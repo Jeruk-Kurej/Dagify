@@ -64,4 +64,16 @@ class FirebaseOperationalService: OperationalRepository, StoreRepository {
         try await batch.commit()
         return true
     }
+    
+    public func addProduct(_ product: Product) async throws -> Bool {
+        let ref = db.collection("products").document()
+        try ref.setData(from: product)
+        return true
+    }
+    
+    public func addIngredient(_ ingredient: Ingredient) async throws -> Bool {
+        let ref = db.collection("ingredients").document()
+        try ref.setData(from: ingredient)
+        return true
+    }
 }

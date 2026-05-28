@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 @MainActor
-class ProductAnalyticsViewModel {
+class ProductAnalyticsViewModel: ObservableObject {
     public var orders: [Order] = []
     public var isLoading: Bool = false
     public var errorMessage: String? = nil

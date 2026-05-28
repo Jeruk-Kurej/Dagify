@@ -41,4 +41,20 @@ class MockOperationalRepository: OperationalRepository, StoreRepository {
         submitCallCount += 1
         return true
     }
+    
+    public func addProduct(_ product: Product) async throws -> Bool {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        var newProduct = product
+        if newProduct.id == nil { newProduct.id = UUID().uuidString }
+        dummyProducts.append(newProduct)
+        return true
+    }
+    
+    public func addIngredient(_ ingredient: Ingredient) async throws -> Bool {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        var newIngredient = ingredient
+        if newIngredient.id == nil { newIngredient.id = UUID().uuidString }
+        dummyIngredients.append(newIngredient)
+        return true
+    }
 }
