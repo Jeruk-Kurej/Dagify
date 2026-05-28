@@ -10,26 +10,42 @@ import Foundation
 
 @MainActor
 class AuthViewModel: ObservableObject {
-    var currentUser: User?
-    var isLoading: Bool = false
-    var error: String?
+    public var currentUser: User? = nil
+    public var isLoading: Bool = false
+    public var errorMessage: String? = nil
 
     private let authRepo: AuthRepository
 
-    init(authRepo: AuthRepository) {
+    public init(authRepo: AuthRepository) {
         self.authRepo = authRepo
     }
 
-    func login(email: String, password: String) async {
+    public var isAuthenticated: Bool {
+        return currentUser != nil
+    }
+
+    public func login(email: String, password: String) async {
         isLoading = true
+        errorMessage = nil
+
         do {
-            self.currentUser = try await authRepo.login(
+            currentUser = try await authRepo.login(
                 email: email,
                 password: password
             )
         } catch {
-            self.error = "Login gagal. Periksa kembali email dan password Anda."
+            errorMessage = "Gagal login: Email atau password salah."
         }
+
         isLoading = false
+    }
+
+    public func logout() {
+        do {
+            try authRepo.logout()
+            currentUser = nil
+        } catch {
+            errorMessage = "Gagal logout."
+        }
     }
 }
