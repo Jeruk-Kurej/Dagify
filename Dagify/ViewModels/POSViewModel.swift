@@ -19,10 +19,12 @@ class POSViewModel: ObservableObject {
 
     private let repo: OperationalRepository
     private let networkMonitor: NetworkMonitor
+    private let crmRepo: CRMRepository
 
-     init(repo: OperationalRepository, networkMonitor: NetworkMonitor) {
+     init(repo: OperationalRepository, networkMonitor: NetworkMonitor, crmRepo: CRMRepository) {
         self.repo = repo
         self.networkMonitor = networkMonitor
+        self.crmRepo = crmRepo
     }
 
      func loadProducts(branchId: String) async {
@@ -82,6 +84,10 @@ class POSViewModel: ObservableObject {
                 firebaseRepo: repo,
                 context: context
             )
+            
+            if let validCustomerId = customerId {
+                _ = try? await crmRepo.recordNewVisit(customerId: validCustomerId, spent: subtotal, date: Date())
+            }
 
             cart.removeAll()
             isCheckoutSuccess = true
@@ -92,5 +98,4 @@ class POSViewModel: ObservableObject {
 
         isLoading = false
     }
-
 }

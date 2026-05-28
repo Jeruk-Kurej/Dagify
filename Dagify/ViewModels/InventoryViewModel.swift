@@ -20,16 +20,6 @@ class InventoryViewModel: ObservableObject {
         self.repo = repo
     }
     
-     func loadIngredients(branchId: String) async {
-        isLoading = true
-        do {
-            ingredients = try await repo.fetchIngredients(for: branchId)
-        } catch {
-            errorMessage = "Gagal memuat data gudang."
-        }
-        isLoading = false
-    }
-    
      var lowStockIngredients: [Ingredient] {
         ingredients.filter { $0.currentStock <= $0.minimumStockWarning }
     }
@@ -40,5 +30,28 @@ class InventoryViewModel: ObservableObject {
             guard let expiry = ingredient.expiryDate else { return false }
             return expiry < today
         }
+    }
+    
+    func loadIngredients(branchId: String) async {
+        isLoading = true
+        do {
+            ingredients = try await repo.fetchIngredients(for: branchId)
+        } catch {
+            errorMessage = "Gagal memuat data gudang."
+        }
+        isLoading = false
+    }
+    
+    func discardExpiredItem(ingredient: Ingredient, branchId: String) async {
+        guard let id = ingredient.id else { return }
+        
+        isLoading = true
+        do {
+            _ = try await repo.recordWaste(ingredientId: id, amountToDeduct: ingredient.currentStock)
+            await loadIngredients(branchId: branchId)
+        } catch {
+            errorMessage = "Gagal membuang stok basi."
+        }
+        isLoading = false
     }
 }

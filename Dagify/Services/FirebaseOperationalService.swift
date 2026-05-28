@@ -76,4 +76,10 @@ class FirebaseOperationalService: OperationalRepository, StoreRepository {
         try ref.setData(from: ingredient)
         return true
     }
+    
+     func recordWaste(ingredientId: String, amountToDeduct: Double) async throws -> Bool {
+        let ref = db.collection("ingredients").document(ingredientId)
+        try await ref.updateData(["currentStock": FieldValue.increment(-amountToDeduct)])
+        return true
+    }
 }
