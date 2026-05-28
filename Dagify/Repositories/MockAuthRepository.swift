@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class MockAuthRepository: AuthRepository {
+class MockAuthRepository: AuthRepository {
     public var shouldThrowError = false
     public var currentUser: User? = User(
         id: "U-1",
