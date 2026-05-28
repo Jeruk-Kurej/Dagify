@@ -6,12 +6,20 @@
 //
 
 import SwiftUI
+import SwiftData
+import FirebaseCore
 
 @main
 struct DagifyApp: App {
+    
+    init() {
+        FirebaseApp.configure()
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(for: OfflineOrder.self)
     }
 }

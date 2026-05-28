@@ -10,17 +10,17 @@ import Foundation
 
 @MainActor
 class MasterDataViewModel: ObservableObject {
-    public var isLoading: Bool = false
-    public var errorMessage: String? = nil
-    public var isSuccess: Bool = false
+    var isLoading: Bool = false
+    var errorMessage: String? = nil
+    var isSuccess: Bool = false
     
     private let repo: OperationalRepository
     
-    public init(repo: OperationalRepository) {
+    init(repo: OperationalRepository) {
         self.repo = repo
     }
     
-    public func createIngredient(name: String, currentStock: Double, unit: String, expiryDate: Date?, minimumStockWarning: Double) async {
+    func createIngredient(name: String, currentStock: Double, unit: String, expiryDate: Date?, minimumStockWarning: Double, costPerUnit: Double) async {
         guard !name.isEmpty, currentStock >= 0 else {
             errorMessage = "Nama bahan baku tidak boleh kosong dan stok harus valid."
             return
@@ -35,7 +35,8 @@ class MasterDataViewModel: ObservableObject {
             currentStock: currentStock,
             unit: unit,
             expiryDate: expiryDate,
-            minimumStockWarning: minimumStockWarning
+            minimumStockWarning: minimumStockWarning,
+            costPerUnit: costPerUnit
         )
         
         do {

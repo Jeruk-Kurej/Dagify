@@ -6,53 +6,56 @@
 //
 
 import Foundation
+import SwiftData
 
+@MainActor
 class SyncManager {
-    public static let shared = SyncManager()
-
-    // Antrean lokal (Offline Queue) untuk pesanan yang gagal terkirim karena offline
-    private var offlineOrdersQueue: [Order] = []
-
+    static let shared = SyncManager()
+    
     private init() {}
-
-    // Fungsi ini dipanggil oleh POSViewModel Mario saat Checkout
-    public func handleCheckout(
-        order: Order,
-        isConnected: Bool,
-        firebaseRepo: OperationalRepository
-    ) async throws {
+    
+    func handleCheckout(order: Order, isConnected: Bool, firebaseRepo: OperationalRepository, context: ModelContext) async throws {
         if isConnected {
-            // Jika Online: Langsung hajar ke Firebase
-            _ = try await firebaseRepo.submitOrderAndUpdateInventory(
-                order: order
-            )
+            _ = try await firebaseRepo.submitOrderAndUpdateInventory(order: order)
+            print("Online: Pesanan sukses masuk ke Firebase.")
         } else {
-            // Jika Offline: Simpan ke memori lokal / SwiftData
-            offlineOrdersQueue.append(order)
-            print(
-                "Internet mati! Pesanan disimpan secara lokal (Offline Mode)."
-            )
-            // Notifikasi sukses palsu agar UI kasir tetap jalan dengan mulus
-        }
-    }
-
-    // Fungsi ini dipanggil secara otomatis saat NetworkMonitor mendeteksi koneksi kembali
-    public func syncOfflineData(firebaseRepo: OperationalRepository) async {
-        guard !offlineOrdersQueue.isEmpty else { return }
-        print(
-            "Koneksi pulih! Memulai sinkronisasi \(offlineOrdersQueue.count) pesanan..."
-        )
-
-        for order in offlineOrdersQueue {
-            do {
-                _ = try await firebaseRepo.submitOrderAndUpdateInventory(
-                    order: order
+            let encoder = JSONEncoder()
+            if let encodedData = try? encoder.encode(order) {
+                let offlineOrder = OfflineOrder(
+                    id: order.id ?? UUID().uuidString,
+                    orderData: encodedData,
+                    timestamp: Date()
                 )
-                // Jika sukses terkirim, hapus dari antrean lokal
-                offlineOrdersQueue.removeAll { $0.id == order.id }
-            } catch {
-                print("Gagal sinkronisasi order \(order.id ?? ""): \(error)")
+                
+                context.insert(offlineOrder)
+                try context.save()
+                print("Offline: Pesanan aman tersimpan di SwiftData Lokal!")
             }
         }
+    }
+    
+    func syncOfflineData(firebaseRepo: OperationalRepository, context: ModelContext) async {
+        let descriptor = FetchDescriptor<OfflineOrder>(sortBy: [SortDescriptor(\.timestamp, order: .forward)])
+        guard let offlineOrders = try? context.fetch(descriptor), !offlineOrders.isEmpty else { return }
+        
+        print("Koneksi pulih! Memulai sinkronisasi \(offlineOrders.count) pesanan ke Firebase...")
+        
+        let decoder = JSONDecoder()
+        
+        for offlineOrder in offlineOrders {
+            if let orderToSync = try? decoder.decode(Order.self, from: offlineOrder.orderData) {
+                do {
+                    _ = try await firebaseRepo.submitOrderAndUpdateInventory(order: orderToSync)
+                    
+                    context.delete(offlineOrder)
+                } catch {
+                    print("Gagal sinkronisasi order \(offlineOrder.id): \(error.localizedDescription)")
+                }
+            }
+        }
+        
+        // Simpan penghapusan
+        try? context.save()
+        print("Sinkronisasi selesai!")
     }
 }
