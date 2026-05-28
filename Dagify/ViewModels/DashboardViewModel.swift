@@ -17,11 +17,11 @@ class DashboardViewModel: ObservableObject{
     var isLoading: Bool = false
     var errorMessage: String? = nil
     
-    let cashflowRepo: CashflowRepository
+    let cashflowRepo: CashflowProtocol
     let crmRepo: CRMRepository
     let operationalRepo: OperationalRepository
     
-    init(cashflowRepo: CashflowRepository, crmRepo: CRMRepository, operationalRepo: OperationalRepository) {
+    init(cashflowRepo: CashflowProtocol, crmRepo: CRMRepository, operationalRepo: OperationalRepository) {
         self.cashflowRepo = cashflowRepo
         self.crmRepo = crmRepo
         self.operationalRepo = operationalRepo

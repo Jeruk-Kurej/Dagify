@@ -14,9 +14,9 @@ class CashflowViewModel : ObservableObject{
     var isLoading: Bool = false
     var errorMessage: String? = nil
     
-    private let repository: CashflowRepository
+    private let repository: CashflowProtocol
     
-    init(repository: CashflowRepository) {
+    init(repository: CashflowProtocol) {
         self.repository = repository
     }
     

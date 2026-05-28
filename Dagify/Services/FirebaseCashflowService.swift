@@ -8,7 +8,7 @@
 import Foundation
 import FirebaseFirestore
 
-class FirebaseCashflowService: CashflowRepository {
+class FirebaseCashflowService: CashflowProtocol {
     private let db = Firestore.firestore()
     private let collectionName = "financial_records"
     
