@@ -11,4 +11,5 @@ protocol OperationalRepository {
     func fetchProducts(for branchId: String) async throws -> [Product]
     func fetchIngredients(for branchId: String) async throws -> [Ingredient]
     func submitOrderAndUpdateInventory(order: Order) async throws -> Bool
+    func fetchOrders(for branchId: String) async throws -> [Order]
 }
