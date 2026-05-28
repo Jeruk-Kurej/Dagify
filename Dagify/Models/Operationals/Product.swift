@@ -9,22 +9,15 @@ import Foundation
 import FirebaseFirestoreSwift
 
 struct Product: Identifiable, Codable, Equatable {
-    @DocumentID var id: String?
-    let name: String
-    let price: Double
-    let recipe: [RecipeItem]
-}
-
-struct OrderItem: Codable, Equatable {
-    let product: Product
-    var quantity: Int
-}
-
-struct Order: Identifiable, Codable, Equatable {
-    @DocumentID var id: String?
-    let branchId: String
-    let customerId: String?
-    let items: [OrderItem]
-    let totalAmount: Double
-    let timestamp: Date
+    @DocumentID public var id: String?
+    public let name: String
+    public let price: Double
+    public let recipe: [RecipeItem]
+    
+    public init(id: String? = nil, name: String, price: Double, recipe: [RecipeItem]) {
+        self.id = id
+        self.name = name
+        self.price = price
+        self.recipe = recipe
+    }
 }

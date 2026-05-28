@@ -5,22 +5,34 @@
 //  Created by Mario Ruby Ariesusandi  on 28-05-2026.
 //
 
+import Combine
 import Foundation
-import Observation
 
 @MainActor
-@Observable
-class POSViewModel {
-    var cart: [OrderItem] = []
-    var isLoading: Bool = false
+class POSViewModel: ObservableObject {
+    public var cart: [OrderItem] = []
+    public var availableProducts: [Product] = []
+    public var isLoading: Bool = false
+    public var errorMessage: String? = nil
+    public var isCheckoutSuccess: Bool = false
     
     private let repo: OperationalRepository
     
-    init(repo: OperationalRepository) {
+    public init(repo: OperationalRepository) {
         self.repo = repo
     }
     
-    func addToCart(product: Product) {
+    public func loadProducts(branchId: String) async {
+        isLoading = true
+        do {
+            availableProducts = try await repo.fetchProducts(for: branchId)
+        } catch {
+            errorMessage = "Gagal memuat daftar menu."
+        }
+        isLoading = false
+    }
+    
+    public func addToCart(product: Product) {
         if let index = cart.firstIndex(where: { $0.product.id == product.id }) {
             cart[index].quantity += 1
         } else {
@@ -28,13 +40,29 @@ class POSViewModel {
         }
     }
     
-    var subtotal: Double {
+    public func removeOrDecreaseFromCart(product: Product) {
+        if let index = cart.firstIndex(where: { $0.product.id == product.id }) {
+            if cart[index].quantity > 1 {
+                cart[index].quantity -= 1
+            } else {
+                cart.remove(at: index)
+            }
+        }
+    }
+    
+    public var subtotal: Double {
         cart.reduce(0) { $0 + ($1.product.price * Double($1.quantity)) }
     }
     
-    func checkout(branchId: String, customerId: String?) async {
-        guard !cart.isEmpty else { return }
+    public func checkout(branchId: String, customerId: String? = nil) async {
+        guard !cart.isEmpty else {
+            errorMessage = "Keranjang masih kosong."
+            return
+        }
+        
         isLoading = true
+        errorMessage = nil
+        isCheckoutSuccess = false
         
         let order = Order(
             branchId: branchId,
@@ -45,11 +73,11 @@ class POSViewModel {
         )
         
         do {
-            _ = try await repo.submitOrder(order)
-            _ = try await repo.updateInventoryStock(for: cart)
+            _ = try await repo.submitOrderAndUpdateInventory(order: order)
             cart.removeAll()
+            isCheckoutSuccess = true
         } catch {
-            print("Checkout Gagal")
+            errorMessage = "Checkout gagal: \(error.localizedDescription)"
         }
         
         isLoading = false

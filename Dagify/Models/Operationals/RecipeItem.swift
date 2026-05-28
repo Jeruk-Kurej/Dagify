@@ -8,6 +8,11 @@
 import Foundation
 
 struct RecipeItem: Codable, Equatable {
-    let ingredientId: String
-    let quantityRequired: Double
+    public let ingredientId: String
+    public let quantityRequired: Double
+    
+    public init(ingredientId: String, quantityRequired: Double) {
+        self.ingredientId = ingredientId
+        self.quantityRequired = quantityRequired
+    }
 }
