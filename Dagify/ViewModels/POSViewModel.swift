@@ -15,13 +15,15 @@ class POSViewModel: ObservableObject {
     public var isLoading: Bool = false
     public var errorMessage: String? = nil
     public var isCheckoutSuccess: Bool = false
-    
+
     private let repo: OperationalRepository
-    
-    public init(repo: OperationalRepository) {
+    private let networkMonitor: NetworkMonitor
+
+    public init(repo: OperationalRepository, networkMonitor: NetworkMonitor) {
         self.repo = repo
+        self.networkMonitor = networkMonitor
     }
-    
+
     public func loadProducts(branchId: String) async {
         isLoading = true
         do {
@@ -31,7 +33,7 @@ class POSViewModel: ObservableObject {
         }
         isLoading = false
     }
-    
+
     public func addToCart(product: Product) {
         if let index = cart.firstIndex(where: { $0.product.id == product.id }) {
             cart[index].quantity += 1
@@ -39,7 +41,7 @@ class POSViewModel: ObservableObject {
             cart.append(OrderItem(product: product, quantity: 1))
         }
     }
-    
+
     public func removeOrDecreaseFromCart(product: Product) {
         if let index = cart.firstIndex(where: { $0.product.id == product.id }) {
             if cart[index].quantity > 1 {
@@ -49,21 +51,21 @@ class POSViewModel: ObservableObject {
             }
         }
     }
-    
+
     public var subtotal: Double {
         cart.reduce(0) { $0 + ($1.product.price * Double($1.quantity)) }
     }
-    
+
     public func checkout(branchId: String, customerId: String? = nil) async {
         guard !cart.isEmpty else {
             errorMessage = "Keranjang masih kosong."
             return
         }
-        
+
         isLoading = true
         errorMessage = nil
         isCheckoutSuccess = false
-        
+
         let order = Order(
             branchId: branchId,
             customerId: customerId,
@@ -71,15 +73,18 @@ class POSViewModel: ObservableObject {
             totalAmount: subtotal,
             timestamp: Date()
         )
-        
+
         do {
-            _ = try await repo.submitOrderAndUpdateInventory(order: order)
-            cart.removeAll()
-            isCheckoutSuccess = true
+            try await SyncManager.shared.handleCheckout(
+                order: order,
+                isConnected: networkMonitor.isConnected,
+                firebaseRepo: repo
+            )
         } catch {
             errorMessage = "Checkout gagal: \(error.localizedDescription)"
         }
-        
+
         isLoading = false
     }
+
 }
