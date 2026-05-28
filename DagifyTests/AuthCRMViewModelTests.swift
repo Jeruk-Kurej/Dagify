@@ -40,6 +40,35 @@ struct AuthViewModelTests {
         #expect(vm.isAuthenticated == false)
         #expect(vm.errorMessage != nil)
     }
+    
+    @Test @MainActor func testRegisterSuccessfullyCreatesUserAndStore() async throws {
+            let mockRepo = MockAuthRepository()
+            let vm = AuthViewModel(authRepo: mockRepo)
+            
+            await vm.register(
+                email: "bcarlielukito@student.ciputra.ac.id",
+                password: "securepassword",
+                storeName: "Kopi Ciputra",
+                branchName: "Pusat Surabaya"
+            )
+            
+            #expect(vm.isAuthenticated == true)
+            #expect(vm.currentUser != nil)
+            #expect(mockRepo.registeredStore != nil)
+            #expect(mockRepo.registeredStore?.name == "Kopi Ciputra")
+            #expect(mockRepo.registeredStore?.branches.count == 1)
+            #expect(vm.errorMessage == nil)
+        }
+        
+        @Test @MainActor func testRegisterFailsEmptyFields() async throws {
+            let mockRepo = MockAuthRepository()
+            let vm = AuthViewModel(authRepo: mockRepo)
+            
+            await vm.register(email: "test@test.com", password: "pass", storeName: "", branchName: "")
+            
+            #expect(vm.isAuthenticated == false)
+            #expect(vm.errorMessage == "Semua kolom pendaftaran wajib diisi.")
+        }
 }
 
 @Suite("CRMViewModel Swift Tests")
