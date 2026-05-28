@@ -80,6 +80,10 @@ class POSViewModel: ObservableObject {
                 isConnected: networkMonitor.isConnected,
                 firebaseRepo: repo
             )
+
+            cart.removeAll()
+            isCheckoutSuccess = true
+            
         } catch {
             errorMessage = "Checkout gagal: \(error.localizedDescription)"
         }
