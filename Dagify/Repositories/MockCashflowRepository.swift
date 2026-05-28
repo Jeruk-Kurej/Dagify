@@ -7,7 +7,7 @@
 
 import Foundation
 
-class MockCashflowRepository: CashflowRepository {
+class MockCashflowRepository: CashflowProtocol {
     var records: [FinancialRecord] = []
     var shouldThrowError = false
     
