@@ -21,7 +21,7 @@ class SyncManager {
         } else {
             let encoder = JSONEncoder()
             if let encodedData = try? encoder.encode(order) {
-                let offlineOrder = OfflineOrder(
+                let offlineOrder = OfflineOrderModel(
                     id: order.id ?? UUID().uuidString,
                     orderData: encodedData,
                     timestamp: Date()
@@ -35,7 +35,7 @@ class SyncManager {
     }
     
     func syncOfflineData(firebaseRepo: OperationalRepository, context: ModelContext) async {
-        let descriptor = FetchDescriptor<OfflineOrder>(sortBy: [SortDescriptor(\.timestamp, order: .forward)])
+        let descriptor = FetchDescriptor<OfflineOrderModel>(sortBy: [SortDescriptor(\.timestamp, order: .forward)])
         guard let offlineOrders = try? context.fetch(descriptor), !offlineOrders.isEmpty else { return }
         
         print("Koneksi pulih! Memulai sinkronisasi \(offlineOrders.count) pesanan ke Firebase...")

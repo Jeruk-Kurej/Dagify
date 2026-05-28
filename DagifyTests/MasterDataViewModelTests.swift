@@ -22,7 +22,8 @@ struct MasterDataViewModelTests {
             currentStock: 5000,
             unit: "Gram",
             expiryDate: Date().addingTimeInterval(86400 * 30), // 30 Hari
-            minimumStockWarning: 1000
+            minimumStockWarning: 1000,
+            costPerUnit: 50000
         )
         
         #expect(vm.isSuccess == true)

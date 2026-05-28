@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftData
 import Testing
 
 @testable import Dagify
@@ -48,7 +49,16 @@ struct POSViewModelTests {
 
         vm.addToCart(product: dummyProduct)
 
-        await vm.checkout(branchId: "B-1")
+        // 1. Buat database lokal bohongan (In-Memory) murni untuk testing
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: OfflineOrderModel.self,
+            configurations: config
+        )
+        let context = ModelContext(container)
+
+        // 2. Masukkan context tersebut saat memanggil checkout
+        await vm.checkout(branchId: "B-1", context: context)
 
         #expect(vm.cart.isEmpty == true)
         #expect(vm.isCheckoutSuccess == true)
@@ -83,7 +93,8 @@ struct InventoryViewModelTests {
                 currentStock: 1000,
                 unit: "Gr",
                 expiryDate: nextMonth,
-                minimumStockWarning: 200
+                minimumStockWarning: 200,
+                costPerUnit: 50000
             ),
 
             // 2. Stok Menipis (Low Stock), Belum Basi
@@ -93,7 +104,8 @@ struct InventoryViewModelTests {
                 currentStock: 100,
                 unit: "Ml",
                 expiryDate: nextMonth,
-                minimumStockWarning: 500
+                minimumStockWarning: 500,
+                costPerUnit: 60000
             ),
 
             // 3. Stok Aman, Tapi Basi (Expired)
@@ -103,7 +115,8 @@ struct InventoryViewModelTests {
                 currentStock: 50,
                 unit: "Pcs",
                 expiryDate: yesterday,
-                minimumStockWarning: 10
+                minimumStockWarning: 10,
+                costPerUnit: 70000
             ),
         ]
 

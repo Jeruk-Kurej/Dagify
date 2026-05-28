@@ -7,6 +7,7 @@
 
 import Combine
 import Foundation
+import SwiftData
 
 @MainActor
 class POSViewModel: ObservableObject {
@@ -56,7 +57,7 @@ class POSViewModel: ObservableObject {
         cart.reduce(0) { $0 + ($1.product.price * Double($1.quantity)) }
     }
 
-    public func checkout(branchId: String, customerId: String? = nil) async {
+    public func checkout(branchId: String, customerId: String? = nil, context: ModelContext) async {
         guard !cart.isEmpty else {
             errorMessage = "Keranjang masih kosong."
             return
@@ -78,7 +79,8 @@ class POSViewModel: ObservableObject {
             try await SyncManager.shared.handleCheckout(
                 order: order,
                 isConnected: networkMonitor.isConnected,
-                firebaseRepo: repo
+                firebaseRepo: repo,
+                context: context
             )
 
             cart.removeAll()

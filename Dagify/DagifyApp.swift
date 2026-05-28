@@ -20,6 +20,6 @@ struct DagifyApp: App {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(for: OfflineOrder.self)
+        .modelContainer(for: OfflineOrderModel.self)
     }
 }

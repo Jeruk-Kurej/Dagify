@@ -5,49 +5,77 @@
 //  Created by Mario Ruby Ariesusandi  on 28-05-2026.
 //
 
-import Testing
 import Foundation
+import Testing
 
 @testable import Dagify
 
 @Suite("ProductAnalyticsViewModel Swift Tests")
 struct ProductAnalyticsViewModelTests {
-    
-    let dummyCoffee = Product(id: "P-1", name: "Kopi Gula Aren", price: 25000, recipe: [])
-    let dummyTea = Product(id: "P-2", name: "Es Teh Manis", price: 10000, recipe: [])
-    let dummyCroissant = Product(id: "P-3", name: "Croissant", price: 30000, recipe: [])
-    
-    @Test @MainActor func testBestSellerAndLeastPopularAnalytics() async throws {
+
+    // Perhatikan tambahan RecipeItem di sini untuk menghitung HPP
+    let dummyCoffee = Product(
+        id: "P-1",
+        name: "Kopi Gula Aren",
+        price: 25000,
+        recipe: [RecipeItem(ingredientId: "I-1", quantityRequired: 20)]
+    )
+    let dummyTea = Product(
+        id: "P-2",
+        name: "Es Teh Manis",
+        price: 10000,
+        recipe: [RecipeItem(ingredientId: "I-2", quantityRequired: 10)]
+    )
+
+    @Test @MainActor func testProfitabilityAnalytics() async throws {
         let mockRepo = MockOperationalRepository()
-        
-        // Skenario Transaksi:
-        // Order 1: 5 Kopi, 1 Teh
-        // Order 2: 3 Kopi, 2 Croissant
-        // Total Terjual: Kopi (8), Croissant (2), Teh (1)
-        let order1 = Order(branchId: "B-1", customerId: nil, items: [
-            OrderItem(product: dummyCoffee, quantity: 5),
-            OrderItem(product: dummyTea, quantity: 1)
-        ], totalAmount: 135000, timestamp: Date())
-        
-        let order2 = Order(branchId: "B-1", customerId: nil, items: [
-            OrderItem(product: dummyCoffee, quantity: 3),
-            OrderItem(product: dummyCroissant, quantity: 2)
-        ], totalAmount: 135000, timestamp: Date())
-        
-        mockRepo.dummyOrders = [order1, order2]
-        
+
+        mockRepo.dummyIngredients = [
+            Ingredient(
+                id: "I-1",
+                name: "Biji Kopi",
+                currentStock: 1000,
+                unit: "Gr",
+                expiryDate: nil,
+                minimumStockWarning: 100,
+                costPerUnit: 500
+            ),
+            Ingredient(
+                id: "I-2",
+                name: "Teh",
+                currentStock: 1000,
+                unit: "Gr",
+                expiryDate: nil,
+                minimumStockWarning: 100,
+                costPerUnit: 200
+            ),
+        ]
+
+        let order1 = Order(
+            branchId: "B-1",
+            customerId: nil,
+            items: [
+                OrderItem(product: dummyCoffee, quantity: 1),
+                OrderItem(product: dummyTea, quantity: 1),
+            ],
+            totalAmount: 35000,
+            timestamp: Date()
+        )
+
+        mockRepo.dummyOrders = [order1]
+
         let vm = ProductAnalyticsViewModel(repo: mockRepo)
-        await vm.loadOrderHistory(branchId: "B-1")
-        
-        let bestSellers = vm.bestSellers
-        let leastPopular = vm.leastPopular
-        
-        // Pengecekan Best-Seller (Peringkat 1 harus Kopi Gula Aren dengan 8 penjualan)
-        #expect(bestSellers.first?.productName == "Kopi Gula Aren")
-        #expect(bestSellers.first?.quantitySold == 8)
-        
-        // Pengecekan Least Popular (Peringkat terakhir/paling bawah di Least Popular harus Kopi, peringkat 1 nya Teh)
-        #expect(leastPopular.first?.productName == "Es Teh Manis")
-        #expect(leastPopular.first?.quantitySold == 1)
+
+        await vm.loadAnalyticsData(branchId: "B-1")
+
+        let profitableProducts = vm.mostProfitableProducts
+
+        #expect(profitableProducts.count == 2)
+
+        #expect(profitableProducts.first?.productName == "Kopi Gula Aren")
+        #expect(profitableProducts.first?.profitMargin == 15000)
+
+        #expect(profitableProducts.last?.productName == "Es Teh Manis")
+        #expect(profitableProducts.last?.profitMargin == 8000)
     }
 }
