@@ -11,9 +11,15 @@ class MockOperationalRepository: OperationalRepository, StoreRepository {
     public var shouldThrowError = false
     public var dummyProducts: [Product] = []
     public var dummyIngredients: [Ingredient] = []
+    public var dummyOrders: [Order] = []
     public var submitCallCount = 0
     
     public init() {}
+    
+    public func fetchOrders(for branchId: String) async throws -> [Order] {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        return dummyOrders.filter { $0.branchId == branchId }
+    }
     
     public func fetchStore(storeId: String) async throws -> Store {
         if shouldThrowError { throw NSError(domain: "MockError", code: 404) }
