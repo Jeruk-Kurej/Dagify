@@ -48,7 +48,7 @@ class DashboardViewModel: ObservableObject{
             lowStockAlertsCount = ingredients.filter { $0.currentStock <= $0.minimumStockWarning }.count
             
         } catch {
-            errorMessage = "Gagal memuat ringkasan dasbor."
+            errorMessage = "Gagal memuat dashboard."
         }
         
         isLoading = false
