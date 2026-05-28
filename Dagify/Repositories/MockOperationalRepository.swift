@@ -7,13 +7,32 @@
 
 import Foundation
 
-class MockOperationalRepository: OperationalRepository {
-    var submitCallCount = 0
-    func submitOrder(_ order: Order) async throws -> Bool {
-        submitCallCount += 1
-        return true
+class MockOperationalRepository: OperationalRepository, StoreRepository {
+    public var shouldThrowError = false
+    public var dummyProducts: [Product] = []
+    public var dummyIngredients: [Ingredient] = []
+    public var submitCallCount = 0
+    
+    public init() {}
+    
+    public func fetchStore(storeId: String) async throws -> Store {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 404) }
+        return Store(id: storeId, name: "Dagify Test Store", branches: [Branch(id: "B-1", name: "Pusat", address: "Surabaya")])
     }
-    func updateInventoryStock(for items: [OrderItem]) async throws -> Bool {
+    
+    public func fetchProducts(for branchId: String) async throws -> [Product] {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        return dummyProducts
+    }
+    
+    public func fetchIngredients(for branchId: String) async throws -> [Ingredient] {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        return dummyIngredients
+    }
+    
+    public func submitOrderAndUpdateInventory(order: Order) async throws -> Bool {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        submitCallCount += 1
         return true
     }
 }
