@@ -11,21 +11,21 @@ import SwiftData
 
 @MainActor
 class POSViewModel: ObservableObject {
-    public var cart: [OrderItem] = []
-    public var availableProducts: [Product] = []
-    public var isLoading: Bool = false
-    public var errorMessage: String? = nil
-    public var isCheckoutSuccess: Bool = false
+     var cart: [OrderItem] = []
+     var availableProducts: [Product] = []
+     var isLoading: Bool = false
+     var errorMessage: String? = nil
+     var isCheckoutSuccess: Bool = false
 
     private let repo: OperationalRepository
     private let networkMonitor: NetworkMonitor
 
-    public init(repo: OperationalRepository, networkMonitor: NetworkMonitor) {
+     init(repo: OperationalRepository, networkMonitor: NetworkMonitor) {
         self.repo = repo
         self.networkMonitor = networkMonitor
     }
 
-    public func loadProducts(branchId: String) async {
+     func loadProducts(branchId: String) async {
         isLoading = true
         do {
             availableProducts = try await repo.fetchProducts(for: branchId)
@@ -35,7 +35,7 @@ class POSViewModel: ObservableObject {
         isLoading = false
     }
 
-    public func addToCart(product: Product) {
+     func addToCart(product: Product) {
         if let index = cart.firstIndex(where: { $0.product.id == product.id }) {
             cart[index].quantity += 1
         } else {
@@ -43,7 +43,7 @@ class POSViewModel: ObservableObject {
         }
     }
 
-    public func removeOrDecreaseFromCart(product: Product) {
+     func removeOrDecreaseFromCart(product: Product) {
         if let index = cart.firstIndex(where: { $0.product.id == product.id }) {
             if cart[index].quantity > 1 {
                 cart[index].quantity -= 1
@@ -53,11 +53,11 @@ class POSViewModel: ObservableObject {
         }
     }
 
-    public var subtotal: Double {
+     var subtotal: Double {
         cart.reduce(0) { $0 + ($1.product.price * Double($1.quantity)) }
     }
 
-    public func checkout(branchId: String, customerId: String? = nil, context: ModelContext) async {
+     func checkout(branchId: String, customerId: String? = nil, context: ModelContext) async {
         guard !cart.isEmpty else {
             errorMessage = "Keranjang masih kosong."
             return

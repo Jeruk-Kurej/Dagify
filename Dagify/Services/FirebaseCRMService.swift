@@ -12,15 +12,15 @@ import Foundation
 class FirebaseCRMService: CRMRepository {
     private let db = Firestore.firestore()
 
-    public init() {}
+     init() {}
 
-    public func addCustomer(_ customer: Customer) async throws -> Bool {
+     func addCustomer(_ customer: Customer) async throws -> Bool {
         let ref = db.collection("customers").document()
         try ref.setData(from: customer)
         return true
     }
 
-    public func fetchCustomers(for storeId: String) async throws -> [Customer] {
+     func fetchCustomers(for storeId: String) async throws -> [Customer] {
         let snapshot = try await db.collection("customers")
             .whereField("storeId", isEqualTo: storeId)
             .getDocuments()
@@ -28,7 +28,7 @@ class FirebaseCRMService: CRMRepository {
         return snapshot.documents.compactMap { try? $0.data(as: Customer.self) }
     }
 
-    public func recordNewVisit(customerId: String, spent: Double, date: Date)
+     func recordNewVisit(customerId: String, spent: Double, date: Date)
         async throws -> Bool
     {
         let ref = db.collection("customers").document(customerId)

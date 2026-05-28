@@ -49,7 +49,7 @@ class MasterDataViewModel: ObservableObject {
         isLoading = false
     }
     
-    public func createProduct(name: String, price: Double, recipe: [RecipeItem]) async {
+    func createProduct(name: String, price: Double, recipe: [RecipeItem]) async {
         guard !name.isEmpty, price >= 0 else {
             errorMessage = "Nama menu dan harga harus valid."
             return

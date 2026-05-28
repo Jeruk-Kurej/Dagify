@@ -59,11 +59,32 @@ class ProductAnalyticsViewModel: ObservableObject {
         
         return allSoldProducts
             .filter { profitMap[$0.id ?? ""] != nil }
-            // Filter duplikat agar listnya bersih
             .reduce(into: [Product]()) { unique, product in
                 if !unique.contains(where: { $0.id == product.id }) { unique.append(product) }
             }
             .map { (productName: $0.name, profitMargin: profitMap[$0.id ?? ""] ?? 0) }
             .sorted { $0.profitMargin > $1.profitMargin }
+    }
+    
+    private var productSalesCount: [String: Int] {
+        var salesDict: [String: Int] = [:]
+        for order in orders {
+            for item in order.items {
+                salesDict[item.product.name, default: 0] += item.quantity
+            }
+        }
+        return salesDict
+    }
+    
+    var bestSellers: [(productName: String, quantitySold: Int)] {
+        return productSalesCount
+            .map { (productName: $0.key, quantitySold: $0.value) }
+            .sorted { $0.quantitySold > $1.quantitySold }
+    }
+    
+    var leastPopular: [(productName: String, quantitySold: Int)] {
+        return productSalesCount
+            .map { (productName: $0.key, quantitySold: $0.value) }
+            .sorted { $0.quantitySold < $1.quantitySold }
     }
 }

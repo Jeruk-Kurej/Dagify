@@ -13,9 +13,9 @@ class FirebaseAuthService: AuthRepository {
     private let auth = Auth.auth()
     private let db = Firestore.firestore()
     
-    public init() {}
+     init() {}
     
-    public func login(email: String, password: String) async throws -> User {
+     func login(email: String, password: String) async throws -> User {
         let authResult = try await auth.signIn(withEmail: email, password: password)
         let uid = authResult.user.uid
         
@@ -27,7 +27,7 @@ class FirebaseAuthService: AuthRepository {
     }
     
     // FITUR BARU: Registrasi Kompleks (User + Store + Branch)
-    public func register(email: String, password: String, storeName: String, branchName: String) async throws -> User {
+     func register(email: String, password: String, storeName: String, branchName: String) async throws -> User {
         // 1. Buat akun di Firebase Auth
         let authResult = try await auth.createUser(withEmail: email, password: password)
         let uid = authResult.user.uid
@@ -54,7 +54,7 @@ class FirebaseAuthService: AuthRepository {
         return newUser
     }
     
-    public func logout() throws {
+     func logout() throws {
         try auth.signOut()
     }
 }

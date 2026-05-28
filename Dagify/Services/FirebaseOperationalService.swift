@@ -11,9 +11,9 @@ import FirebaseFirestore
 class FirebaseOperationalService: OperationalRepository, StoreRepository {
     private let db = Firestore.firestore()
     
-    public init() {}
+     init() {}
     
-    public func fetchOrders(for branchId: String) async throws -> [Order] {
+     func fetchOrders(for branchId: String) async throws -> [Order] {
         let snapshot = try await db.collection("orders")
             .whereField("branchId", isEqualTo: branchId)
             .getDocuments()
@@ -21,7 +21,7 @@ class FirebaseOperationalService: OperationalRepository, StoreRepository {
         return snapshot.documents.compactMap { try? $0.data(as: Order.self) }
     }
     
-    public func fetchStore(storeId: String) async throws -> Store {
+     func fetchStore(storeId: String) async throws -> Store {
         let snapshot = try await db.collection("stores").document(storeId).getDocument()
         guard let store = try snapshot.data(as: Store?.self) else {
             throw NSError(domain: "Operational", code: 404, userInfo: [NSLocalizedDescriptionKey: "Toko tidak ditemukan."])
@@ -29,21 +29,21 @@ class FirebaseOperationalService: OperationalRepository, StoreRepository {
         return store
     }
     
-    public func fetchProducts(for branchId: String) async throws -> [Product] {
+     func fetchProducts(for branchId: String) async throws -> [Product] {
         let snapshot = try await db.collection("products")
             .whereField("branchId", isEqualTo: branchId)
             .getDocuments()
         return snapshot.documents.compactMap { try? $0.data(as: Product.self) }
     }
     
-    public func fetchIngredients(for branchId: String) async throws -> [Ingredient] {
+     func fetchIngredients(for branchId: String) async throws -> [Ingredient] {
         let snapshot = try await db.collection("ingredients")
             .whereField("branchId", isEqualTo: branchId)
             .getDocuments()
         return snapshot.documents.compactMap { try? $0.data(as: Ingredient.self) }
     }
     
-    public func submitOrderAndUpdateInventory(order: Order) async throws -> Bool {
+     func submitOrderAndUpdateInventory(order: Order) async throws -> Bool {
         let batch = db.batch()
         
         let orderRef = db.collection("orders").document()
@@ -65,13 +65,13 @@ class FirebaseOperationalService: OperationalRepository, StoreRepository {
         return true
     }
     
-    public func addProduct(_ product: Product) async throws -> Bool {
+     func addProduct(_ product: Product) async throws -> Bool {
         let ref = db.collection("products").document()
         try ref.setData(from: product)
         return true
     }
     
-    public func addIngredient(_ ingredient: Ingredient) async throws -> Bool {
+     func addIngredient(_ ingredient: Ingredient) async throws -> Bool {
         let ref = db.collection("ingredients").document()
         try ref.setData(from: ingredient)
         return true

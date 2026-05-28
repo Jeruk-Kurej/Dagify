@@ -10,21 +10,21 @@ import Foundation
 
 @MainActor
 class AuthViewModel: ObservableObject {
-    public var currentUser: User? = nil
-    public var isLoading: Bool = false
-    public var errorMessage: String? = nil
+     var currentUser: User? = nil
+     var isLoading: Bool = false
+     var errorMessage: String? = nil
 
     private let authRepo: AuthRepository
 
-    public init(authRepo: AuthRepository) {
+     init(authRepo: AuthRepository) {
         self.authRepo = authRepo
     }
 
-    public var isAuthenticated: Bool {
+     var isAuthenticated: Bool {
         return currentUser != nil
     }
 
-    public func login(email: String, password: String) async {
+     func login(email: String, password: String) async {
         isLoading = true
         errorMessage = nil
 
@@ -40,7 +40,7 @@ class AuthViewModel: ObservableObject {
         isLoading = false
     }
 
-    public func register(
+     func register(
         email: String,
         password: String,
         storeName: String,
@@ -68,7 +68,7 @@ class AuthViewModel: ObservableObject {
         isLoading = false
     }
 
-    public func logout() {
+     func logout() {
         do {
             try authRepo.logout()
             currentUser = nil
