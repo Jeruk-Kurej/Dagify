@@ -8,6 +8,7 @@
 import Foundation
 
 protocol OperationalRepository {
-    func submitOrder(_ order: Order) async throws -> Bool
-    func updateInventoryStock(for items: [OrderItem]) async throws -> Bool
+    func fetchProducts(for branchId: String) async throws -> [Product]
+    func fetchIngredients(for branchId: String) async throws -> [Ingredient]
+    func submitOrderAndUpdateInventory(order: Order) async throws -> Bool
 }

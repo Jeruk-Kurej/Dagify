@@ -9,7 +9,7 @@ import FirebaseAuth
 import FirebaseFirestore
 import Foundation
 
-public class FirebaseCRMService: CRMRepository {
+class FirebaseCRMService: CRMRepository {
     private let db = Firestore.firestore()
 
     public init() {}
