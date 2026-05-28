@@ -13,6 +13,14 @@ class FirebaseOperationalService: OperationalRepository, StoreRepository {
     
     public init() {}
     
+    public func fetchOrders(for branchId: String) async throws -> [Order] {
+        let snapshot = try await db.collection("orders")
+            .whereField("branchId", isEqualTo: branchId)
+            .getDocuments()
+        
+        return snapshot.documents.compactMap { try? $0.data(as: Order.self) }
+    }
+    
     public func fetchStore(storeId: String) async throws -> Store {
         let snapshot = try await db.collection("stores").document(storeId).getDocument()
         guard let store = try snapshot.data(as: Store?.self) else {

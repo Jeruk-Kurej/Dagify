@@ -34,7 +34,35 @@ class AuthViewModel: ObservableObject {
                 password: password
             )
         } catch {
-            errorMessage = "Gagal login: Email atau password salah."
+            errorMessage = "Gagal login: Periksa kembali kredensial Anda."
+        }
+
+        isLoading = false
+    }
+
+    public func register(
+        email: String,
+        password: String,
+        storeName: String,
+        branchName: String
+    ) async {
+        guard !email.isEmpty, !password.isEmpty, !storeName.isEmpty else {
+            errorMessage = "Semua kolom pendaftaran wajib diisi."
+            return
+        }
+
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            currentUser = try await authRepo.register(
+                email: email,
+                password: password,
+                storeName: storeName,
+                branchName: branchName
+            )
+        } catch {
+            errorMessage = "Gagal mendaftar: \(error.localizedDescription)"
         }
 
         isLoading = false
