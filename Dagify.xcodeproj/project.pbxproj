@@ -14,14 +14,30 @@
 		64A9C8252FC7CF5F00A81B83 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 64A9C8242FC7CF5F00A81B83 /* FirebaseFirestore */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		903F30472FC7E0C500BA79C6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 643E95782FC4267E00508448 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 643E957F2FC4267E00508448;
+			remoteInfo = Dagify;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		643E95802FC4267E00508448 /* Dagify.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Dagify.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		903F30432FC7E0C500BA79C6 /* DagifyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DagifyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		643E95822FC4267E00508448 /* Dagify */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Dagify;
+			sourceTree = "<group>";
+		};
+		903F30442FC7E0C500BA79C6 /* DagifyTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = DagifyTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -39,6 +55,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		903F30402FC7E0C500BA79C6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -46,6 +69,7 @@
 			isa = PBXGroup;
 			children = (
 				643E95822FC4267E00508448 /* Dagify */,
+				903F30442FC7E0C500BA79C6 /* DagifyTests */,
 				643E95812FC4267E00508448 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,6 +78,7 @@
 			isa = PBXGroup;
 			children = (
 				643E95802FC4267E00508448 /* Dagify.app */,
+				903F30432FC7E0C500BA79C6 /* DagifyTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -88,6 +113,29 @@
 			productReference = 643E95802FC4267E00508448 /* Dagify.app */;
 			productType = "com.apple.product-type.application";
 		};
+		903F30422FC7E0C500BA79C6 /* DagifyTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 903F30492FC7E0C500BA79C6 /* Build configuration list for PBXNativeTarget "DagifyTests" */;
+			buildPhases = (
+				903F303F2FC7E0C500BA79C6 /* Sources */,
+				903F30402FC7E0C500BA79C6 /* Frameworks */,
+				903F30412FC7E0C500BA79C6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				903F30482FC7E0C500BA79C6 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				903F30442FC7E0C500BA79C6 /* DagifyTests */,
+			);
+			name = DagifyTests;
+			packageProductDependencies = (
+			);
+			productName = DagifyTests;
+			productReference = 903F30432FC7E0C500BA79C6 /* DagifyTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -95,11 +143,15 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2650;
+				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					643E957F2FC4267E00508448 = {
 						CreatedOnToolsVersion = 26.5;
+					};
+					903F30422FC7E0C500BA79C6 = {
+						CreatedOnToolsVersion = 26.4.1;
+						TestTargetID = 643E957F2FC4267E00508448;
 					};
 				};
 			};
@@ -121,12 +173,20 @@
 			projectRoot = "";
 			targets = (
 				643E957F2FC4267E00508448 /* Dagify */,
+				903F30422FC7E0C500BA79C6 /* DagifyTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		643E957E2FC4267E00508448 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		903F30412FC7E0C500BA79C6 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -143,7 +203,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		903F303F2FC7E0C500BA79C6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		903F30482FC7E0C500BA79C6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 643E957F2FC4267E00508448 /* Dagify */;
+			targetProxy = 903F30472FC7E0C500BA79C6 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		643E95892FC4267F00508448 /* Debug */ = {
@@ -327,6 +402,48 @@
 			};
 			name = Release;
 		};
+		903F304A2FC7E0C500BA79C6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = student.DagifyTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Dagify.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Dagify";
+			};
+			name = Debug;
+		};
+		903F304B2FC7E0C500BA79C6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = student.DagifyTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Dagify.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Dagify";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -344,6 +461,15 @@
 			buildConfigurations = (
 				643E958C2FC4267F00508448 /* Debug */,
 				643E958D2FC4267F00508448 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		903F30492FC7E0C500BA79C6 /* Build configuration list for PBXNativeTarget "DagifyTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				903F304A2FC7E0C500BA79C6 /* Debug */,
+				903F304B2FC7E0C500BA79C6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
