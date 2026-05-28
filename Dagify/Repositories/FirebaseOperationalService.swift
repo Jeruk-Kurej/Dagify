@@ -7,7 +7,6 @@
 
 import Foundation
 import FirebaseFirestore
-import FirebaseFirestoreSwift
 
 class FirebaseOperationalService: OperationalRepository, StoreRepository {
     private let db = Firestore.firestore()

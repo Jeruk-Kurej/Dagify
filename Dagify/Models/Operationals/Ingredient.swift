@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import FirebaseFirestoreSwift
+import FirebaseFirestore
 
 struct Ingredient: Identifiable, Codable, Equatable {
     @DocumentID public var id: String?
