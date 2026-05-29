@@ -20,17 +20,11 @@ class POSViewModel {
 
     private let repo: OperationalRepository
     private let networkMonitor: NetworkMonitor
-    private let crmRepo: CRMRepository
-    
-    private let cashflowRepo: CashflowProtocol
 
-    init(repo: OperationalRepository, networkMonitor: NetworkMonitor, crmRepo: CRMRepository, cashflowRepo: CashflowProtocol) {
+    init(repo: OperationalRepository, networkMonitor: NetworkMonitor) {
         self.repo = repo
         self.networkMonitor = networkMonitor
-        self.crmRepo = crmRepo
-        self.cashflowRepo = cashflowRepo // <-- Assign disini
     }
-
     
     func loadProducts(branchId: String) async {
         isLoading = true
@@ -90,20 +84,6 @@ class POSViewModel {
                 context: context
             )
             
-            if let validCustomerId = customerId {
-                _ = try? await crmRepo.recordNewVisit(customerId: validCustomerId, spent: subtotal, date: Date())
-            }
-            
-            let incomeRecord = FinancialRecord(
-                branchId: branchId,
-                amount: subtotal,
-                type: .income,
-                category: .none,
-                timestamp: Date(),
-                notes: "Penjualan Kasir POS"
-            )
-            _ = try? await cashflowRepo.addRecord(incomeRecord)
-
             cart.removeAll()
             isCheckoutSuccess = true
             
