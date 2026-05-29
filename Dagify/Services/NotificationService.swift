@@ -39,4 +39,26 @@ class NotificationService {
             }
         }
     }
+    
+    func scheduleExpiryAlert(for ingredient: Ingredient, branchName: String) {
+        guard let expiryDate = ingredient.expiryDate else { return }
+        
+        let content = UNMutableNotificationContent()
+        content.title = "Peringatan Kedaluwarsa!"
+        content.body = "Bahan \(ingredient.name) di \(branchName) akan kedaluwarsa pada \(expiryDate.formatted(date: .abbreviated, time: .omitted)). Cek gudang sekarang!"
+        content.sound = .default
+        
+        let alertDate = Calendar.current.date(byAdding: .day, value: -1, to: expiryDate) ?? expiryDate
+        let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: alertDate)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        
+        let requestIdentifier = "expiry_\(ingredient.id ?? UUID().uuidString)"
+        let request = UNNotificationRequest(identifier: requestIdentifier, content: content, trigger: trigger)
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Gagal menjadwalkan notifikasi expiry: \(error.localizedDescription)")
+            }
+        }
+    }
 }

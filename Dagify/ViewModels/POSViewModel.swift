@@ -5,29 +5,34 @@
 //  Created by Mario Ruby Ariesusandi  on 28-05-2026.
 //
 
-import Combine
 import Foundation
 import SwiftData
+import Observation
 
 @MainActor
-class POSViewModel: ObservableObject {
-     var cart: [OrderItem] = []
-     var availableProducts: [Product] = []
-     var isLoading: Bool = false
-     var errorMessage: String? = nil
-     var isCheckoutSuccess: Bool = false
+@Observable
+class POSViewModel {
+    var cart: [OrderItem] = []
+    var availableProducts: [Product] = []
+    var isLoading: Bool = false
+    var errorMessage: String? = nil
+    var isCheckoutSuccess: Bool = false
 
     private let repo: OperationalRepository
     private let networkMonitor: NetworkMonitor
     private let crmRepo: CRMRepository
+    
+    private let cashflowRepo: CashflowProtocol
 
-     init(repo: OperationalRepository, networkMonitor: NetworkMonitor, crmRepo: CRMRepository) {
+    init(repo: OperationalRepository, networkMonitor: NetworkMonitor, crmRepo: CRMRepository, cashflowRepo: CashflowProtocol) {
         self.repo = repo
         self.networkMonitor = networkMonitor
         self.crmRepo = crmRepo
+        self.cashflowRepo = cashflowRepo // <-- Assign disini
     }
 
-     func loadProducts(branchId: String) async {
+    
+    func loadProducts(branchId: String) async {
         isLoading = true
         do {
             availableProducts = try await repo.fetchProducts(for: branchId)
@@ -36,16 +41,16 @@ class POSViewModel: ObservableObject {
         }
         isLoading = false
     }
-
-     func addToCart(product: Product) {
+    
+    func addToCart(product: Product) {
         if let index = cart.firstIndex(where: { $0.product.id == product.id }) {
             cart[index].quantity += 1
         } else {
             cart.append(OrderItem(product: product, quantity: 1))
         }
     }
-
-     func removeOrDecreaseFromCart(product: Product) {
+    
+    func removeOrDecreaseFromCart(product: Product) {
         if let index = cart.firstIndex(where: { $0.product.id == product.id }) {
             if cart[index].quantity > 1 {
                 cart[index].quantity -= 1
@@ -54,12 +59,12 @@ class POSViewModel: ObservableObject {
             }
         }
     }
-
-     var subtotal: Double {
+    
+    var subtotal: Double {
         cart.reduce(0) { $0 + ($1.product.price * Double($1.quantity)) }
     }
-
-     func checkout(branchId: String, customerId: String? = nil, context: ModelContext) async {
+    
+    func checkout(branchId: String, customerId: String? = nil, context: ModelContext) async {
         guard !cart.isEmpty else {
             errorMessage = "Keranjang masih kosong."
             return
@@ -88,6 +93,16 @@ class POSViewModel: ObservableObject {
             if let validCustomerId = customerId {
                 _ = try? await crmRepo.recordNewVisit(customerId: validCustomerId, spent: subtotal, date: Date())
             }
+            
+            let incomeRecord = FinancialRecord(
+                branchId: branchId,
+                amount: subtotal,
+                type: .income,
+                category: .none,
+                timestamp: Date(),
+                notes: "Penjualan Kasir POS"
+            )
+            _ = try? await cashflowRepo.addRecord(incomeRecord)
 
             cart.removeAll()
             isCheckoutSuccess = true
