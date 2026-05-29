@@ -6,10 +6,11 @@
 //
 
 import Foundation
-import Combine
+import Observation
 
 @MainActor
-class CashflowViewModel : ObservableObject{
+@Observable
+class CashflowViewModel{
     var records: [FinancialRecord] = []
     var isLoading: Bool = false
     var errorMessage: String? = nil
