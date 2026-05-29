@@ -6,10 +6,11 @@
 //
 
 import Foundation
-import Combine
+import Observation
 
 @MainActor
-class DashboardViewModel: ObservableObject{
+@Observable
+class DashboardViewModel{
     var todayRevenue: Double = 0
     var totalLoyalCustomers: Int = 0
     var lowStockAlertsCount: Int = 0

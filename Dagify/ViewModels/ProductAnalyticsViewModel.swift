@@ -6,10 +6,11 @@
 //
 
 import Foundation
-import Combine
+import Observation
 
 @MainActor
-class ProductAnalyticsViewModel: ObservableObject {
+@Observable
+class ProductAnalyticsViewModel{
     var orders: [Order] = []
     var ingredients: [Ingredient] = []
     

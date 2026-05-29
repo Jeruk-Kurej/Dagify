@@ -5,11 +5,12 @@
 //  Created by Bryan Carlie Lukito Setiawan on 28/05/26.
 //
 
-import Combine
 import Foundation
+import Observation
 
 @MainActor
-class AuthViewModel: ObservableObject {
+@Observable
+class AuthViewModel{
      var currentUser: User? = nil
      var isLoading: Bool = false
      var errorMessage: String? = nil

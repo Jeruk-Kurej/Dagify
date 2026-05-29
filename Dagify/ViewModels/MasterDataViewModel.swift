@@ -5,11 +5,12 @@
 //  Created by Mario Ruby Ariesusandi  on 28-05-2026.
 //
 
-import Combine
 import Foundation
+import Observation
 
 @MainActor
-class MasterDataViewModel: ObservableObject {
+@Observable
+class MasterDataViewModel{
     var isLoading: Bool = false
     var errorMessage: String? = nil
     var isSuccess: Bool = false

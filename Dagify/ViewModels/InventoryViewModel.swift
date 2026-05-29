@@ -5,11 +5,12 @@
 //  Created by Mario Ruby Ariesusandi  on 28-05-2026.
 //
 
-import Combine
+import Observation
 import Foundation
 
 @MainActor
-class InventoryViewModel: ObservableObject {
+@Observable
+class InventoryViewModel{
      var ingredients: [Ingredient] = []
      var isLoading: Bool = false
      var errorMessage: String? = nil
