@@ -5,22 +5,23 @@
 //  Created by Bryan Carlie Lukito Setiawan on 28/05/26.
 //
 
-import Combine
 import Foundation
+import Observation
 
 @MainActor
-class CRMViewModel: ObservableObject {
-     var customers: [Customer] = []
-     var isLoading: Bool = false
-     var errorMessage: String? = nil
+@Observable
+class CRMViewModel {
+    var customers: [Customer] = []
+    var isLoading: Bool = false
+    var errorMessage: String? = nil
 
     private let crmRepo: CRMRepository
 
-     init(crmRepo: CRMRepository) {
+    init(crmRepo: CRMRepository) {
         self.crmRepo = crmRepo
     }
 
-     func loadCustomers(storeId: String) async {
+    func loadCustomers(storeId: String) async {
         isLoading = true
         do {
             customers = try await crmRepo.fetchCustomers(for: storeId)
@@ -30,13 +31,13 @@ class CRMViewModel: ObservableObject {
         isLoading = false
     }
 
-     var loyalCustomerPercentage: Double {
+    var loyalCustomerPercentage: Double {
         guard !customers.isEmpty else { return 0 }
         let loyalCount = customers.filter { $0.isLoyal }.count
         return (Double(loyalCount) / Double(customers.count)) * 100
     }
 
-     var busiestHours: [Int: Int] {
+    var busiestHours: [Int: Int] {
         var hourFrequencies: [Int: Int] = [:]
         let calendar = Calendar.current
 
