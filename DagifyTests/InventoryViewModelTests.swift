@@ -14,36 +14,68 @@ import Foundation
 @MainActor
 struct InventoryViewModelTests {
     
-    @Test("Test Deteksi Stok Menipis & Kadaluwarsa")
-    func testStockAlerts() async {
+    @Test("Test Fungsi loadIngredients - Berhasil Mengambil Data Bahan Baku")
+    func testLoadIngredients() async {
         let mockOp = MockOperationalRepository()
         let mockCash = MockCashflowRepository()
         let vm = InventoryViewModel(operationalProtocol: mockOp, cashflowProtocol: mockCash)
         
-        let ing1 = Ingredient(name: "Gula", currentStock: 1, unit: "kg", expiryDate: Date().addingTimeInterval(86400), minimumStockWarning: 5, costPerUnit: 10000)
-        let ing2 = Ingredient(name: "Susu", currentStock: 10, unit: "L", expiryDate: Date().addingTimeInterval(-86400), minimumStockWarning: 2, costPerUnit: 15000)
+        mockOp.dummyIngredients = [
+            Ingredient(id: "1", name: "Biji Kopi", currentStock: 10, unit: "kg", expiryDate: nil, minimumStockWarning: 2, costPerUnit: 50000)
+        ]
         
-        mockOp.dummyIngredients = [ing1, ing2]
-        await vm.loadIngredients(branchId: "B1")
+        await vm.loadIngredients(branchId: "BRANCH-A")
         
-        #expect(vm.lowStockIngredients.contains { $0.name == "Gula" } == true)
-        #expect(vm.expiredIngredients.contains { $0.name == "Susu" } == true)
+        #expect(vm.ingredients.count == 1)
+        #expect(vm.ingredients.first?.name == "Biji Kopi")
     }
     
-    @Test("Test Buang Bahan Basi (Waste to Cashflow)")
+    @Test("Test Properti lowStockIngredients - Berhasil Mendeteksi Stok Menipis")
+    func testLowStockIngredientsAlert() async {
+        let mockOp = MockOperationalRepository()
+        let mockCash = MockCashflowRepository()
+        let vm = InventoryViewModel(operationalProtocol: mockOp, cashflowProtocol: mockCash)
+        
+        let gula = Ingredient(name: "Gula", currentStock: 1, unit: "kg", expiryDate: nil, minimumStockWarning: 5, costPerUnit: 12000)
+        mockOp.dummyIngredients = [gula]
+        
+        await vm.loadIngredients(branchId: "BRANCH-A")
+        
+        #expect(vm.lowStockIngredients.count == 1)
+        #expect(vm.lowStockIngredients.first?.name == "Gula")
+    }
+    
+    @Test("Test Properti expiredIngredients - Berhasil Mendeteksi Bahan Kedaluwarsa")
+    func testExpiredIngredientsAlert() async {
+        let mockOp = MockOperationalRepository()
+        let mockCash = MockCashflowRepository()
+        let vm = InventoryViewModel(operationalProtocol: mockOp, cashflowProtocol: mockCash)
+        
+        let susuBasi = Ingredient(name: "Susu", currentStock: 5, unit: "L", expiryDate: Date().addingTimeInterval(-86400), minimumStockWarning: 2, costPerUnit: 15000)
+        mockOp.dummyIngredients = [susuBasi]
+        
+        await vm.loadIngredients(branchId: "BRANCH-A")
+        
+        #expect(vm.expiredIngredients.count == 1)
+        #expect(vm.expiredIngredients.first?.name == "Susu")
+    }
+    
+    @Test("Test Fungsi discardExpiredItem - Berhasil Membuang Bahan & Mencatat Waste ke Cashflow")
     func testDiscardExpiredItem() async {
         let mockOp = MockOperationalRepository()
         let mockCash = MockCashflowRepository()
         let vm = InventoryViewModel(operationalProtocol: mockOp, cashflowProtocol: mockCash)
         
-        let ing = Ingredient(id: "I-1", name: "Susu Basi", currentStock: 2, unit: "L", expiryDate: Date().addingTimeInterval(-86400), minimumStockWarning: 5, costPerUnit: 10000)
+        let ing = Ingredient(id: "I-BASI", name: "Susu UHT", currentStock: 2, unit: "L", expiryDate: Date().addingTimeInterval(-86400), minimumStockWarning: 2, costPerUnit: 15000)
         mockOp.dummyIngredients = [ing]
         
-        await vm.loadIngredients(branchId: "B1")
-        await vm.discardExpiredItem(ingredient: ing, branchId: "B1")
+        await vm.loadIngredients(branchId: "BRANCH-A")
+        await vm.discardExpiredItem(ingredient: ing, branchId: "BRANCH-A")
         
-        let cashflowRecords = try? await mockCash.fetchRecords(for: "B1")
-        #expect(cashflowRecords?.count == 1)
-        #expect(cashflowRecords?.first?.amount == 20000)
+        let records = try? await mockCash.fetchRecords(for: "BRANCH-A")
+        #expect(records?.count == 1)
+        #expect(records?.first?.amount == 30000)
+        #expect(records?.first?.category == .incidental)
     }
 }
+
