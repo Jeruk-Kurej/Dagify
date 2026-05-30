@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol OperationalRepository {
+protocol OperationalProtocol {
     func fetchProducts(for branchId: String) async throws -> [Product]
     func fetchIngredients(for branchId: String) async throws -> [Ingredient]
     func submitOrderAndUpdateInventory(order: Order) async throws -> Bool

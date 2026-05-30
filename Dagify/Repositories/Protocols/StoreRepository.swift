@@ -7,6 +7,6 @@
 
 import Foundation
 
-protocol StoreRepository {
+protocol StoreProtocol {
     func fetchStore(storeId: String) async throws -> Store
 }
