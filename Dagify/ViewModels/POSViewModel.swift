@@ -18,12 +18,12 @@ class POSViewModel {
     var errorMessage: String? = nil
     var isCheckoutSuccess: Bool = false
 
-    private let repo: OperationalRepository
+    private let operationalProtocol: OperationalProtocol
     private let networkMonitor: NetworkMonitor
     private let syncManager: SyncManagerProtocol
 
-    init(repo: OperationalRepository, networkMonitor: NetworkMonitor, syncManager: SyncManagerProtocol) {
-        self.repo = repo
+    init(operationalProtocol: OperationalProtocol, networkMonitor: NetworkMonitor, syncManager: SyncManagerProtocol) {
+        self.operationalProtocol = operationalProtocol
         self.networkMonitor = networkMonitor
         self.syncManager = syncManager
     }
@@ -31,7 +31,7 @@ class POSViewModel {
     func loadProducts(branchId: String) async {
         isLoading = true
         do {
-            availableProducts = try await repo.fetchProducts(for: branchId)
+            availableProducts = try await operationalProtocol.fetchProducts(for: branchId)
         } catch {
             errorMessage = "Gagal memuat daftar menu."
         }
@@ -82,7 +82,7 @@ class POSViewModel {
             try await syncManager.handleCheckout(
                 order: order,
                 isConnected: networkMonitor.isConnected,
-                firebaseRepo: repo,
+                firebaseRepo: operationalProtocol,
                 context: context
             )
             

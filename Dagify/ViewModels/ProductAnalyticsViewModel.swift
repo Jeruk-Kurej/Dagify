@@ -17,17 +17,17 @@ class ProductAnalyticsViewModel{
     var isLoading: Bool = false
     var errorMessage: String? = nil
     
-    private let repo: OperationalRepository
+    private let operationalProtocol: OperationalProtocol
     
-    init(repo: OperationalRepository) {
-        self.repo = repo
+    init(operationalProtocol: OperationalProtocol) {
+        self.operationalProtocol = operationalProtocol
     }
     
     func loadAnalyticsData(branchId: String) async {
         isLoading = true
         do {
-            async let fetchOrders = repo.fetchOrders(for: branchId)
-            async let fetchIngredients = repo.fetchIngredients(for: branchId)
+            async let fetchOrders = operationalProtocol.fetchOrders(for: branchId)
+            async let fetchIngredients = operationalProtocol.fetchIngredients(for: branchId)
             
             self.orders = try await fetchOrders
             self.ingredients = try await fetchIngredients

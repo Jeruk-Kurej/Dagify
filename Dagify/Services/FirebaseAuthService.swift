@@ -9,7 +9,7 @@ import FirebaseAuth
 import FirebaseFirestore
 import Foundation
 
-class FirebaseAuthService: AuthRepository {
+class FirebaseAuthService: AuthProtocol {
     private let auth = Auth.auth()
     private let db = Firestore.firestore()
     

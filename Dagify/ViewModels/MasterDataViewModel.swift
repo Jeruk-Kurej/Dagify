@@ -15,10 +15,10 @@ class MasterDataViewModel{
     var errorMessage: String? = nil
     var isSuccess: Bool = false
     
-    private let repo: OperationalRepository
+    private let operationalProtocol: OperationalProtocol
     
-    init(repo: OperationalRepository) {
-        self.repo = repo
+    init(operationalProtocol: OperationalProtocol) {
+        self.operationalProtocol = operationalProtocol
     }
     
     func createIngredient(name: String, currentStock: Double, unit: String, expiryDate: Date?, minimumStockWarning: Double, costPerUnit: Double) async {
@@ -41,7 +41,7 @@ class MasterDataViewModel{
         )
         
         do {
-            _ = try await repo.addIngredient(newIngredient)
+            _ = try await operationalProtocol.addIngredient(newIngredient)
             isSuccess = true
         } catch {
             errorMessage = "Gagal menyimpan bahan baku: \(error.localizedDescription)"
@@ -67,7 +67,7 @@ class MasterDataViewModel{
         )
         
         do {
-            _ = try await repo.addProduct(newProduct)
+            _ = try await operationalProtocol.addProduct(newProduct)
             isSuccess = true
         } catch {
             errorMessage = "Gagal menyimpan menu baru: \(error.localizedDescription)"

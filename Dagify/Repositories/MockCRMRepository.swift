@@ -7,7 +7,7 @@
 
 import Foundation
 
-class MockCRMRepository: CRMRepository {
+class MockCRMRepository: CRMProtocol{
     public var shouldThrowError = false
     public var customers: [Customer] = []
 

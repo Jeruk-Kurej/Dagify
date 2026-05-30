@@ -8,10 +8,10 @@
 import Foundation
 
 struct OrderItem: Codable, Equatable {
-    public let product: Product
-    public var quantity: Int
+    let product: Product
+    var quantity: Int
     
-    public init(product: Product, quantity: Int) {
+    init(product: Product, quantity: Int) {
         self.product = product
         self.quantity = quantity
     }

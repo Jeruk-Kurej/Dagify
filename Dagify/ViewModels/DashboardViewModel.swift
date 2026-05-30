@@ -21,18 +21,18 @@ class DashboardViewModel {
     var isLoading: Bool = false
     var errorMessage: String? = nil
 
-    let cashflowRepo: CashflowProtocol
-    let crmRepo: CRMRepository
-    let operationalRepo: OperationalRepository
+    let cashflowProtocol: CashflowProtocol
+    let crmProtocol: CRMProtocol
+    let operationalProtocol: OperationalProtocol
 
     init(
-        cashflowRepo: CashflowProtocol,
-        crmRepo: CRMRepository,
-        operationalRepo: OperationalRepository
+        cashflowProtocol: CashflowProtocol,
+        crmProtocol: CRMProtocol,
+        operationalProtocol: OperationalProtocol
     ) {
-        self.cashflowRepo = cashflowRepo
-        self.crmRepo = crmRepo
-        self.operationalRepo = operationalRepo
+        self.cashflowProtocol = cashflowProtocol
+        self.crmProtocol = crmProtocol
+        self.operationalProtocol = operationalProtocol
     }
 
     func loadDashboardSummary(storeId: String, branchId: String) async {
@@ -40,9 +40,9 @@ class DashboardViewModel {
         errorMessage = nil
 
         do {
-            async let fetchCashflow = cashflowRepo.fetchRecords(for: branchId)
-            async let fetchCustomers = crmRepo.fetchCustomers(for: storeId)
-            async let fetchIngredients = operationalRepo.fetchIngredients(
+            async let fetchCashflow = cashflowProtocol.fetchRecords(for: branchId)
+            async let fetchCustomers = crmProtocol.fetchCustomers(for: storeId)
+            async let fetchIngredients = operationalProtocol.fetchIngredients(
                 for: branchId
             )
 

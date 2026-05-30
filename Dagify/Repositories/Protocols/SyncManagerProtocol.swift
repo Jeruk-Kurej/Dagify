@@ -6,7 +6,8 @@
 //
 
 import Foundation
+import SwiftData
 
 protocol SyncManagerProtocol {
-    func handleCheckout(order: Order, isConnected: Bool, firebaseRepo: OperationalRepository, context: ModelContext) async throws
+    func handleCheckout(order: Order, isConnected: Bool, firebaseRepo: OperationalProtocol, context: ModelContext) async throws
 }

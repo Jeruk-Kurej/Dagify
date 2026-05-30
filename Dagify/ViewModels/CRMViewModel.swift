@@ -15,16 +15,16 @@ class CRMViewModel {
     var isLoading: Bool = false
     var errorMessage: String? = nil
 
-    private let crmRepo: CRMRepository
+    private let crmProtocol: CRMProtocol
 
-    init(crmRepo: CRMRepository) {
-        self.crmRepo = crmRepo
+    init(crmProtocol: CRMProtocol) {
+        self.crmProtocol = crmProtocol
     }
 
     func loadCustomers(storeId: String) async {
         isLoading = true
         do {
-            customers = try await crmRepo.fetchCustomers(for: storeId)
+            customers = try await crmProtocol.fetchCustomers(for: storeId)
         } catch {
             errorMessage = "Gagal memuat data pelanggan."
         }

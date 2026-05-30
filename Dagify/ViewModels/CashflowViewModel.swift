@@ -15,10 +15,10 @@ class CashflowViewModel{
     var isLoading: Bool = false
     var errorMessage: String? = nil
     
-    private let repository: CashflowProtocol
+    private let cashProtocol: CashflowProtocol
     
-    init(repository: CashflowProtocol) {
-        self.repository = repository
+    init(cashProtocol: CashflowProtocol) {
+        self.cashProtocol = cashProtocol
     }
     
     // MARK: - Core Operations
@@ -28,7 +28,7 @@ class CashflowViewModel{
         errorMessage = nil
         
         do {
-            records = try await repository.fetchRecords(for: branchId)
+            records = try await cashProtocol.fetchRecords(for: branchId)
         } catch {
             errorMessage = "Gagal memuat data keuangan: \(error.localizedDescription)"
         }
@@ -50,7 +50,7 @@ class CashflowViewModel{
         )
         
         do {
-            _ = try await repository.addRecord(newRecord)
+            _ = try await cashProtocol.addRecord(newRecord)
             await loadRecords(branchId: branchId)
         } catch {
             errorMessage = "Gagal menyimpan transaksi."
@@ -62,7 +62,7 @@ class CashflowViewModel{
     func deleteTransaction(recordId: String, branchId: String) async {
         isLoading = true
         do {
-            _ = try await repository.deleteRecord(id: recordId)
+            _ = try await cashProtocol.deleteRecord(id: recordId)
             await loadRecords(branchId: branchId)
         } catch {
             errorMessage = "Gagal menghapus transaksi."

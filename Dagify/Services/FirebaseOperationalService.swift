@@ -8,7 +8,7 @@
 import Foundation
 import FirebaseFirestore
 
-class FirebaseOperationalService: OperationalRepository, StoreRepository {
+class FirebaseOperationalService: OperationalProtocol, StoreProtocol {
     private let db = Firestore.firestore()
     
      init() {}

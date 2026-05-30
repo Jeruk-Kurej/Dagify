@@ -7,7 +7,7 @@
 
 import Foundation
 
-class MockOperationalRepository: OperationalRepository, StoreRepository {
+class MockOperationalRepository: OperationalProtocol, StoreProtocol {
     public var shouldThrowError = false
     public var dummyProducts: [Product] = []
     public var dummyIngredients: [Ingredient] = []
@@ -57,4 +57,14 @@ class MockOperationalRepository: OperationalRepository, StoreRepository {
         dummyIngredients.append(newIngredient)
         return true
     }
+    
+    public func recordWaste(ingredientId: String, amountToDeduct: Double) async throws -> Bool {
+            if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+            
+            if let index = dummyIngredients.firstIndex(where: { $0.id == ingredientId }) {
+                dummyIngredients[index].currentStock -= amountToDeduct
+                return true
+            }
+            return false
+        }
 }

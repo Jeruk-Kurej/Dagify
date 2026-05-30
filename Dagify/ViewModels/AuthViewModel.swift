@@ -15,10 +15,10 @@ class AuthViewModel{
      var isLoading: Bool = false
      var errorMessage: String? = nil
 
-    private let authRepo: AuthRepository
+    private let authProtocol: AuthProtocol
 
-     init(authRepo: AuthRepository) {
-        self.authRepo = authRepo
+     init(authProtocol: AuthProtocol) {
+        self.authProtocol = authProtocol
     }
 
      var isAuthenticated: Bool {
@@ -30,7 +30,7 @@ class AuthViewModel{
         errorMessage = nil
 
         do {
-            currentUser = try await authRepo.login(
+            currentUser = try await authProtocol.login(
                 email: email,
                 password: password
             )
@@ -56,7 +56,7 @@ class AuthViewModel{
         errorMessage = nil
 
         do {
-            currentUser = try await authRepo.register(
+            currentUser = try await authProtocol.register(
                 email: email,
                 password: password,
                 storeName: storeName,
@@ -71,7 +71,7 @@ class AuthViewModel{
 
      func logout() {
         do {
-            try authRepo.logout()
+            try authProtocol.logout()
             currentUser = nil
         } catch {
             errorMessage = "Gagal logout."

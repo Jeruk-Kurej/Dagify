@@ -7,7 +7,7 @@
 
 import Foundation
 
-class MockAuthRepository: AuthRepository {
+class MockAuthRepository: AuthProtocol {
     public var shouldThrowError = false
     public var currentUser: User? = nil
     public var registeredStore: Store? = nil

@@ -8,11 +8,11 @@
 import Foundation
 
 struct Branch: Identifiable, Codable, Equatable {
-    public let id: String
-    public let name: String
-    public let address: String
+    let id: String
+    let name: String
+    let address: String
     
-    public init(id: String, name: String, address: String) {
+    init(id: String, name: String, address: String) {
         self.id = id
         self.name = name
         self.address = address

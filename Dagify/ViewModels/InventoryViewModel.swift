@@ -15,12 +15,12 @@ class InventoryViewModel {
     var isLoading: Bool = false
     var errorMessage: String? = nil
 
-    private let repo: OperationalRepository
-    private let cashflowRepo: CashflowProtocol
+    private let operationalProtocol: OperationalProtocol
+    private let cashflowProtocol: CashflowProtocol
 
-    init(repo: OperationalRepository, cashflowRepo: CashflowProtocol) {
-        self.repo = repo
-        self.cashflowRepo = cashflowRepo
+    init(operationalProtocol: OperationalProtocol, cashflowProtocol: CashflowProtocol) {
+        self.operationalProtocol = operationalProtocol
+        self.cashflowProtocol = cashflowProtocol
     }
 
     var lowStockIngredients: [Ingredient] {
@@ -38,7 +38,7 @@ class InventoryViewModel {
     func loadIngredients(branchId: String) async {
         isLoading = true
         do {
-            ingredients = try await repo.fetchIngredients(for: branchId)
+            ingredients = try await operationalProtocol.fetchIngredients(for: branchId)
         } catch {
             errorMessage = "Gagal memuat data gudang."
         }
@@ -50,7 +50,7 @@ class InventoryViewModel {
 
         isLoading = true
         do {
-            _ = try await repo.recordWaste(
+            _ = try await operationalProtocol.recordWaste(
                 ingredientId: id,
                 amountToDeduct: ingredient.currentStock
             )
@@ -64,7 +64,7 @@ class InventoryViewModel {
                     timestamp: Date(),
                     notes: "Kerugian: Bahan \(ingredient.name) kedaluwarsa"
                 )
-                _ = try await cashflowRepo.addRecord(lossRecord)
+                _ = try await cashflowProtocol.addRecord(lossRecord)
             }
 
             await loadIngredients(branchId: branchId)
