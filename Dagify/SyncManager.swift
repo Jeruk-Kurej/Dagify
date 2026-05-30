@@ -14,7 +14,7 @@ class SyncManager {
     
     private init() {}
     
-    func handleCheckout(order: Order, isConnected: Bool, firebaseRepo: OperationalRepository, context: ModelContext) async throws {
+    func handleCheckout(order: Order, isConnected: Bool, firebaseRepo: OperationalProtocol, context: ModelContext) async throws {
         if isConnected {
             _ = try await firebaseRepo.submitOrderAndUpdateInventory(order: order)
             print("Online: Pesanan sukses masuk ke Firebase.")
@@ -34,7 +34,7 @@ class SyncManager {
         }
     }
     
-    func syncOfflineData(firebaseRepo: OperationalRepository, context: ModelContext) async {
+    func syncOfflineData(firebaseRepo: OperationalProtocol, context: ModelContext) async {
         let descriptor = FetchDescriptor<OfflineOrderModel>(sortBy: [SortDescriptor(\.timestamp, order: .forward)])
         guard let offlineOrders = try? context.fetch(descriptor), !offlineOrders.isEmpty else { return }
         
