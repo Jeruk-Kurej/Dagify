@@ -50,7 +50,7 @@ struct CashflowView: View {
             }
         }
         .sheet(isPresented: $showAddSheet) {
-            AddTransactionSheet(viewModel: viewModel, branchId: branchId)
+            AddTransactionView(viewModel: viewModel, branchId: branchId)
         }
         .onAppear { Task { await viewModel.loadRecords(branchId: branchId) } }
     }
