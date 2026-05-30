@@ -20,10 +20,12 @@ class POSViewModel {
 
     private let repo: OperationalRepository
     private let networkMonitor: NetworkMonitor
+    private let syncManager: SyncManagerProtocol
 
-    init(repo: OperationalRepository, networkMonitor: NetworkMonitor) {
+    init(repo: OperationalRepository, networkMonitor: NetworkMonitor, syncManager: SyncManagerProtocol) {
         self.repo = repo
         self.networkMonitor = networkMonitor
+        self.syncManager = syncManager
     }
     
     func loadProducts(branchId: String) async {
@@ -77,7 +79,7 @@ class POSViewModel {
         )
 
         do {
-            try await SyncManager.shared.handleCheckout(
+            try await syncManager.handleCheckout(
                 order: order,
                 isConnected: networkMonitor.isConnected,
                 firebaseRepo: repo,
