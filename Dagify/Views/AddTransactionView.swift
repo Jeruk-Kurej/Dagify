@@ -7,7 +7,8 @@
 
 import SwiftUI
 
-struct AddTransactionView: View {
+// MARK: - Form Tambah Pendapatan & Pengeluaran
+struct AddTransactionSheet: View {
     @Environment(\.dismiss) private var dismiss
     var viewModel: CashflowViewModel
     let branchId: String
@@ -15,9 +16,10 @@ struct AddTransactionView: View {
     @State private var amount: Double = 0
     @State private var isIncome = true
     @State private var notes = ""
-    @State private var selectedCategory = "operational"
     
-    let categories = ["operational", "incidental", "marketing", "supply"]
+    @State private var selectedCategory: ExpenseCategory = .operational
+    
+    let categories: [ExpenseCategory] = [.cogs, .operational, .incidental, .none]
     
     var body: some View {
         NavigationStack {
@@ -35,39 +37,60 @@ struct AddTransactionView: View {
                         Text("Nominal (Rp)")
                         Spacer()
                         TextField("0", value: $amount, format: .number)
-                            .keyboardType(.numberPad).multilineTextAlignment(.trailing)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
                     }
                     
-                    Picker("Kategori", selection: $selectedCategory) {
-                        ForEach(categories, id: \.self) { Text($0.capitalized) }
+                    if !isIncome {
+                        Picker("Kategori", selection: $selectedCategory) {
+                            ForEach(categories, id: \.self) { category in
+                                Text(category.rawValue).tag(category)
+                            }
+                        }
                     }
                     
-                    TextField("Catatan Tambahan", text: $notes)
+                    TextField("Catatan Tambahan (Opsional)", text: $notes)
+                }
+                
+                if let err = viewModel.errorMessage {
+                    Section {
+                        Text(err).font(.caption).foregroundColor(.themeDestructive)
+                    }
                 }
                 
                 Section {
                     Button(action: {
                         Task {
-                            // Panggil fungsi createRecord bawaan dari ViewModel Anda
-                            await viewModel.createRecord(
+                            let transactionType = isIncome ? TransactionType.income : TransactionType.expense
+                            
+                            let categoryType = isIncome ? ExpenseCategory.none : selectedCategory
+                            
+                            await viewModel.addTransaction(
                                 branchId: branchId,
                                 amount: amount,
-                                type: isIncome ? .income : .expense,
-                                category: ExpenseCategory(rawValue: selectedCategory) ?? .operational,
-                                notes: notes
+                                type: transactionType,
+                                category: categoryType,
+                                notes: notes.isEmpty ? "Tanpa Catatan" : notes
                             )
-                            dismiss()
+                            
+                            if viewModel.errorMessage == nil {
+                                dismiss()
+                            }
                         }
                     }) {
                         HStack {
                             Spacer()
-                            Text("Simpan Transaksi").bold()
+                            if viewModel.isLoading {
+                                ProgressView().tint(.white)
+                            } else {
+                                Text("Simpan Transaksi").bold()
+                            }
                             Spacer()
                         }
                     }
                     .foregroundColor(.white)
-                    .listRowBackground(amount <= 0 ? Color.themeBorder : Color.themePrimary)
-                    .disabled(amount <= 0)
+                    .listRowBackground(amount <= 0 || viewModel.isLoading ? Color.themeBorder : Color.themePrimary)
+                    .disabled(amount <= 0 || viewModel.isLoading)
                 }
             }
             .navigationTitle("Catat Keuangan")
