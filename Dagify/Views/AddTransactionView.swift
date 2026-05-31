@@ -7,8 +7,7 @@
 
 import SwiftUI
 
-// MARK: - Form Tambah Pendapatan & Pengeluaran
-struct AddTransactionSheet: View {
+struct AddTransactionView: View {
     @Environment(\.dismiss) private var dismiss
     var viewModel: CashflowViewModel
     let branchId: String
