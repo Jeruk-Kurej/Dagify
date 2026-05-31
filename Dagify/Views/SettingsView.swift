@@ -16,27 +16,15 @@ struct SettingsView: View {
             List {
                 Section(header: Text("Toko & Gudang")) {
                     NavigationLink(destination: MasterDataView(viewModel: MasterDataViewModel(operationalProtocol: operationalService))) {
-                        HStack {
-                            Image(systemName: "cube.box.fill").foregroundColor(.themePrimary)
-                            Text("Master Data & Resep")
-                        }
+                        HStack { Image(systemName: "cube.box.fill").foregroundColor(.themePrimary); Text("Master Data & Resep") }
                     }
                 }
-                
                 Section {
-                    Button(role: .destructive) {
-                        authViewModel.logout()
-                    } label: {
-                        HStack {
-                            Image(systemName: "rectangle.portrait.and.arrow.right.fill")
-                            Text("Keluar Akun")
-                        }
+                    Button(role: .destructive) { authViewModel.logout() } label: {
+                        HStack { Image(systemName: "rectangle.portrait.and.arrow.right.fill"); Text("Keluar Akun") }
                     }
                 }
-            }
-            .navigationTitle("Pengaturan")
-            .listStyle(.insetGrouped)
-            .background(Color.themeBgMain.edgesIgnoringSafeArea(.all))
+            }.navigationTitle("Pengaturan").listStyle(.insetGrouped)
         }
     }
 }
