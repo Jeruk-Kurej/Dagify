@@ -50,4 +50,38 @@ struct CashflowViewModelTests {
         #expect(vm.totalExpense == 50000)
         #expect(vm.netProfit == 150000)
     }
+    @Test("Test Fungsi deleteTransaction - Menghapus Riwayat")
+        func testDeleteTransaction() async {
+            let mockRepo = MockCashflowRepository()
+            let vm = CashflowViewModel(cashProtocol: mockRepo)
+            
+            let record = FinancialRecord(id: "REC-1", branchId: "B1", amount: 50000, type: .income, category: .none, timestamp: Date(), notes: "Test")
+            _ = try? await mockRepo.addRecord(record)
+            
+            await vm.loadRecords(branchId: "B1")
+            #expect(vm.records.count == 1)
+            
+            await vm.deleteTransaction(recordId: "REC-1", branchId: "B1")
+            #expect(vm.records.isEmpty == true)
+        }
+
+        @Test("Test Properti groupedRecordsByMonth - Mengelompokkan Data per Bulan")
+        func testGroupedRecordsByMonth() async {
+            let mockRepo = MockCashflowRepository()
+            let vm = CashflowViewModel(cashProtocol: mockRepo)
+            
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            
+            let r1 = FinancialRecord(branchId: "B1", amount: 100, type: .income, category: .none, timestamp: formatter.date(from: "2026-05-10")!, notes: "Mei")
+            let r2 = FinancialRecord(branchId: "B1", amount: 200, type: .income, category: .none, timestamp: formatter.date(from: "2026-06-15")!, notes: "Juni")
+            
+            _ = try? await mockRepo.addRecord(r1)
+            _ = try? await mockRepo.addRecord(r2)
+            
+            await vm.loadRecords(branchId: "B1")
+            
+            let grouped = vm.groupedRecordsByMonth
+            #expect(grouped.keys.count == 2) 
+        }
 }
