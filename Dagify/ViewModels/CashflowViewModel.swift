@@ -10,36 +10,64 @@ import Observation
 
 @MainActor
 @Observable
-class CashflowViewModel{
+class CashflowViewModel {
     var records: [FinancialRecord] = []
     var isLoading: Bool = false
     var errorMessage: String? = nil
-    
+
+    // MARK: - Computations & Analytics (Business Logic)
+    var totalIncome: Double {
+        records.filter { $0.type == .income }.reduce(0) { $0 + $1.amount }
+    }
+
+    var totalExpense: Double {
+        records.filter { $0.type == .expense }.reduce(0) { $0 + $1.amount }
+    }
+
+    var netProfit: Double {
+        totalIncome - totalExpense
+    }
+
+    var groupedRecordsByMonth: [String: [FinancialRecord]] {
+        Dictionary(grouping: records) { record in
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMMM yyyy"
+            return formatter.string(from: record.timestamp)
+        }
+    }
+
     private let cashProtocol: CashflowProtocol
-    
+
     init(cashProtocol: CashflowProtocol) {
         self.cashProtocol = cashProtocol
     }
-    
+
     // MARK: - Core Operations
-    
+
     func loadRecords(branchId: String) async {
         isLoading = true
         errorMessage = nil
-        
+
         do {
             records = try await cashProtocol.fetchRecords(for: branchId)
         } catch {
-            errorMessage = "Gagal memuat data keuangan: \(error.localizedDescription)"
+            errorMessage =
+                "Gagal memuat data keuangan: \(error.localizedDescription)"
         }
-        
+
         isLoading = false
     }
-    
-    func addTransaction(branchId: String, amount: Double, type: TransactionType, category: ExpenseCategory, notes: String) async {
+
+    func addTransaction(
+        branchId: String,
+        amount: Double,
+        type: TransactionType,
+        category: ExpenseCategory,
+        notes: String
+    ) async {
         isLoading = true
         errorMessage = nil
-        
+
         let newRecord = FinancialRecord(
             branchId: branchId,
             amount: amount,
@@ -48,17 +76,17 @@ class CashflowViewModel{
             timestamp: Date(),
             notes: notes
         )
-        
+
         do {
             _ = try await cashProtocol.addRecord(newRecord)
             await loadRecords(branchId: branchId)
         } catch {
             errorMessage = "Gagal menyimpan transaksi."
         }
-        
+
         isLoading = false
     }
-    
+
     func deleteTransaction(recordId: String, branchId: String) async {
         isLoading = true
         do {
@@ -69,26 +97,5 @@ class CashflowViewModel{
         }
         isLoading = false
     }
-    
-    // MARK: - Computations & Analytics (Business Logic)
-    
-    var totalIncome: Double {
-        records.filter { $0.type == .income }.reduce(0) { $0 + $1.amount }
-    }
-    
-    var totalExpense: Double {
-        records.filter { $0.type == .expense }.reduce(0) { $0 + $1.amount }
-    }
-    
-    var netProfit: Double {
-        totalIncome - totalExpense
-    }
-    
-    var groupedRecordsByMonth: [String: [FinancialRecord]] {
-        Dictionary(grouping: records) { record in
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MMMM yyyy"
-            return formatter.string(from: record.timestamp)
-        }
-    }
+
 }

@@ -15,14 +15,6 @@ class InventoryViewModel {
     var isLoading: Bool = false
     var errorMessage: String? = nil
 
-    private let operationalProtocol: OperationalProtocol
-    private let cashflowProtocol: CashflowProtocol
-
-    init(operationalProtocol: OperationalProtocol, cashflowProtocol: CashflowProtocol) {
-        self.operationalProtocol = operationalProtocol
-        self.cashflowProtocol = cashflowProtocol
-    }
-
     var lowStockIngredients: [Ingredient] {
         ingredients.filter { $0.currentStock <= $0.minimumStockWarning }
     }
@@ -35,10 +27,23 @@ class InventoryViewModel {
         }
     }
 
+    private let operationalProtocol: OperationalProtocol
+    private let cashflowProtocol: CashflowProtocol
+
+    init(
+        operationalProtocol: OperationalProtocol,
+        cashflowProtocol: CashflowProtocol
+    ) {
+        self.operationalProtocol = operationalProtocol
+        self.cashflowProtocol = cashflowProtocol
+    }
+
     func loadIngredients(branchId: String) async {
         isLoading = true
         do {
-            ingredients = try await operationalProtocol.fetchIngredients(for: branchId)
+            ingredients = try await operationalProtocol.fetchIngredients(
+                for: branchId
+            )
         } catch {
             errorMessage = "Gagal memuat data gudang."
         }

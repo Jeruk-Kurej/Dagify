@@ -40,7 +40,9 @@ class DashboardViewModel {
         errorMessage = nil
 
         do {
-            async let fetchCashflow = cashflowProtocol.fetchRecords(for: branchId)
+            async let fetchCashflow = cashflowProtocol.fetchRecords(
+                for: branchId
+            )
             async let fetchCustomers = crmProtocol.fetchCustomers(for: storeId)
             async let fetchIngredients = operationalProtocol.fetchIngredients(
                 for: branchId

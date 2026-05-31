@@ -10,22 +10,22 @@ import Observation
 
 @MainActor
 @Observable
-class AuthViewModel{
-     var currentUser: User? = nil
-     var isLoading: Bool = false
-     var errorMessage: String? = nil
+class AuthViewModel {
+    var currentUser: User? = nil
+    var isLoading: Bool = false
+    var errorMessage: String? = nil
 
-    private let authProtocol: AuthProtocol
-
-     init(authProtocol: AuthProtocol) {
-        self.authProtocol = authProtocol
-    }
-
-     var isAuthenticated: Bool {
+    var isAuthenticated: Bool {
         return currentUser != nil
     }
 
-     func login(email: String, password: String) async {
+    private let authProtocol: AuthProtocol
+
+    init(authProtocol: AuthProtocol) {
+        self.authProtocol = authProtocol
+    }
+
+    func login(email: String, password: String) async {
         isLoading = true
         errorMessage = nil
 
@@ -41,7 +41,7 @@ class AuthViewModel{
         isLoading = false
     }
 
-     func register(
+    func register(
         email: String,
         password: String,
         storeName: String,
@@ -69,7 +69,7 @@ class AuthViewModel{
         isLoading = false
     }
 
-     func logout() {
+    func logout() {
         do {
             try authProtocol.logout()
             currentUser = nil

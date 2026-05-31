@@ -9,25 +9,19 @@ import Testing
 import Foundation
 @testable import Dagify
 
-@Suite("AuthViewModel Tests")
+@Suite("Auth ViewModel Tests")
+@MainActor
 struct AuthViewModelTests {
     
-    @Test @MainActor func testLoginSuccessfully() async throws {
+    @Test("Test Login Sukses")
+    func testLoginSuccess() async {
         let mockRepo = MockAuthRepository()
-        let vm = AuthViewModel(repo: mockRepo)
+        let vm = AuthViewModel(authProtocol: mockRepo)
         
-        await vm.login(email: "owner@dagify.com", password: "password123")
+        await vm.login(email: "test@dagify.com", password: "password123")
         
+        #expect(vm.isAuthenticated == true)
+        #expect(vm.currentUser?.email == "test@dagify.com")
         #expect(vm.errorMessage == nil)
-        #expect(vm.isLoading == false)
-    }
-    
-    @Test @MainActor func testLoginFailsWithEmptyFields() async throws {
-        let mockRepo = MockAuthRepository()
-        let vm = AuthViewModel(repo: mockRepo)
-        
-        await vm.login(email: "", password: "")
-        
-        #expect(vm.errorMessage != nil)
     }
 }

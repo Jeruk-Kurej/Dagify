@@ -9,16 +9,42 @@ import Testing
 import Foundation
 @testable import Dagify
 
-@Suite("CRMViewModel Tests")
+@Suite("CRM ViewModel Tests")
+@MainActor
 struct CRMViewModelTests {
     
-    @Test @MainActor func testLoadCustomersAndCalculateRetention() async throws {
+    @Test("Test Load Customers & Persentase Loyalitas")
+    func testLoadCustomersAndLoyalty() async {
         let mockRepo = MockCRMRepository()
-        let vm = CRMViewModel(repo: mockRepo)
+        let vm = CRMViewModel(crmProtocol: mockRepo)
         
-        await vm.loadCustomers(for: "B-1")
+        // Cust 1 = Biasa (2 kunjungan), Cust 2 = Loyal (5 kunjungan)
+        let cust1 = Customer(name: "Pelanggan A", phoneNumber: "1", totalSpent: 20, visitHistory: [Date(), Date()])
+        let cust2 = Customer(name: "Pelanggan B", phoneNumber: "2", totalSpent: 100, visitHistory: [Date(), Date(), Date(), Date(), Date()])
         
-        #expect(vm.errorMessage == nil)
-        #expect(vm.isLoading == false)
+        _ = try? await mockRepo.addCustomer(cust1)
+        _ = try? await mockRepo.addCustomer(cust2)
+        
+        await vm.loadCustomers(storeId: "S1")
+        
+        #expect(vm.customers.count == 2)
+        #expect(vm.loyalCustomerPercentage == 50.0) // 1 dari 2 pelanggan adalah loyal
+    }
+    
+    @Test("Test Heatmap Jam Sibuk (Busiest Hours)")
+    func testBusiestHours() async {
+        let mockRepo = MockCRMRepository()
+        let vm = CRMViewModel(crmProtocol: mockRepo)
+        
+        var components = DateComponents()
+        components.hour = 14 // Jam 2 Siang
+        let date2PM = Calendar.current.date(from: components)!
+        
+        let cust = Customer(name: "Pelanggan C", phoneNumber: "3", totalSpent: 10, visitHistory: [date2PM, date2PM])
+        _ = try? await mockRepo.addCustomer(cust)
+        
+        await vm.loadCustomers(storeId: "S1")
+        
+        #expect(vm.busiestHours[14] == 2) // Jam 2 siang harus tercatat 2 kali kunjungan
     }
 }

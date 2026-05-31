@@ -14,23 +14,7 @@ class CRMViewModel {
     var customers: [Customer] = []
     var isLoading: Bool = false
     var errorMessage: String? = nil
-
-    private let crmProtocol: CRMProtocol
-
-    init(crmProtocol: CRMProtocol) {
-        self.crmProtocol = crmProtocol
-    }
-
-    func loadCustomers(storeId: String) async {
-        isLoading = true
-        do {
-            customers = try await crmProtocol.fetchCustomers(for: storeId)
-        } catch {
-            errorMessage = "Gagal memuat data pelanggan."
-        }
-        isLoading = false
-    }
-
+    
     var loyalCustomerPercentage: Double {
         guard !customers.isEmpty else { return 0 }
         let loyalCount = customers.filter { $0.isLoyal }.count
@@ -49,4 +33,21 @@ class CRMViewModel {
         }
         return hourFrequencies
     }
+    
+    private let crmProtocol: CRMProtocol
+
+    init(crmProtocol: CRMProtocol) {
+        self.crmProtocol = crmProtocol
+    }
+
+    func loadCustomers(storeId: String) async {
+        isLoading = true
+        do {
+            customers = try await crmProtocol.fetchCustomers(for: storeId)
+        } catch {
+            errorMessage = "Gagal memuat data pelanggan."
+        }
+        isLoading = false
+    }
+
 }

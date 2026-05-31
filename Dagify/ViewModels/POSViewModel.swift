@@ -6,8 +6,8 @@
 //
 
 import Foundation
-import SwiftData
 import Observation
+import SwiftData
 
 @MainActor
 @Observable
@@ -18,26 +18,36 @@ class POSViewModel {
     var errorMessage: String? = nil
     var isCheckoutSuccess: Bool = false
 
+    var subtotal: Double {
+        cart.reduce(0) { $0 + ($1.product.price * Double($1.quantity)) }
+    }
+
     private let operationalProtocol: OperationalProtocol
     private let networkMonitor: NetworkMonitor
     private let syncManager: SyncManagerProtocol
 
-    init(operationalProtocol: OperationalProtocol, networkMonitor: NetworkMonitor, syncManager: SyncManagerProtocol) {
+    init(
+        operationalProtocol: OperationalProtocol,
+        networkMonitor: NetworkMonitor,
+        syncManager: SyncManagerProtocol
+    ) {
         self.operationalProtocol = operationalProtocol
         self.networkMonitor = networkMonitor
         self.syncManager = syncManager
     }
-    
+
     func loadProducts(branchId: String) async {
         isLoading = true
         do {
-            availableProducts = try await operationalProtocol.fetchProducts(for: branchId)
+            availableProducts = try await operationalProtocol.fetchProducts(
+                for: branchId
+            )
         } catch {
             errorMessage = "Gagal memuat daftar menu."
         }
         isLoading = false
     }
-    
+
     func addToCart(product: Product) {
         if let index = cart.firstIndex(where: { $0.product.id == product.id }) {
             cart[index].quantity += 1
@@ -45,7 +55,7 @@ class POSViewModel {
             cart.append(OrderItem(product: product, quantity: 1))
         }
     }
-    
+
     func removeOrDecreaseFromCart(product: Product) {
         if let index = cart.firstIndex(where: { $0.product.id == product.id }) {
             if cart[index].quantity > 1 {
@@ -55,12 +65,12 @@ class POSViewModel {
             }
         }
     }
-    
-    var subtotal: Double {
-        cart.reduce(0) { $0 + ($1.product.price * Double($1.quantity)) }
-    }
-    
-    func checkout(branchId: String, customerId: String? = nil, context: ModelContext) async {
+
+    func checkout(
+        branchId: String,
+        customerId: String? = nil,
+        context: ModelContext
+    ) async {
         guard !cart.isEmpty else {
             errorMessage = "Keranjang masih kosong."
             return
@@ -85,10 +95,10 @@ class POSViewModel {
                 firebaseRepo: operationalProtocol,
                 context: context
             )
-            
+
             cart.removeAll()
             isCheckoutSuccess = true
-            
+
         } catch {
             errorMessage = "Checkout gagal: \(error.localizedDescription)"
         }
