@@ -9,7 +9,7 @@ import SwiftUI
 
 struct InventoryView: View {
     var viewModel: InventoryViewModel
-    let branchId = "B-1"
+    let branchId: String
     
     var body: some View {
         Group {
@@ -57,6 +57,7 @@ struct InventoryView: View {
         .onAppear { Task { await viewModel.loadIngredients(branchId: branchId) } }
     }
 }
+
 #Preview {
     //InventoryView()
 }

@@ -10,7 +10,7 @@ import SwiftUI
 struct POSView: View {
     var viewModel: POSViewModel
     @Environment(\.modelContext) private var context
-    let branchId = "B-1"
+    let branchId: String
     
     var body: some View {
         VStack(spacing: 0) {
