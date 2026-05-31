@@ -5,64 +5,115 @@
 //  Created by Bryan Carlie Lukito Setiawan on 31/05/26.
 //
 
+import Charts
 import SwiftUI
 
 struct DashboardView: View {
     var viewModel: DashboardViewModel
     let storeId: String
     let branchId: String
-    let adaptiveColumns = [
-        GridItem(.adaptive(minimum: 240, maximum: .infinity), spacing: 16)
-    ]
+    let columns = [GridItem(.adaptive(minimum: 160))]
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                if viewModel.isLoading {
-                    ProgressView("Mengolah rekam data keuangan...").frame(
-                        maxWidth: .infinity,
-                        minHeight: 300
-                    )
-                } else {
-                    Text("Performa Operasional Hari Ini").font(.title2).bold()
-                        .foregroundColor(.themeTextPrimary)
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 20) {
+                    if viewModel.isLoading {
+                        ProgressView("Menyiapkan Metrik...").frame(
+                            maxHeight: .infinity
+                        )
+                    } else {
+                        LazyVGrid(columns: columns, spacing: 16) {
+                            DashItemCard(
+                                title: "Pendapatan Hari Ini",
+                                value:
+                                    "Rp \(viewModel.todayRevenue, default: "%.0f")",
+                                icon: "arrow.up.circle.fill",
+                                color: .themeSuccess
+                            )
+                            DashItemCard(
+                                title: "Laba Bersih",
+                                value:
+                                    "Rp \(viewModel.todayNetProfit, default: "%.0f")",
+                                icon: "banknote.fill",
+                                color: .themePrimary
+                            )
+                            DashItemCard(
+                                title: "Pelanggan Loyal",
+                                value: "\(viewModel.totalLoyalCustomers)",
+                                icon: "person.2.fill",
+                                color: .themeWarning
+                            )
+                            DashItemCard(
+                                title: "Stok Menipis",
+                                value: "\(viewModel.lowStockAlertsCount)",
+                                icon: "exclamationmark.triangle.fill",
+                                color: .themeDestructive
+                            )
+                        }
 
-                    LazyVGrid(columns: adaptiveColumns, spacing: 16) {
-                        DashItemCard(
-                            title: "Pendapatan Kotor",
-                            value: "Rp \(viewModel.todayRevenue, default: "%.0f")",
-                            icon: "arrow.up.forward.circle.fill",
-                            color: .themeSuccess
-                        )
-                        DashItemCard(
-                            title: "Beban Pengeluaran",
-                            value: "Rp \(viewModel.todayExpense, default: "%.0f")",
-                            icon: "arrow.down.backward.circle.fill",
-                            color: .themeDestructive
-                        )
-                        DashItemCard(
-                            title: "Estimasi Untung Bersih",
-                            value: "Rp \(viewModel.todayNetProfit, default: "%.0f")",
-                            icon: "banknote.fill",
-                            color: .themePrimary
-                        )
-                        DashItemCard(
-                            title: "Indikator Stok Kritis",
-                            value: "\(viewModel.lowStockAlertsCount) Item",
-                            icon: "exclamationmark.triangle.fill",
-                            color: .themeWarning
-                        )
+                        VStack(alignment: .leading) {
+                            HStack {
+                                Text("Tren Penjualan").font(.headline)
+                                Spacer()
+                                Picker(
+                                    "Periode",
+                                    selection: $viewModel.selectedPeriod
+                                ) {
+                                    ForEach(ChartPeriod.allCases, id: \.self) {
+                                        Text($0.rawValue).tag($0)
+                                    }
+                                }.pickerStyle(.menu)
+                            }
+
+                            if viewModel.revenueTrend.isEmpty {
+                                ContentUnavailableView(
+                                    "Tidak Ada Data",
+                                    systemImage: "chart.xyaxis.line"
+                                ).frame(height: 200)
+                            } else {
+                                Chart {
+                                    ForEach(viewModel.revenueTrend, id: \.date)
+                                    { item in
+                                        LineMark(
+                                            x: .value("Tanggal", item.date),
+                                            y: .value("Total", item.amount)
+                                        )
+                                        .foregroundStyle(Color.themePrimary)
+                                        .symbol(
+                                            Circle().strokeBorder(lineWidth: 2)
+                                        )
+                                        AreaMark(
+                                            x: .value("Tanggal", item.date),
+                                            y: .value("Total", item.amount)
+                                        )
+                                        .foregroundStyle(
+                                            LinearGradient(
+                                                gradient: Gradient(colors: [
+                                                    Color.themePrimary.opacity(
+                                                        0.4
+                                                    ), .clear,
+                                                ]),
+                                                startPoint: .top,
+                                                endPoint: .bottom
+                                            )
+                                        )
+                                    }
+                                }.frame(height: 250)
+                            }
+                        }.padding().background(Color.themeBgSecondary)
+                            .cornerRadius(12)
                     }
+                }.padding()
+            }
+            .navigationTitle("Dashboard").background(Color.themeBgMain)
+            .onAppear {
+                Task {
+                    await viewModel.loadDashboardSummary(
+                        storeId: storeId,
+                        branchId: branchId
+                    )
                 }
-            }.padding()
-        }
-        .background(Color.themeBgMain).navigationTitle("Dasbor Analitik")
-        .onAppear {
-            Task {
-                await viewModel.loadDashboardSummary(
-                    storeId: storeId,
-                    branchId: branchId
-                )
             }
         }
     }
