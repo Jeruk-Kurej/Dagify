@@ -7,84 +7,33 @@
 
 import SwiftUI
 
-enum AppMenu: String, CaseIterable, Identifiable, Hashable {
-    case dashboard = "Dasbor"
-    case pos = "Kasir (POS)"
-    case inventory = "Gudang"
-    case cashflow = "Arus Kas"
-    case analytics = "Analitik Menu"
-    case crm = "CRM"
-    
-    var id: String { self.rawValue }
-    
-    var icon: String {
-        switch self {
-        case .dashboard: return "squareshape.2x2.fill"
-        case .pos: return "cart.fill"
-        case .inventory: return "shippingbox.fill"
-        case .cashflow: return "chart.line.uptrend.xyaxis"
-        case .analytics: return "chart.pie.fill"
-        case .crm: return "person.2.fill"
-        }
-    }
-}
-
 struct MainAppView: View {
     let storeId: String
     let branchId: String
     var authViewModel: AuthViewModel
     
-    @State private var selectedTab: AppMenu = .dashboard
-    
-    private let operationalService = FirebaseOperationalService()
-    private let cashflowService = FirebaseCashflowService()
-    private let crmService = FirebaseCRMService()
+    let operationalService = FirebaseOperationalService()
+    let cashflowService = FirebaseCashflowService()
+    let crmService = FirebaseCRMService()
+    let syncManager = SyncManager.shared
+    let networkMonitor = NetworkMonitor()
     
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView {
+            DashboardView(viewModel: DashboardViewModel(cashflowProtocol: cashflowService, crmProtocol: crmService, operationalProtocol: operationalService), storeId: storeId, branchId: branchId)
+                .tabItem { Label("Dashboard", systemImage: "squareshape.2x2.fill") }
             
-            Tab(AppMenu.dashboard.rawValue, systemImage: AppMenu.dashboard.icon, value: .dashboard) {
-                DashboardView(
-                    viewModel: DashboardViewModel(cashflowProtocol: cashflowService, crmProtocol: crmService, operationalProtocol: operationalService),
-                    storeId: storeId,
-                    branchId: branchId
-                )
-            }
+            CashflowView(viewModel: CashflowViewModel(cashProtocol: cashflowService), branchId: branchId)
+                .tabItem { Label("Cashflow", systemImage: "chart.line.uptrend.xyaxis") }
             
-            Tab(AppMenu.pos.rawValue, systemImage: AppMenu.pos.icon, value: .pos) {
-                POSView(
-                    viewModel: POSViewModel(operationalProtocol: operationalService, networkMonitor: NetworkMonitor(), syncManager: SyncManager.shared),
-                    branchId: branchId
-                )
-            }
+            CRMView(viewModel: CRMViewModel(crmProtocol: crmService), storeId: storeId)
+                .tabItem { Label("CRM", systemImage: "person.2.fill") }
             
-            Tab(AppMenu.inventory.rawValue, systemImage: AppMenu.inventory.icon, value: .inventory) {
-                InventoryView(
-                    viewModel: InventoryViewModel(operationalProtocol: operationalService, cashflowProtocol: cashflowService),
-                    branchId: branchId
-                )
-            }
+            OperationalView(branchId: branchId, storeId: storeId, operationalService: operationalService, cashflowService: cashflowService, syncManager: syncManager, networkMonitor: networkMonitor)
+                .tabItem { Label("Operational", systemImage: "briefcase.fill") }
             
-            Tab(AppMenu.cashflow.rawValue, systemImage: AppMenu.cashflow.icon, value: .cashflow) {
-                CashflowView(
-                    viewModel: CashflowViewModel(cashProtocol: cashflowService),
-                    branchId: branchId
-                )
-            }
-            
-            Tab(AppMenu.analytics.rawValue, systemImage: AppMenu.analytics.icon, value: .analytics) {
-                ProductAnalyticsView(
-                    viewModel: ProductAnalyticsViewModel(operationalProtocol: operationalService),
-                    branchId: branchId
-                )
-            }
-            
-            Tab(AppMenu.crm.rawValue, systemImage: AppMenu.crm.icon, value: .crm) {
-                CRMView(
-                    viewModel: CRMViewModel(crmProtocol: crmService),
-                    storeId: storeId
-                )
-            }
+            SettingsView(authViewModel: authViewModel, operationalService: operationalService)
+                .tabItem { Label("Settings", systemImage: "gearshape.fill") }
         }
         .tabViewStyle(.sidebarAdaptable)
     }
