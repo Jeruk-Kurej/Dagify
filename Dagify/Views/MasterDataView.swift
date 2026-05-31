@@ -8,77 +8,78 @@
 import SwiftUI
 
 struct MasterDataView: View {
-    @State private var viewModel = MasterDataViewModel(operationalProtocol: FirebaseOperationalService())
+    var viewModel: MasterDataViewModel
     
-    @State private var ingredientName = ""
-    @State private var selectedUnit = "gram"
-    @State private var currentStock: Double = 0
-    @State private var costPrice: Double = 0
-    @State private var alertThreshold: Double = 0
-    
-    let units = ["gram", "ml", "pcs", "pack", "kg", "liter"]
+    @State private var productName = ""
+    @State private var productPrice = ""
+    @State private var isShowingAlert = false
     
     var body: some View {
         Form {
-            Section(header: Text("Identitas Bahan Baku")) {
-                TextField("Nama Bahan Baku (Misal: Gula Aren)", text: $ingredientName)
+            Section(header: Text("Informasi Menu Baru").foregroundColor(.themeTextPrimary)) {
+                TextField("Nama Produk (Cth: Kopi Susu Aren)", text: $productName)
+                    .foregroundColor(.themeTextPrimary)
                 
-                Picker("Satuan Ukuran", selection: $selectedUnit) {
-                    ForEach(units, id: \.self) { Text($0) }
+                HStack {
+                    Text("Rp").foregroundColor(.themeTextSecondary)
+                    TextField("Harga Jual (Cth: 18000)", text: $productPrice)
+                        .keyboardType(.numberPad)
+                        .foregroundColor(.themeTextPrimary)
                 }
             }
             
-            Section(header: Text("Parameter Nilai & Batas Stok")) {
-                HStack {
-                    Text("Jumlah Stok Awal")
-                    Spacer()
-                    TextField("0", value: $currentStock, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
-                }
-                HStack {
-                    Text("Biaya HPP per Satuan (Rp)")
-                    Spacer()
-                    TextField("0", value: $costPrice, format: .number).keyboardType(.numberPad).multilineTextAlignment(.trailing)
-                }
-                HStack {
-                    Text("Batas Peringatan Minimum")
-                    Spacer()
-                    TextField("0", value: $alertThreshold, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
-                }
-            }
-            
-            if let error = viewModel.errorMessage {
-                Section { Text(error).font(.caption).foregroundColor(.themeDestructive) }
+            Section(
+                header: Text("Resep Bahan Baku").foregroundColor(.themeTextPrimary),
+                footer: Text("Pilih bahan baku yang otomatis terpotong saat produk ini terjual.").foregroundColor(.themeTextSecondary)
+            ) {
+                Text("Fitur integrasi resep akan segera hadir.")
+                    .italic()
+                    .foregroundColor(.themeTextSecondary)
             }
             
             Section {
-                Button(action: {
-                    Task {
-                        await viewModel.createIngredient(name: ingredientName, currentStock: currentStock, unit: selectedUnit, expiryDate: nil, minimumStockWarning: alertThreshold, costPerUnit: costPrice)
-                    }
-                }) {
+                Button(action: saveProduct) {
                     HStack {
                         Spacer()
-                        if viewModel.isLoading { ProgressView().tint(.white) }
-                        else { Text("Daftarkan ke Sistem Gudang").bold() }
+                        if viewModel.isLoading {
+                            ProgressView()
+                        } else {
+                            Text("Simpan Produk ke Database")
+                                .bold()
+                        }
                         Spacer()
                     }
                 }
-                .disabled(ingredientName.isEmpty || viewModel.isLoading)
+                .disabled(productName.isEmpty || productPrice.isEmpty)
+                .listRowBackground(productName.isEmpty || productPrice.isEmpty ? Color.themeBorder : Color.themePrimary)
                 .foregroundColor(.white)
-                .listRowBackground(ingredientName.isEmpty ? Color.themeBorder : Color.themePrimary)
+            }
+            
+            if let err = viewModel.errorMessage {
+                Section {
+                    Text(err).foregroundColor(.themeDestructive).font(.caption)
+                }
             }
         }
-        .navigationTitle("Input Master Data")
-        .alert("Pemberitahuan", isPresented: $viewModel.isSuccess) {
-            Button("OK", role: .cancel) {
-                ingredientName = ""
-                currentStock = 0
-                costPrice = 0
-                alertThreshold = 0
+        .navigationTitle("Tambah Master Data")
+        .alert("Berhasil", isPresented: $viewModel.isSuccess) {
+            Button("OK") {
+                productName = ""
+                productPrice = ""
             }
-        } message: { Text("Data material baru berhasil diunggah.") }
+        } message: {
+            Text("Produk berhasil ditambahkan ke menu Kasir.")
+        }
+    }
+    
+    private func saveProduct() {
+        guard let price = Double(productPrice) else { return }
+        Task {
+            await viewModel.createProduct(name: productName, price: price, recipe: [])
+        }
     }
 }
+
 #Preview {
     //MasterDataView()
 }
