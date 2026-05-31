@@ -5,9 +5,10 @@
 //  Created by Bryan Carlie Lukito Setiawan on 25/05/26.
 //
 
+
 import SwiftUI
-import SwiftData
 import FirebaseCore
+import SwiftData
 
 @main
 struct DagifyApp: App {
