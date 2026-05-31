@@ -5,91 +5,105 @@
 //  Created by Bryan Carlie Lukito Setiawan on 31/05/26.
 //
 
+import Charts
 import SwiftUI
 
 struct CRMView: View {
     var viewModel: CRMViewModel
-    let storeId = "S-1"
+    let storeId: String
 
     var body: some View {
-        VStack(spacing: 0) {
-            // MARK: - Banner Retensi Pelanggan
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Tingkat Retensi Loyalitas").font(.subheadline)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+
+                VStack(alignment: .leading) {
+                    Text("Tingkat Retensi Pelanggan")
+                        .font(.headline)
+                        .foregroundColor(.themeTextPrimary)
+                    HStack {
+                        Text(
+                            String(
+                                format: "%.1f%%",
+                                viewModel.loyalCustomerPercentage
+                            )
+                        )
+                        .font(.system(size: 48, weight: .bold))
+                        .foregroundColor(.themeSuccess)
+                        Text(
+                            "dari total pelanggan Anda berbelanja lebih dari 5 kali."
+                        )
+                        .font(.subheadline)
                         .foregroundColor(.themeTextSecondary)
-                    Text(
-                        String(
-                            format: "%.1f%%",
-                            viewModel.loyalCustomerPercentage
-                        )
-                    ).font(.largeTitle).bold().foregroundColor(.themeHighlight)
+                    }
                 }
-                Spacer()
-                Image(systemName: "person.3.sequence.fill").font(.largeTitle)
-                    .foregroundColor(.themePrimary.opacity(0.3))
-            }
-            .padding(24).background(Color.themeBgSecondary)
-            .overlay(
-                Rectangle().frame(height: 1).foregroundColor(.themeBorder),
-                alignment: .bottom
-            )
+                .padding(.horizontal)
 
-            // MARK: - Daftar Pelanggan
-            if viewModel.isLoading {
-                ProgressView("Memuat data pelanggan...").frame(
-                    maxHeight: .infinity
-                )
-            } else if viewModel.customers.isEmpty {
-                ContentUnavailableView(
-                    "Belum Ada Pelanggan",
-                    systemImage: "person.crop.circle.badge.questionmark"
-                )
-            } else {
-                List(viewModel.customers) { customer in
-                    HStack(spacing: 16) {
-                        Circle().fill(Color.themePrimary.opacity(0.12)).frame(
-                            width: 44,
-                            height: 44
-                        )
-                        .overlay(
-                            Text(String(customer.name.prefix(1))).font(
-                                .headline
-                            ).bold().foregroundColor(.themePrimary)
-                        )
+                VStack(alignment: .leading) {
+                    Text("Heatmap Kunjungan (Jam Sibuk)")
+                        .font(.headline)
+                        .padding(.horizontal)
 
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(customer.name).font(.headline).foregroundColor(
-                                .themeTextPrimary
-                            )
-                            Text(
-                                "Total Kontribusi: Rp \(customer.totalSpent, specifier: "%.0f")"
-                            ).font(.caption).foregroundColor(
-                                .themeTextSecondary
-                            )
+                    if viewModel.busiestHours.isEmpty {
+                        Text("Belum ada data kunjungan.")
+                            .foregroundColor(.themeTextSecondary)
+                            .padding(.horizontal)
+                    } else {
+                        Chart {
+                            let sortedHours = viewModel.busiestHours.sorted(
+                                by: { $0.key < $1.key })
+                            ForEach(sortedHours, id: \.key) { hour, count in
+                                BarMark(
+                                    x: .value("Jam", "\(hour):00"),
+                                    y: .value("Kunjungan", count)
+                                )
+                                .foregroundStyle(Color.themePrimary)
+                                .cornerRadius(4)
+                            }
                         }
-                        Spacer()
+                        .frame(height: 250)
+                        .padding()
+                        .background(Color.themeBgSecondary)
+                        .cornerRadius(12)
+                        .padding(.horizontal)
+                    }
+                }
 
-                        // Indikator Loyalitas
-                        if customer.isLoyal {
-                            HStack(spacing: 4) {
+                VStack(alignment: .leading) {
+                    Text("Daftar Pelanggan")
+                        .font(.headline)
+                        .padding(.horizontal)
+
+                    ForEach(viewModel.customers) { customer in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(customer.name).font(.body).bold()
+                                Text(customer.phoneNumber).font(.caption)
+                                    .foregroundColor(.themeTextSecondary)
+                            }
+                            Spacer()
+                            if customer.isLoyal {
                                 Image(systemName: "star.fill").foregroundColor(
                                     .themeWarning
                                 )
-                                Text("Loyal").font(.caption2).bold()
-                                    .foregroundColor(.themeWarning)
                             }
-                            .padding(.vertical, 4).padding(.horizontal, 8)
-                            .background(Color.themeWarning.opacity(0.1))
-                            .cornerRadius(6)
+                            Text("Rp \(customer.totalSpent, specifier: "%.0f")")
+                                .font(.subheadline)
+                                .bold()
+                                .foregroundColor(.themePrimary)
                         }
+                        .padding()
+                        .background(Color.themeBgSecondary)
+                        .cornerRadius(8)
+                        .padding(.horizontal)
                     }
-                    .padding(.vertical, 4)
                 }
-                .listStyle(.plain)
             }
+            .padding(.vertical)
         }
-        .navigationTitle("Manajemen CRM")
-        .onAppear { Task { await viewModel.loadCustomers(storeId: storeId) } }
+        .navigationTitle("CRM & Pelanggan")
+        .background(Color.themeBgMain.edgesIgnoringSafeArea(.all))
+        .onAppear {
+            Task { await viewModel.loadCustomers(storeId: storeId) }
+        }
     }
 }

@@ -69,7 +69,7 @@ struct MainAppView: View {
                 )
             case .pos:
                 POSView(
-                    viewModel: POSViewModel(operationalProtocol: operationalService, networkMonitor: NetworkMonitor(), syncManager: SyncManager.shared),
+                    viewModel: POSViewModel(operationalProtocol: operationalService, networkMonitor: NetworkMonitor(), syncManager: SyncManager.shared as! SyncManagerProtocol),
                     branchId: branchId
                 )
             case .inventory:

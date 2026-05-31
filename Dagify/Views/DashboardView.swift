@@ -9,57 +9,88 @@ import SwiftUI
 
 struct DashboardView: View {
     var viewModel: DashboardViewModel
-    let storeId = "S-1"
-    let branchId = "B-1"
-    let adaptiveColumns = [
-        GridItem(.adaptive(minimum: 240, maximum: .infinity), spacing: 16)
-    ]
+    let storeId: String
+    let branchId: String
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                if viewModel.isLoading {
-                    ProgressView("Mengolah rekam data keuangan...").frame(
-                        maxWidth: .infinity,
-                        minHeight: 300
-                    )
-                } else {
-                    Text("Performa Operasional Hari Ini").font(.title2).bold()
-                        .foregroundColor(.themeTextPrimary)
+            VStack(spacing: 20) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Ringkasan Keuangan Hari Ini")
+                        .font(.headline)
+                        .foregroundColor(.themeTextSecondary)
 
-                    LazyVGrid(columns: adaptiveColumns, spacing: 16) {
-                        DashItemCard(
-                            title: "Pendapatan Kotor",
-                            value:
-                                "Rp \(viewModel.todayRevenue, default: "%.0f")",
-                            icon: "arrow.up.forward.circle.fill",
+                    HStack {
+                        FinancialBox(
+                            title: "Pendapatan Harian",
+                            amount: viewModel.todayRevenue,
                             color: .themeSuccess
                         )
-                        DashItemCard(
-                            title: "Beban Pengeluaran",
-                            value:
-                                "Rp \(viewModel.todayExpense, default: "%.0f")",
-                            icon: "arrow.down.backward.circle.fill",
-                            color: .themeDestructive
-                        )
-                        DashItemCard(
-                            title: "Estimasi Untung Bersih",
-                            value:
-                                "Rp \(viewModel.todayNetProfit, default: "%.0f")",
-                            icon: "banknote.fill",
+                        FinancialBox(
+                            title: "Laba Bersih",
+                            amount: viewModel.todayNetProfit,
                             color: .themePrimary
-                        )
-                        DashItemCard(
-                            title: "Indikator Stok Kritis",
-                            value: "\(viewModel.lowStockAlertsCount) Item",
-                            icon: "exclamationmark.triangle.fill",
-                            color: .themeWarning
                         )
                     }
                 }
-            }.padding()
+                .padding(.horizontal)
+
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text("Peringatan Stok Gudang")
+                            .font(.caption)
+                            .foregroundColor(.themeTextSecondary)
+                        Text("\(viewModel.lowStockAlertsCount) Item Menipis")
+                            .font(.title3)
+                            .bold()
+                            .foregroundColor(.themeWarning)
+                    }
+                    Spacer()
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.largeTitle)
+                        .foregroundColor(.themeWarning)
+                }
+                .padding()
+                .background(Color.themeBgSecondary)
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12).stroke(
+                        Color.themeBorder,
+                        lineWidth: 1
+                    )
+                )
+                .padding(.horizontal)
+
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text("Pelanggan Loyal")
+                            .font(.caption)
+                            .foregroundColor(.themeTextSecondary)
+                        Text("\(viewModel.totalLoyalCustomers) Orang")
+                            .font(.title3)
+                            .bold()
+                            .foregroundColor(.themeTextPrimary)
+                    }
+                    Spacer()
+                    Image(systemName: "heart.fill")
+                        .font(.largeTitle)
+                        .foregroundColor(.themeHighlight)
+                }
+                .padding()
+                .background(Color.themeBgSecondary)
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12).stroke(
+                        Color.themeBorder,
+                        lineWidth: 1
+                    )
+                )
+                .padding(.horizontal)
+            }
+            .padding(.top)
         }
-        .background(Color.themeBgMain).navigationTitle("Dasbor Analitik")
+        .navigationTitle("Dasbor Utama")
+        .background(Color.themeBgMain.edgesIgnoringSafeArea(.all))
         .onAppear {
             Task {
                 await viewModel.loadDashboardSummary(
@@ -68,33 +99,5 @@ struct DashboardView: View {
                 )
             }
         }
-    }
-}
-
-struct DashItemCard: View {
-    let title: String
-    let value: String
-    let icon: String
-    let color: Color
-    var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: icon).font(.system(size: 36)).foregroundColor(
-                color
-            )
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.caption).foregroundColor(.themeTextSecondary)
-                Text(value).font(.title3).bold().foregroundColor(
-                    .themeTextPrimary
-                )
-            }
-            Spacer()
-        }
-        .padding().background(Color.themeBgSecondary).cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12).stroke(
-                Color.themeBorder,
-                lineWidth: 1
-            )
-        )
     }
 }
