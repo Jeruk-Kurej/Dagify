@@ -30,19 +30,19 @@ struct DashboardView: View {
                     LazyVGrid(columns: adaptiveColumns, spacing: 16) {
                         DashItemCard(
                             title: "Pendapatan Kotor",
-                            value: "Rp \(viewModel.todayRevenue, specifier: "%.0f")",
+                            value: "Rp \(viewModel.todayRevenue, default: "%.0f")",
                             icon: "arrow.up.forward.circle.fill",
                             color: .themeSuccess
                         )
                         DashItemCard(
                             title: "Beban Pengeluaran",
-                            value: "Rp \(viewModel.todayExpense, specifier: "%.0f")",
+                            value: "Rp \(viewModel.todayExpense, default: "%.0f")",
                             icon: "arrow.down.backward.circle.fill",
                             color: .themeDestructive
                         )
                         DashItemCard(
                             title: "Estimasi Untung Bersih",
-                            value: "Rp \(viewModel.todayNetProfit, specifier: "%.0f")",
+                            value: "Rp \(viewModel.todayNetProfit, default: "%.0f")",
                             icon: "banknote.fill",
                             color: .themePrimary
                         )
