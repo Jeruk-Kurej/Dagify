@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct MasterDataView: View {
-    var viewModel: MasterDataViewModel
+    @Bindable var viewModel: MasterDataViewModel
     
     @State private var productName = ""
     @State private var productPrice = ""

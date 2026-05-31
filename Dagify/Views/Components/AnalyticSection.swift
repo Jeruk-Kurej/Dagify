@@ -30,5 +30,5 @@ struct AnalyticSection<Content: View>: View {
 }
 
 #Preview {
-    AnalyticSection()
+    //AnalyticSection()
 }
