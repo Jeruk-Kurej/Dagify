@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-enum AppMenu: String, CaseIterable, Identifiable {
+enum AppMenu: String, CaseIterable, Identifiable, Hashable {
     case dashboard = "Dasbor"
     case pos = "Kasir (POS)"
     case inventory = "Gudang"
@@ -34,68 +34,58 @@ struct MainAppView: View {
     let branchId: String
     var authViewModel: AuthViewModel
     
-    @State private var selectedMenu: AppMenu? = .dashboard
+    @State private var selectedTab: AppMenu = .dashboard
     
     private let operationalService = FirebaseOperationalService()
     private let cashflowService = FirebaseCashflowService()
     private let crmService = FirebaseCRMService()
     
     var body: some View {
-        NavigationSplitView {
+        TabView(selection: $selectedTab) {
             
-            List(AppMenu.allCases, selection: $selectedMenu) { menu in
-                NavigationLink(value: menu) {
-                    Label(menu.rawValue, systemImage: menu.icon)
-                }
-            }
-            .navigationTitle("Menu Dagify")
-            .toolbar {
-                ToolbarItem(placement: .bottomBar) {
-                    Button(role: .destructive, action: { authViewModel.logout() }) {
-                        Label("Keluar Sistem", systemImage: "rectangle.portrait.and.arrow.right")
-                            .foregroundColor(.themeDestructive)
-                    }
-                }
-            }
-            
-        } detail: {
-            
-            switch selectedMenu {
-            case .dashboard:
+            Tab(AppMenu.dashboard.rawValue, systemImage: AppMenu.dashboard.icon, value: .dashboard) {
                 DashboardView(
                     viewModel: DashboardViewModel(cashflowProtocol: cashflowService, crmProtocol: crmService, operationalProtocol: operationalService),
                     storeId: storeId,
                     branchId: branchId
                 )
-            case .pos:
+            }
+            
+            Tab(AppMenu.pos.rawValue, systemImage: AppMenu.pos.icon, value: .pos) {
                 POSView(
-                    viewModel: POSViewModel(operationalProtocol: operationalService, networkMonitor: NetworkMonitor(), syncManager: SyncManager.shared as! SyncManagerProtocol),
+                    viewModel: POSViewModel(operationalProtocol: operationalService, networkMonitor: NetworkMonitor(), syncManager: SyncManager.shared),
                     branchId: branchId
                 )
-            case .inventory:
+            }
+            
+            Tab(AppMenu.inventory.rawValue, systemImage: AppMenu.inventory.icon, value: .inventory) {
                 InventoryView(
                     viewModel: InventoryViewModel(operationalProtocol: operationalService, cashflowProtocol: cashflowService),
                     branchId: branchId
                 )
-            case .cashflow:
+            }
+            
+            Tab(AppMenu.cashflow.rawValue, systemImage: AppMenu.cashflow.icon, value: .cashflow) {
                 CashflowView(
                     viewModel: CashflowViewModel(cashProtocol: cashflowService),
                     branchId: branchId
                 )
-            case .analytics:
+            }
+            
+            Tab(AppMenu.analytics.rawValue, systemImage: AppMenu.analytics.icon, value: .analytics) {
                 ProductAnalyticsView(
                     viewModel: ProductAnalyticsViewModel(operationalProtocol: operationalService),
                     branchId: branchId
                 )
-            case .crm:
+            }
+            
+            Tab(AppMenu.crm.rawValue, systemImage: AppMenu.crm.icon, value: .crm) {
                 CRMView(
                     viewModel: CRMViewModel(crmProtocol: crmService),
                     storeId: storeId
                 )
-            case .none:
-                Text("Pilih menu dari bilah navigasi di sebelah kiri.")
-                    .foregroundColor(.themeTextSecondary)
             }
         }
+        .tabViewStyle(.sidebarAdaptable)
     }
 }
