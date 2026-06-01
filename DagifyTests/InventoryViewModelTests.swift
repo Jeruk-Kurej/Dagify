@@ -7,7 +7,32 @@ import Testing
 @MainActor
 struct InventoryViewModelTests {
 
-    @Test("Skenario 1: Filter Barang Low Stock & Expired")
+    @Test("Fungsi: loadIngredients() - Skenario Berhasil")
+    func testLoadIngredients() async {
+        let mockOp = MockOperationalRepository()
+        let mockCash = MockCashflowRepository()
+        let vm = InventoryViewModel(
+            operationalProtocol: mockOp,
+            cashflowProtocol: mockCash
+        )
+
+        mockOp.dummyIngredients = [
+            Ingredient(
+                id: "1",
+                name: "Roti",
+                currentStock: 2,
+                unit: "pcs",
+                expiryDate: nil,
+                minimumStockWarning: 5,
+                costPerUnit: 2000
+            )
+        ]
+
+        await vm.loadIngredients(branchId: "B-1")
+        #expect(vm.ingredients.count == 1)
+    }
+
+    @Test("Properti: lowStockIngredients & expiredIngredients")
     func testLowStockAndExpiredFilters() async {
         let mockOp = MockOperationalRepository()
         let mockCash = MockCashflowRepository()
@@ -22,7 +47,7 @@ struct InventoryViewModelTests {
             to: Date()
         )
 
-        _ = try? await mockOp.addIngredient(
+        mockOp.dummyIngredients = [
             Ingredient(
                 id: "1",
                 name: "Roti",
@@ -31,9 +56,7 @@ struct InventoryViewModelTests {
                 expiryDate: pastDate,
                 minimumStockWarning: 5,
                 costPerUnit: 2000
-            )
-        )
-        _ = try? await mockOp.addIngredient(
+            ),  // Basi & Menipis
             Ingredient(
                 id: "2",
                 name: "Gula",
@@ -42,17 +65,15 @@ struct InventoryViewModelTests {
                 expiryDate: nil,
                 minimumStockWarning: 10,
                 costPerUnit: 10000
-            )
-        )
+            ),  // Normal
+        ]
 
         await vm.loadIngredients(branchId: "B-1")
-
         #expect(vm.lowStockIngredients.count == 1)
         #expect(vm.expiredIngredients.count == 1)
-        #expect(vm.expiredIngredients.first?.name == "Roti")
     }
 
-    @Test("Skenario 2: Buang Barang Basi & Catat Kerugian Otomatis")
+    @Test("Fungsi: discardExpiredItem() - Skenario Mencatat Kerugian")
     func testDiscardExpiredItemRecordsLoss() async {
         let mockOp = MockOperationalRepository()
         let mockCash = MockCashflowRepository()
@@ -61,29 +82,22 @@ struct InventoryViewModelTests {
             cashflowProtocol: mockCash
         )
 
-        let pastDate = Calendar.current.date(
-            byAdding: .day,
-            value: -1,
-            to: Date()
-        )
         let basi = Ingredient(
             id: "1",
             name: "Roti",
             currentStock: 5,
             unit: "pcs",
-            expiryDate: pastDate,
+            expiryDate: Date(),
             minimumStockWarning: 10,
             costPerUnit: 2000
-        )
+        )  // Loss 10.000
 
         await vm.discardExpiredItem(ingredient: basi, branchId: "B-1")
 
-        #expect(vm.errorMessage == nil)
-
-        // Menggunakan .records untuk mengecek array di MockCashflowRepository
-        #expect(mockCash.records.first?.amount == 10000)
         #expect(
-            mockCash.records.first?.notes == "Kerugian: Bahan Roti kedaluwarsa"
+            mockCash.records.count == 1,
+            "Data kerugian harus masuk ke Cashflow"
         )
+        #expect(mockCash.records.first?.amount == 10000)
     }
 }

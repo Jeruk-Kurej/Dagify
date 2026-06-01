@@ -7,53 +7,58 @@ import Testing
 @MainActor
 struct ProductAnalyticsViewModelTests {
 
-    @Test("Skenario 1: Urutan Best Seller dan Paling Sepi")
-    func testBestSellersSorting() async {
+    @Test("Fungsi: loadAnalyticsData()")
+    func testLoadAnalyticsData() async {
+        let mockRepo = MockOperationalRepository()
+        let vm = ProductAnalyticsViewModel(operationalProtocol: mockRepo)
+        mockRepo.dummyOrders = [
+            Order(
+                branchId: "B-1",
+                customerId: nil,
+                items: [],
+                totalAmount: 10000,
+                timestamp: Date()
+            )
+        ]
+
+        await vm.loadAnalyticsData(branchId: "B-1")
+        #expect(vm.orders.count == 1)
+    }
+
+    @Test("Properti: productSalesCount, bestSellers, leastPopular")
+    func testSalesSorting() async {
         let mockRepo = MockOperationalRepository()
         let vm = ProductAnalyticsViewModel(operationalProtocol: mockRepo)
 
-        let pLaris = Product(
-            id: "1",
-            name: "Ayam Goreng",
-            price: 20000,
-            recipe: []
-        )
-        let pSepi = Product(
-            id: "2",
-            name: "Tahu Walik",
-            price: 5000,
-            recipe: []
-        )
+        let pLaris = Product(id: "1", name: "Ayam", price: 20000, recipe: [])
+        let pSepi = Product(id: "2", name: "Tahu", price: 5000, recipe: [])
 
         mockRepo.dummyOrders = [
             Order(
                 branchId: "B-1",
                 customerId: nil,
-                items: [OrderItem(product: pLaris, quantity: 15)],
-                totalAmount: 300000,
+                items: [
+                    OrderItem(product: pLaris, quantity: 15),
+                    OrderItem(product: pSepi, quantity: 2),
+                ],
+                totalAmount: 0,
                 timestamp: Date()
-            ),
-            Order(
-                branchId: "B-1",
-                customerId: nil,
-                items: [OrderItem(product: pSepi, quantity: 2)],
-                totalAmount: 10000,
-                timestamp: Date()
-            ),
+            )
         ]
 
         await vm.loadAnalyticsData(branchId: "B-1")
 
-        #expect(vm.bestSellers.first?.productName == "Ayam Goreng")
-        #expect(vm.leastPopular.first?.productName == "Tahu Walik")
+        #expect(vm.productSalesCount["Ayam"] == 15)
+        #expect(vm.bestSellers.first?.productName == "Ayam")
+        #expect(vm.leastPopular.first?.productName == "Tahu")
     }
 
-    @Test("Skenario 2: Perhitungan Profit Margin Berdasarkan HPP")
-    func testMostProfitableProductsCalculation() async {
+    @Test("Properti: mostProfitableProducts (Kalkulasi HPP)")
+    func testMostProfitableProducts() async {
         let mockRepo = MockOperationalRepository()
         let vm = ProductAnalyticsViewModel(operationalProtocol: mockRepo)
 
-        // Modal Kopi Rp 500
+        // Ingredient cost: 500
         mockRepo.dummyIngredients = [
             Ingredient(
                 id: "I-1",
@@ -66,7 +71,7 @@ struct ProductAnalyticsViewModelTests {
             )
         ]
 
-        // Harga Jual Rp 25.000, butuh 20 unit (Modal total = Rp 10.000)
+        // Product price: 25.000, butuh 20 unit (HPP = 10.000)
         let produk = Product(
             id: "P-1",
             name: "Kopi Aren",
@@ -86,11 +91,8 @@ struct ProductAnalyticsViewModelTests {
 
         await vm.loadAnalyticsData(branchId: "B-1")
 
-        // Ekspektasi Laba = 25.000 - 10.000 = 15.000
+        // Profit margin: 25.000 - 10.000 = 15.000
         #expect(vm.mostProfitableProducts.first?.productName == "Kopi Aren")
-        #expect(
-            vm.mostProfitableProducts.first?.profitMargin == 15000,
-            "Kalkulasi HPP salah!"
-        )
+        #expect(vm.mostProfitableProducts.first?.profitMargin == 15000)
     }
 }

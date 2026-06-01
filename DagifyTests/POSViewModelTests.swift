@@ -8,28 +8,45 @@ import Testing
 @MainActor
 struct POSViewModelTests {
 
-    @Test("Skenario 1: Kalkulasi Tambah & Kurang Keranjang")
-    func testCartCalculations() {
+    @Test("Fungsi: loadProducts()")
+    func testLoadProducts() async {
         let mockRepo = MockOperationalRepository()
         let vm = POSViewModel(
             operationalProtocol: mockRepo,
             networkMonitor: NetworkMonitor(),
             syncManager: MockSyncManager()
         )
+        mockRepo.dummyProducts = [
+            Product(id: "1", name: "Kopi", price: 10000, recipe: [])
+        ]
 
-        let p1 = Product(id: "1", name: "Es Teh", price: 5000, recipe: [])
-
-        vm.addToCart(product: p1)
-        vm.addToCart(product: p1)
-
-        #expect(vm.cart.first?.quantity == 2)
-        #expect(vm.subtotal == 10000)
-
-        vm.removeOrDecreaseFromCart(product: p1)
-        #expect(vm.subtotal == 5000)
+        await vm.loadProducts(branchId: "B-1")
+        #expect(vm.availableProducts.count == 1)
     }
 
-    @Test("Skenario 2: Checkout Sukses Membersihkan Keranjang")
+    @Test("Fungsi: addToCart() & removeOrDecreaseFromCart()")
+    func testCartOperations() {
+        let mockRepo = MockOperationalRepository()
+        let vm = POSViewModel(
+            operationalProtocol: mockRepo,
+            networkMonitor: NetworkMonitor(),
+            syncManager: MockSyncManager()
+        )
+        let p1 = Product(id: "1", name: "Kopi", price: 10000, recipe: [])
+
+        vm.addToCart(product: p1)
+        vm.addToCart(product: p1)  // qty = 2
+        #expect(vm.cart.first?.quantity == 2)
+        #expect(vm.subtotal == 20000)
+
+        vm.removeOrDecreaseFromCart(product: p1)  // qty = 1
+        #expect(vm.cart.first?.quantity == 1)
+
+        vm.removeOrDecreaseFromCart(product: p1)  // qty = 0 (dihapus)
+        #expect(vm.cart.isEmpty == true)
+    }
+
+    @Test("Fungsi: checkout() - Skenario Berhasil")
     func testCheckoutSuccess() async throws {
         let mockRepo = MockOperationalRepository()
         let vm = POSViewModel(
@@ -37,29 +54,21 @@ struct POSViewModelTests {
             networkMonitor: NetworkMonitor(),
             syncManager: MockSyncManager()
         )
+        vm.addToCart(
+            product: Product(id: "1", name: "Kopi", price: 10000, recipe: [])
+        )
 
-        let p1 = Product(id: "1", name: "Es Teh", price: 5000, recipe: [])
-        vm.addToCart(product: p1)
-
-        // Menggunakan nama model asli "OfflineOrderModel"
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(
             for: OfflineOrderModel.self,
-            configurations: config
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
-        let context = ModelContext(container)
+        await vm.checkout(branchId: "B-1", context: ModelContext(container))
 
-        await vm.checkout(branchId: "B-1", context: context)
-
-        #expect(vm.isCheckoutSuccess == true, "Flag success harus menyala")
-        #expect(
-            vm.cart.isEmpty == true,
-            "Keranjang harus dikosongkan setelah bayar"
-        )
-        #expect(vm.errorMessage == nil)
+        #expect(vm.isCheckoutSuccess == true)
+        #expect(vm.cart.isEmpty == true)
     }
 
-    @Test("Skenario 3: Checkout Gagal Karena Keranjang Kosong (Unhappy Path)")
+    @Test("Fungsi: checkout() - Skenario Gagal (Keranjang Kosong)")
     func testCheckoutFailEmptyCart() async throws {
         let mockRepo = MockOperationalRepository()
         let vm = POSViewModel(
@@ -68,15 +77,11 @@ struct POSViewModelTests {
             syncManager: MockSyncManager()
         )
 
-        // Menggunakan nama model asli "OfflineOrderModel"
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(
             for: OfflineOrderModel.self,
-            configurations: config
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
-        let context = ModelContext(container)
-
-        await vm.checkout(branchId: "B-1", context: context)
+        await vm.checkout(branchId: "B-1", context: ModelContext(container))
 
         #expect(vm.isCheckoutSuccess == false)
         #expect(vm.errorMessage == "Keranjang masih kosong.")

@@ -7,7 +7,7 @@ import Testing
 @MainActor
 struct AuthViewModelTests {
 
-    @Test("Skenario 1: Login Sukses")
+    @Test("Fungsi: login() - Skenario Berhasil")
     func testLoginSuccess() async {
         let mockRepo = MockAuthRepository()
         let vm = AuthViewModel(authProtocol: mockRepo)
@@ -18,12 +18,41 @@ struct AuthViewModelTests {
         #expect(vm.errorMessage == nil)
     }
 
-    @Test("Skenario 2: Registrasi Gagal Karena Kolom Kosong (Unhappy Path)")
-    func testRegisterFailWithEmptyFields() async {
+    @Test("Fungsi: login() - Skenario Gagal (Unhappy Path)")
+    func testLoginFailure() async {
+        let mockRepo = MockAuthRepository()
+        mockRepo.shouldThrowError = true  // Memaksa error
+        let vm = AuthViewModel(authProtocol: mockRepo)
+
+        await vm.login(email: "salah@dagify.com", password: "123")
+
+        #expect(vm.isAuthenticated == false)
+        #expect(
+            vm.errorMessage == "Gagal login: Periksa kembali kredensial Anda."
+        )
+    }
+
+    @Test("Fungsi: register() - Skenario Berhasil")
+    func testRegisterSuccess() async {
         let mockRepo = MockAuthRepository()
         let vm = AuthViewModel(authProtocol: mockRepo)
 
-        // Sengaja mengosongkan storeName untuk memicu error
+        await vm.register(
+            email: "owner@dagify.com",
+            password: "123",
+            storeName: "Toko Budi",
+            branchName: "Pusat"
+        )
+
+        #expect(vm.isAuthenticated == true)
+        #expect(vm.errorMessage == nil)
+    }
+
+    @Test("Fungsi: register() - Skenario Gagal Kolom Kosong")
+    func testRegisterFailureEmptyFields() async {
+        let mockRepo = MockAuthRepository()
+        let vm = AuthViewModel(authProtocol: mockRepo)
+
         await vm.register(
             email: "owner@dagify.com",
             password: "123",
@@ -31,23 +60,17 @@ struct AuthViewModelTests {
             branchName: "Pusat"
         )
 
-        #expect(
-            vm.isAuthenticated == false,
-            "Sistem kebobolan, akun berhasil dibuat padahal data tidak lengkap!"
-        )
-        #expect(
-            vm.errorMessage == "Semua kolom pendaftaran wajib diisi.",
-            "Pesan error tidak sesuai ekspektasi."
-        )
+        #expect(vm.isAuthenticated == false)
+        #expect(vm.errorMessage == "Semua kolom pendaftaran wajib diisi.")
     }
 
-    @Test("Skenario 3: Logout Sukses")
+    @Test("Fungsi: logout() - Skenario Berhasil")
     func testLogoutSuccess() async {
         let mockRepo = MockAuthRepository()
         let vm = AuthViewModel(authProtocol: mockRepo)
 
-        await vm.login(email: "test@dagify.com", password: "password123")
-        vm.logout()
+        await vm.login(email: "test@dagify.com", password: "password123")  // Login dulu
+        vm.logout()  // Act: Logout
 
         #expect(vm.isAuthenticated == false)
         #expect(vm.currentUser == nil)

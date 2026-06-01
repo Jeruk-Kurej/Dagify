@@ -1,27 +1,77 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import Dagify
 
 @Suite("CRM ViewModel Tests")
 @MainActor
 struct CRMViewModelTests {
-    
-    @Test("Skenario 1: Kalkulasi Persentase Pelanggan Loyal")
+
+    @Test("Fungsi: loadCustomers() - Skenario Berhasil")
+    func testLoadCustomers() async {
+        let mockRepo = MockCRMRepository()
+        let vm = CRMViewModel(crmProtocol: mockRepo)
+        mockRepo.customers = [
+            Customer(
+                id: "1",
+                name: "Budi",
+                phoneNumber: "081",
+                totalSpent: 100000,
+                visitHistory: []
+            )
+        ]
+
+        await vm.loadCustomers(storeId: "S-1")
+        #expect(vm.customers.count == 1)
+        #expect(vm.errorMessage == nil)
+    }
+
+    @Test("Properti: loyalCustomerPercentage")
     func testLoyalCustomerPercentage() async {
         let mockRepo = MockCRMRepository()
         let vm = CRMViewModel(crmProtocol: mockRepo)
-        
+
         let date = Date()
-        // Menggunakan nama model asli "Customer", nilai 100k diganti 100000, visitHistory menggunakan array Date
-        let loyalCustomer = Customer(id: "1", name: "Budi", phoneNumber: "081", totalSpent: 100000, visitHistory: [date, date, date, date, date])
-        let newCustomer = Customer(id: "2", name: "Susi", phoneNumber: "082", totalSpent: 20000, visitHistory: [date])
-        
-        _ = try? await mockRepo.addCustomer(loyalCustomer)
-        _ = try? await mockRepo.addCustomer(newCustomer)
-        
-        // Asumsi fungsi memuat pelanggan berdasarkan storeId
+        let loyalCustomer = Customer(
+            id: "1",
+            name: "Budi",
+            phoneNumber: "081",
+            totalSpent: 100000,
+            visitHistory: [date, date, date, date, date]
+        )
+        let newCustomer = Customer(
+            id: "2",
+            name: "Susi",
+            phoneNumber: "082",
+            totalSpent: 20000,
+            visitHistory: [date]
+        )
+
+        mockRepo.customers = [loyalCustomer, newCustomer]
         await vm.loadCustomers(storeId: "S-1")
-        
-        #expect(vm.loyalCustomerPercentage == 50.0, "Persentase 1 dari 2 orang harusnya 50%")
+
+        #expect(vm.loyalCustomerPercentage == 50.0)
+    }
+
+    @Test("Properti: busiestHours (Heatmap Jam Sibuk)")
+    func testBusiestHours() async {
+        let mockRepo = MockCRMRepository()
+        let vm = CRMViewModel(crmProtocol: mockRepo)
+
+        var components = DateComponents()
+        components.hour = 14  // Jam 2 Siang
+        let date2PM = Calendar.current.date(from: components)!
+
+        let cust = Customer(
+            id: "1",
+            name: "Budi",
+            phoneNumber: "081",
+            totalSpent: 100000,
+            visitHistory: [date2PM, date2PM, date2PM]
+        )
+        mockRepo.customers = [cust]
+
+        await vm.loadCustomers(storeId: "S-1")
+        #expect(vm.busiestHours[14] == 3, "Tercatat 3 kunjungan pada jam 14:00")
     }
 }
