@@ -30,11 +30,11 @@ struct MainAppView: View {
                 .tabItem { Label("CRM", systemImage: "person.2.fill") }
             
             OperationalView(branchId: branchId, storeId: storeId, operationalService: operationalService, cashflowService: cashflowService, syncManager: syncManager, networkMonitor: networkMonitor)
-                .tabItem { Label("Operational", systemImage: "briefcase.fill") }
+                .tabItem { Label("Operasional", systemImage: "briefcase.fill") }
             
-            SettingsView(authViewModel: authViewModel, operationalService: operationalService)
-                .tabItem { Label("Settings", systemImage: "gearshape.fill") }
+            SettingsView(authViewModel: authViewModel, operationalService: operationalService, storeId: storeId, branchId: branchId)
+                .tabItem { Label("Pengaturan", systemImage: "gearshape.fill") }
         }
-        .tabViewStyle(.sidebarAdaptable) 
+        .tabViewStyle(.sidebarAdaptable)
     }
 }

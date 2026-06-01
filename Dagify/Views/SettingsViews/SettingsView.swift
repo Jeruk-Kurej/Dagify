@@ -11,11 +11,14 @@ struct SettingsView: View {
     var authViewModel: AuthViewModel
     var operationalService: OperationalProtocol
     
+    let storeId: String
+    let branchId: String
+    
     var body: some View {
         NavigationStack {
             List {
                 Section(header: Text("Toko & Gudang")) {
-                    NavigationLink(destination: MasterDataView(viewModel: MasterDataViewModel(operationalProtocol: operationalService))) {
+                    NavigationLink(destination: MasterDataView(viewModel: MasterDataViewModel(operationalProtocol: operationalService), storeId: storeId, branchId: branchId)) {
                         HStack { Image(systemName: "cube.box.fill").foregroundColor(.themePrimary); Text("Master Data & Resep") }
                     }
                 }
