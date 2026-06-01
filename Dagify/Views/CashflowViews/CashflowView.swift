@@ -9,7 +9,7 @@ import SwiftUI
 import Charts
 
 struct CashflowView: View {
-    var viewModel: CashflowViewModel
+    @Bindable var viewModel: CashflowViewModel
     let branchId: String
     @State private var showAddSheet = false
     
@@ -36,10 +36,8 @@ struct CashflowView: View {
                         } else {
                             Chart {
                                 ForEach(viewModel.chartData, id: \.date) { item in
-                                    BarMark(x: .value("Tanggal", item.date), y: .value("Nominal", item.income))
-                                        .foregroundStyle(Color.themeSuccess).position(by: .value("Tipe", "Pemasukan"))
-                                    BarMark(x: .value("Tanggal", item.date), y: .value("Nominal", item.expense))
-                                        .foregroundStyle(Color.themeDestructive).position(by: .value("Tipe", "Pengeluaran"))
+                                    BarMark(x: .value("Tanggal", item.date), y: .value("Nominal", item.income)).foregroundStyle(Color.themeSuccess).position(by: .value("Tipe", "Pemasukan"))
+                                    BarMark(x: .value("Tanggal", item.date), y: .value("Nominal", item.expense)).foregroundStyle(Color.themeDestructive).position(by: .value("Tipe", "Pengeluaran"))
                                 }
                             }.chartForegroundStyleScale(["Pemasukan": Color.themeSuccess, "Pengeluaran": Color.themeDestructive]).frame(height: 250)
                         }
@@ -53,10 +51,7 @@ struct CashflowView: View {
                                 ForEach(group.records) { record in
                                     HStack {
                                         Image(systemName: record.type == .income ? "arrow.down.left.circle.fill" : "arrow.up.right.circle.fill").foregroundColor(record.type == .income ? .themeSuccess : .themeDestructive)
-                                        VStack(alignment: .leading) {
-                                            Text(record.notes).font(.body).bold()
-                                            Text(record.category.rawValue).font(.caption).foregroundColor(.themeTextSecondary)
-                                        }
+                                        VStack(alignment: .leading) { Text(record.notes).font(.body).bold(); Text(record.category.rawValue).font(.caption).foregroundColor(.themeTextSecondary) }
                                         Spacer()
                                         Text("Rp \(record.amount, specifier: "%.0f")").bold()
                                     }.padding().background(Color.themeBgSecondary).cornerRadius(8).padding(.horizontal)
@@ -80,3 +75,4 @@ struct CashflowView: View {
         }
     }
 }
+

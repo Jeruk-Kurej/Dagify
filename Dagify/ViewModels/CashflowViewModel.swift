@@ -61,13 +61,17 @@ class CashflowViewModel {
     }
 
     func addTransaction(record: FinancialRecord, branchId: String) async {
-        isLoading = true; _ = try? await cashProtocol.addRecord(record)
-        await loadRecords(branchId: branchId); isLoading = false
+        isLoading = true
+        _ = try? await cashProtocol.addRecord(record)
+        await loadRecords(branchId: branchId)
+        isLoading = false
     }
 
     func deleteTransaction(recordId: String, branchId: String) async {
-        isLoading = true; _ = try? await cashProtocol.deleteRecord(id: recordId)
-        await loadRecords(branchId: branchId); isLoading = false
+        isLoading = true
+        _ = try? await cashProtocol.deleteRecord(id: recordId)
+        await loadRecords(branchId: branchId)
+        isLoading = false
     }
     
     func generateFinancialReport(branchId: String) {
