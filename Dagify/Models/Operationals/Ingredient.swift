@@ -21,8 +21,5 @@ struct Ingredient: Identifiable, Codable, Equatable {
         guard let expiry = expiryDate else { return false }
         return expiry < Date()
     }
-    
-    var isLowStock: Bool {
-        return currentStock <= minimumStockWarning
-    }
+    var isLowStock: Bool { return currentStock <= minimumStockWarning }
 }

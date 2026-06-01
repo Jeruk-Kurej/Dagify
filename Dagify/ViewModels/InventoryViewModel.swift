@@ -36,4 +36,3 @@ class InventoryViewModel {
         await loadIngredients(branchId: branchId)
     }
 }
-

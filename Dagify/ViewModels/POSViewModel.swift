@@ -49,7 +49,7 @@ class POSViewModel {
     func checkout(branchId: String, customerId: String? = nil, context: ModelContext) async {
         guard !cart.isEmpty else { return }
         isLoading = true; isCheckoutSuccess = false
-        let order = Order(branchId: branchId, customerId: customerId, items: cart, totalAmount: subtotal, timestamp: Date())
+        let order = Order(id: nil, branchId: branchId, customerId: customerId, items: cart, totalAmount: subtotal, timestamp: Date())
         _ = try? await syncManager.handleCheckout(order: order, isConnected: networkMonitor.isConnected, firebaseRepo: operationalProtocol, context: context)
         cart.removeAll(); isCheckoutSuccess = true; isLoading = false
     }
