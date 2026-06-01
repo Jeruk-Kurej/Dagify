@@ -6,76 +6,92 @@
 //
 
 import Foundation
+import SwiftData
 import Observation
-import SwiftUI
 
 @MainActor
 @Observable
-class CashflowViewModel {
+final class CashflowViewModel {
+    private let repository: CashflowProtocol
+    private let pdfService = PDFGeneratorService()
+    
     var records: [FinancialRecord] = []
     var isLoading: Bool = false
     var errorMessage: String? = nil
-    var selectedPeriod: ChartPeriod = .bulanan
+    
+    var totalIncome: Double = 0.0
+    var totalExpense: Double = 0.0
+    var netProfit: Double = 0.0
+    var chartData: [(date: Date, income: Double, expense: Double)] = []
+    var groupedRecords: [(month: String, records: [FinancialRecord])] = []
     var generatedPDFURL: URL? = nil
-
-    var totalIncome: Double { records.filter { $0.type == .income }.reduce(0) { $0 + $1.amount } }
-    var totalExpense: Double { records.filter { $0.type == .expense }.reduce(0) { $0 + $1.amount } }
-    var netProfit: Double { totalIncome - totalExpense }
-
-    var chartData: [(date: Date, income: Double, expense: Double)] {
-        var dict: [Date: (income: Double, expense: Double)] = [:]
-        let calendar = Calendar.current
-        
-        for record in records {
-            let keyDate: Date
-            switch selectedPeriod {
-            case .harian: keyDate = calendar.startOfDay(for: record.timestamp)
-            case .bulanan: keyDate = calendar.date(from: calendar.dateComponents([.year, .month], from: record.timestamp)) ?? record.timestamp
-            case .tahunan: keyDate = calendar.date(from: calendar.dateComponents([.year], from: record.timestamp)) ?? record.timestamp
-            }
-            
-            let current = dict[keyDate] ?? (0, 0)
-            if record.type == .income { dict[keyDate] = (current.income + record.amount, current.expense) }
-            else { dict[keyDate] = (current.income, current.expense + record.amount) }
-        }
-        
-        let sortedKeys = dict.keys.sorted()
-        return sortedKeys.map { (date: $0, income: dict[$0]!.income, expense: dict[$0]!.expense) }
-    }
-
-    var groupedRecordsByMonth: [(month: String, records: [FinancialRecord])] {
-        let dict = Dictionary(grouping: records) { record -> String in
-            let formatter = DateFormatter(); formatter.dateFormat = "MMMM yyyy"
-            return formatter.string(from: record.timestamp)
-        }
-        return dict.map { (month: $0.key, records: $0.value) }.sorted { $0.month > $1.month }
-    }
-
-    private let cashProtocol: CashflowProtocol
-    init(cashProtocol: CashflowProtocol) { self.cashProtocol = cashProtocol }
-
-    func loadRecords(branchId: String) async {
+    
+    var selectedPeriod: ChartPeriod = .bulanan { didSet { Task { await recalculateCharts() } } }
+    
+    init(repository: CashflowProtocol) { self.repository = repository }
+    
+    func loadData(branchId: String, context: ModelContext) {
         isLoading = true
-        records = (try? await cashProtocol.fetchRecords(for: branchId)) ?? []
-        isLoading = false
-    }
-
-    func addTransaction(record: FinancialRecord, branchId: String) async {
-        isLoading = true
-        _ = try? await cashProtocol.addRecord(record)
-        await loadRecords(branchId: branchId)
-        isLoading = false
-    }
-
-    func deleteTransaction(recordId: String, branchId: String) async {
-        isLoading = true
-        _ = try? await cashProtocol.deleteRecord(id: recordId)
-        await loadRecords(branchId: branchId)
+        do {
+            records = try repository.fetchLocalRecords(branchId: branchId, context: context)
+            Task { await computeAnalytics() }
+            Task { try? await repository.syncUnsyncedRecords(context: context) }
+        } catch { errorMessage = "Gagal memuat data lokal." }
         isLoading = false
     }
     
-    func generateFinancialReport(branchId: String) {
-        let template = CashflowPDFTemplate(totalIncome: totalIncome, totalExpense: totalExpense, netProfit: netProfit, branchId: branchId)
-        self.generatedPDFURL = PDFGeneratorService.renderViewToPDF(view: template, filename: "Laporan_Cashflow_\(branchId)_\(Int(Date().timeIntervalSince1970))")
+    func addTransaction(amount: Double, type: TransactionType, category: ExpenseCategory, notes: String, branchId: String, context: ModelContext) async {
+        let newRecord = FinancialRecord(branchId: branchId, amount: amount, type: type, category: category, notes: notes)
+        do {
+            try await repository.addRecord(newRecord, context: context)
+            loadData(branchId: branchId, context: context)
+        } catch { errorMessage = "Gagal menyimpan transaksi." }
+    }
+    
+    func deleteTransaction(_ record: FinancialRecord, branchId: String, context: ModelContext) async {
+        do {
+            try await repository.deleteRecord(record, context: context)
+            loadData(branchId: branchId, context: context)
+        } catch { errorMessage = "Gagal menghapus data." }
+    }
+    
+    func requestPDFGeneration(branchId: String) {
+        generatedPDFURL = pdfService.generatePDF(for: branchId, income: totalIncome, expense: totalExpense, profit: netProfit)
+    }
+    
+    private func computeAnalytics() async {
+        let safeRecords = records
+        let income = safeRecords.filter { $0.type == .income }.reduce(0) { $0 + $1.amount }
+        let expense = safeRecords.filter { $0.type == .expense }.reduce(0) { $0 + $1.amount }
+        
+        let formatter = DateFormatter(); formatter.dateFormat = "MMMM yyyy"
+        let dict = Dictionary(grouping: safeRecords) { formatter.string(from: $0.timestamp) }
+        
+        self.totalIncome = income
+        self.totalExpense = expense
+        self.netProfit = income - expense
+        self.groupedRecords = dict.map { (month: $0.key, records: $0.value) }.sorted { $0.month > $1.month }
+        await recalculateCharts()
+    }
+    
+    private func recalculateCharts() async {
+        let safeRecords = records; let period = selectedPeriod
+        Task.detached {
+            var dict: [Date: (income: Double, expense: Double)] = [:]
+            let calendar = Calendar.current
+            for record in safeRecords {
+                let keyDate: Date
+                switch period {
+                case .harian: keyDate = calendar.startOfDay(for: record.timestamp)
+                case .bulanan: keyDate = calendar.date(from: calendar.dateComponents([.year, .month], from: record.timestamp)) ?? record.timestamp
+                case .tahunan: keyDate = calendar.date(from: calendar.dateComponents([.year], from: record.timestamp)) ?? record.timestamp
+                }
+                let current = dict[keyDate] ?? (0, 0)
+                if record.typeRaw == TransactionType.income.rawValue { dict[keyDate] = (current.income + record.amount, current.expense) }
+                else { dict[keyDate] = (current.income, current.expense + record.amount) }
+            }
+            let sortedChart = dict.keys.sorted().map { (date: $0, income: dict[$0]!.income, expense: dict[$0]!.expense) }
+            await MainActor.run { self.chartData = sortedChart }
+        }
     }
 }

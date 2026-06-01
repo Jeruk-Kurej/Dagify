@@ -12,29 +12,57 @@ struct MainAppView: View {
     let branchId: String
     var authViewModel: AuthViewModel
     
-    let operationalService = FirebaseOperationalService()
-    let cashflowService = FirebaseCashflowService()
-    let crmService = FirebaseCRMService()
-    let syncManager = SyncManager.shared
-    let networkMonitor = NetworkMonitor()
+    @State private var cashflowRepo = FirebaseCashflowService()
+    @State private var crmRepo = FirebaseCRMService()
+    @State private var operationalRepo = FirebaseOperationalService()
     
     var body: some View {
         TabView {
-            DashboardView(viewModel: DashboardViewModel(cashflowProtocol: cashflowService, crmProtocol: crmService, operationalProtocol: operationalService), storeId: storeId, branchId: branchId)
-                .tabItem { Label("Dashboard", systemImage: "squareshape.2x2.fill") }
             
-            CashflowView(viewModel: CashflowViewModel(cashProtocol: cashflowService), branchId: branchId)
-                .tabItem { Label("Cashflow", systemImage: "chart.line.uptrend.xyaxis") }
+            // TAB 1: DASHBOARD
+            DashboardView(
+                viewModel: DashboardViewModel(),
+                storeId: storeId,
+                branchId: branchId
+            )
+            .tabItem { Label("Dashboard", systemImage: "squareshape.2x2.fill") }
             
-            CRMView(viewModel: CRMViewModel(crmProtocol: crmService), storeId: storeId)
-                .tabItem { Label("CRM", systemImage: "person.2.fill") }
+            // TAB 2: CASHFLOW
+            CashflowView(
+                viewModel: CashflowViewModel(repository: cashflowRepo),
+                branchId: branchId
+            )
+            .tabItem { Label("Arus Kas", systemImage: "chart.line.uptrend.xyaxis") }
             
-            OperationalView(branchId: branchId, storeId: storeId, operationalService: operationalService, cashflowService: cashflowService, syncManager: syncManager, networkMonitor: networkMonitor)
-                .tabItem { Label("Operasional", systemImage: "briefcase.fill") }
+            // TAB 3: CRM
+            CRMView(
+                viewModel: CRMViewModel(repository: crmRepo),
+                storeId: storeId
+            )
+            .tabItem { Label("CRM", systemImage: "person.2.fill") }
             
-            SettingsView(authViewModel: authViewModel, operationalService: operationalService, storeId: storeId, branchId: branchId)
-                .tabItem { Label("Pengaturan", systemImage: "gearshape.fill") }
+            // TAB 4: OPERASIONAL
+            OperationalView(
+                branchId: branchId,
+                storeId: storeId,
+                posViewModel: POSViewModel(repository: operationalRepo),
+                inventoryViewModel: InventoryViewModel(repository: operationalRepo),
+                masterDataViewModel: MasterDataViewModel(repository: operationalRepo)
+            )
+            .tabItem { Label("Operasional", systemImage: "briefcase.fill") }
+            
+            // TAB 5: SETTINGS
+            SettingsView(
+                authViewModel: authViewModel,
+                storeId: storeId,
+                branchId: branchId
+            )
+            .tabItem { Label("Pengaturan", systemImage: "gearshape.fill") }
+            
         }
-        .tabViewStyle(.sidebarAdaptable)
+        .tint(.dagifyPrimary)
+        .onAppear {
+            NotificationService.shared.requestPermission()
+        }
     }
 }

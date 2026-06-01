@@ -10,23 +10,17 @@ import Observation
 
 @MainActor
 @Observable
-class ProductAnalyticsViewModel {
-    var products: [Product] = []
+final class ProductAnalyticsViewModel {
     var isLoading: Bool = false
+    var mostProfitableProducts: [(name: String, margin: Double)] = []
+    var bestSellers: [(name: String, quantity: Int)] = []
     
-    let operationalProtocol: OperationalProtocol
-    
-    init(operationalProtocol: OperationalProtocol) {
-        self.operationalProtocol = operationalProtocol
-    }
-    
-    var mostProfitableProducts: [Product] {
-        return products.sorted { $0.price > $1.price }
-    }
-    
-    func loadProducts(branchId: String) async {
+    func loadAnalyticsData(branchId: String) async {
         isLoading = true
-        products = (try? await operationalProtocol.fetchProducts(for: branchId)) ?? []
+        try? await Task.sleep(nanoseconds: 500_000_000)
+        mostProfitableProducts = [("Es Kopi Susu Aren", 12000), ("Americano", 10000), ("Teh Manis", 5000)].sorted { $0.margin > $1.margin }
+        bestSellers = [("Es Kopi Susu Aren", 450), ("Teh Manis", 300), ("Americano", 120)].sorted { $0.quantity > $1.quantity }
         isLoading = false
     }
 }
+

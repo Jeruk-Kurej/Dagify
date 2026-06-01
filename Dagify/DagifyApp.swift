@@ -21,6 +21,12 @@ struct DagifyApp: App {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(for: OfflineOrderModel.self)
+        .modelContainer(for: [
+            FinancialRecord.self,
+            CustomerModel.self,
+            IngredientModel.self,
+            ProductModel.self,
+            OrderModel.self
+        ])
     }
 }

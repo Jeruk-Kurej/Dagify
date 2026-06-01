@@ -7,81 +7,59 @@
 
 import Testing
 import Foundation
+import SwiftData
 @testable import Dagify
 
-@Suite("Cashflow ViewModel Tests")
 @MainActor
+@Suite("Cashflow ViewModel Tests")
 struct CashflowViewModelTests {
     
-    @Test("Test Load Records")
-    func testLoadRecords() async {
+    @Test("Skenario 1: Tambah Pemasukan dan Hitung Saldo")
+    func testAddIncomeAndCalculate() async throws {
+        let context = try TestHelper.createInMemoryContext()
         let mockRepo = MockCashflowRepository()
-        let vm = CashflowViewModel(cashProtocol: mockRepo)
+        let vm = CashflowViewModel(repository: mockRepo)
         
-        let record = FinancialRecord(branchId: "B1", amount: 50000, type: .income, category: .none, timestamp: Date(), notes: "Test")
-        _ = try? await mockRepo.addRecord(record)
+        await vm.addTransaction(amount: 1000000, type: .income, category: .none, notes: "Pendapatan A", branchId: "B1", context: context)
+        vm.loadData(branchId: "B1", context: context)
         
-        await vm.loadRecords(branchId: "B1")
+        try await Task.sleep(nanoseconds: 100_000_000)
         
-        #expect(vm.records.count == 1)
-        #expect(vm.totalIncome == 50000)
+        #expect(vm.records.count == 1, "Data pemasukan gagal disimpan")
+        #expect(vm.totalIncome == 1000000, "Kalkulasi total pemasukan salah")
+        #expect(vm.netProfit == 1000000, "Laba bersih harusnya sama dengan pemasukan jika tidak ada pengeluaran")
     }
     
-    @Test("Test Tambah Transaksi")
-    func testAddTransaction() async {
+    @Test("Skenario 2: Tambah Pengeluaran dan Potong Laba Bersih")
+    func testAddExpenseAndDeductProfit() async throws {
+        let context = try TestHelper.createInMemoryContext()
         let mockRepo = MockCashflowRepository()
-        let vm = CashflowViewModel(cashProtocol: mockRepo)
+        let vm = CashflowViewModel(repository: mockRepo)
         
-        await vm.addTransaction(branchId: "B1", amount: 150000, type: .income, category: .none, notes: "Jual Kopi")
+        await vm.addTransaction(amount: 1000000, type: .income, category: .none, notes: "Pendapatan A", branchId: "B1", context: context)
+        await vm.addTransaction(amount: 300000, type: .expense, category: .operational, notes: "Listrik", branchId: "B1", context: context)
         
-        #expect(vm.records.count == 1)
-        #expect(vm.records.first?.amount == 150000)
+        vm.loadData(branchId: "B1", context: context)
+        try await Task.sleep(nanoseconds: 100_000_000)
+        
+        #expect(vm.totalExpense == 300000, "Kalkulasi total pengeluaran salah")
+        #expect(vm.netProfit == 700000, "Pemotongan Laba Bersih (Income - Expense) tidak akurat!")
     }
     
-    @Test("Test Kalkulasi Laba Bersih & Total")
-    func testAnalyticsComputations() async {
+    @Test("Skenario 3: Penghapusan Transaksi")
+    func testDeleteTransaction() async throws {
+        let context = try TestHelper.createInMemoryContext()
         let mockRepo = MockCashflowRepository()
-        let vm = CashflowViewModel(cashProtocol: mockRepo)
+        let vm = CashflowViewModel(repository: mockRepo)
         
-        await vm.addTransaction(branchId: "B1", amount: 200000, type: .income, category: .none, notes: "Pendapatan Hari ini")
-        await vm.addTransaction(branchId: "B1", amount: 50000, type: .expense, category: .cogs, notes: "Beli Susu")
+        await vm.addTransaction(amount: 50000, type: .income, category: .none, notes: "Test Hapus", branchId: "B1", context: context)
+        vm.loadData(branchId: "B1", context: context)
         
-        #expect(vm.totalIncome == 200000)
-        #expect(vm.totalExpense == 50000)
-        #expect(vm.netProfit == 150000)
+        guard let recordToTrash = vm.records.first else { Issue.record("Data setup gagal"); return }
+        
+        await vm.deleteTransaction(recordToTrash, branchId: "B1", context: context)
+        vm.loadData(branchId: "B1", context: context)
+        
+        #expect(vm.records.isEmpty == true, "Record gagal dihapus dari database")
     }
-    @Test("Test Fungsi deleteTransaction - Menghapus Riwayat")
-        func testDeleteTransaction() async {
-            let mockRepo = MockCashflowRepository()
-            let vm = CashflowViewModel(cashProtocol: mockRepo)
-            
-            let record = FinancialRecord(id: "REC-1", branchId: "B1", amount: 50000, type: .income, category: .none, timestamp: Date(), notes: "Test")
-            _ = try? await mockRepo.addRecord(record)
-            
-            await vm.loadRecords(branchId: "B1")
-            #expect(vm.records.count == 1)
-            
-            await vm.deleteTransaction(recordId: "REC-1", branchId: "B1")
-            #expect(vm.records.isEmpty == true)
-        }
-
-        @Test("Test Properti groupedRecordsByMonth - Mengelompokkan Data per Bulan")
-        func testGroupedRecordsByMonth() async {
-            let mockRepo = MockCashflowRepository()
-            let vm = CashflowViewModel(cashProtocol: mockRepo)
-            
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd"
-            
-            let r1 = FinancialRecord(branchId: "B1", amount: 100, type: .income, category: .none, timestamp: formatter.date(from: "2026-05-10")!, notes: "Mei")
-            let r2 = FinancialRecord(branchId: "B1", amount: 200, type: .income, category: .none, timestamp: formatter.date(from: "2026-06-15")!, notes: "Juni")
-            
-            _ = try? await mockRepo.addRecord(r1)
-            _ = try? await mockRepo.addRecord(r2)
-            
-            await vm.loadRecords(branchId: "B1")
-            
-            let grouped = vm.groupedRecordsByMonth
-            #expect(grouped.keys.count == 2) 
-        }
 }

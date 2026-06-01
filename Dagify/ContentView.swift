@@ -14,17 +14,20 @@ struct ContentView: View {
     var body: some View {
         Group {
             if authViewModel.isAuthenticated, let user = authViewModel.currentUser {
-                MainAppView(storeId: user.storeId, branchId: "B-1", authViewModel: authViewModel)
-                    .transition(.opacity)
+                MainAppView(
+                    storeId: user.storeId,
+                    branchId: user.activeBranchId,
+                    authViewModel: authViewModel
+                )
+                .transition(.opacity)
             } else {
                 AuthView(viewModel: authViewModel)
                     .transition(.opacity)
             }
         }
-        .animation(.easeInOut, value: authViewModel.isAuthenticated)
+        .animation(.easeInOut(duration: 0.3), value: authViewModel.isAuthenticated)
     }
 }
-
 
 #Preview {
     //ContentView()
