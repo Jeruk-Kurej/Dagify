@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct POSView: View {
-    var viewModel: POSViewModel
+    @Bindable var viewModel: POSViewModel
     var crmViewModel: CRMViewModel
     let branchId: String
     let storeId: String
