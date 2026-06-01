@@ -9,26 +9,41 @@ import SwiftUI
 
 struct AnalyticSection<Content: View>: View {
     let title: String
-    let systemImage: String
-    let color: Color
-    @ViewBuilder let content: Content
-    
-    var body: some View {
-        VStack(alignment: .leading) {
-            HStack {
-                Image(systemName: systemImage).foregroundColor(color)
-                Text(title).font(.headline).foregroundColor(.themeTextPrimary)
-            }
-            .padding(.bottom, 5)
-            content
-        }
-        .padding()
-        .background(Color.white)
-        .cornerRadius(12)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.themeBorder, lineWidth: 1))
-    }
-}
+    let icon: String
+    let iconColor: Color
+    let content: Content
 
-#Preview {
-    //AnalyticSection()
+    init(
+        title: String,
+        icon: String,
+        iconColor: Color,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.icon = icon
+        self.iconColor = iconColor
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .foregroundColor(iconColor)
+                    .font(.title3)
+                Text(title)
+                    .font(.headline)
+                    .foregroundColor(Color(hex: "#111827"))
+            }
+            .padding(.horizontal)
+
+            VStack(spacing: 0) {
+                content
+            }
+            .background(Color(hex: "#FFFFFF"))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
+            .padding(.horizontal)
+        }
+    }
 }

@@ -1,70 +1,168 @@
-//
-//  ProductAnalyticsView.swift
-//  Dagify
-//
-//  Created by Mario Ruby Ariesusandi  on 31-05-2026.
-//
-
 import SwiftUI
 
 struct ProductAnalyticsView: View {
     var viewModel: ProductAnalyticsViewModel
     let branchId: String
-    
+
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                if viewModel.isLoading {
-                    ProgressView("Menganalisis data penjualan...")
-                        .padding()
-                } else {
-                    AnalyticSection(title: "Paling Menguntungkan (Laba Bersih)", systemImage: "dollarsign.circle.fill", color: .themeSuccess) {
-                        if viewModel.mostProfitableProducts.isEmpty { Text("Belum ada data.").foregroundColor(.themeTextSecondary) }
-                        ForEach(viewModel.mostProfitableProducts.prefix(5), id: \.productName) { item in
-                            HStack {
-                                Text(item.productName).bold()
-                                Spacer()
-                                Text("Laba: Rp \(item.profitMargin, specifier: "%.0f")").foregroundColor(.themeSuccess)
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 24) {
+                    if viewModel.isLoading {
+                        ProgressView("Mengolah algoritma data...")
+                            .frame(maxWidth: .infinity, minHeight: 300)
+                    } else if viewModel.orders.isEmpty {
+                        ContentUnavailableView(
+                            "Belum Ada Data",
+                            systemImage: "chart.pie",
+                            description: Text(
+                                "Lakukan transaksi di Kasir terlebih dahulu."
+                            )
+                        )
+                    } else {
+                        // Section: Best Sellers
+                        AnalyticSection(
+                            title: "Paling Laris (Best Seller)",
+                            icon: "flame.fill",
+                            iconColor: Color(hex: "#F59E0B")
+                        ) {
+                            ForEach(
+                                Array(
+                                    viewModel.bestSellers.prefix(3).enumerated()
+                                ),
+                                id: \.element.productName
+                            ) { index, item in
+                                AnalyticRow(
+                                    rank: index + 1,
+                                    name: item.productName,
+                                    detail: "\(item.quantitySold) Terjual",
+                                    highlightColor: Color(hex: "#00A3A3")
+                                )
                             }
-                            .padding().background(Color.themeBgSecondary).cornerRadius(8)
                         }
-                    }
-                    
-                    AnalyticSection(title: "Terlaris (Kuantitas Penjualan)", systemImage: "flame.fill", color: .themeWarning) {
-                        if viewModel.bestSellers.isEmpty { Text("Belum ada data.").foregroundColor(.themeTextSecondary) }
-                        ForEach(viewModel.bestSellers.prefix(5), id: \.productName) { item in
-                            HStack {
-                                Text(item.productName).bold()
-                                Spacer()
-                                Text("\(item.quantitySold) Terjual").foregroundColor(.themeWarning)
+
+                        // Section: Paling Menguntungkan (HPP / Margin)
+                        AnalyticSection(
+                            title: "Margin Tertinggi",
+                            icon: "arrow.up.right.circle.fill",
+                            iconColor: Color(hex: "#10B981")
+                        ) {
+                            ForEach(
+                                Array(
+                                    viewModel.mostProfitableProducts.prefix(3)
+                                        .enumerated()
+                                ),
+                                id: \.element.productName
+                            ) { index, item in
+                                AnalyticRow(
+                                    rank: index + 1,
+                                    name: item.productName,
+                                    detail:
+                                        "Untung Rp \(String(format: "%.0f", item.profitMargin)) / Porsi",
+                                    highlightColor: Color(hex: "#10B981")
+                                )
                             }
-                            .padding().background(Color.themeBgSecondary).cornerRadius(8)
                         }
-                    }
-                    
-                    AnalyticSection(title: "Evaluasi Menu (Kurang Laku)", systemImage: "arrow.down.right.circle.fill", color: .themeDestructive) {
-                        if viewModel.leastPopular.isEmpty { Text("Belum ada data.").foregroundColor(.themeTextSecondary) }
-                        ForEach(viewModel.leastPopular.prefix(3), id: \.productName) { item in
-                            HStack {
-                                Text(item.productName).foregroundColor(.themeTextSecondary)
-                                Spacer()
-                                Text("Hanya \(item.quantitySold) Terjual").foregroundColor(.themeDestructive)
+
+                        // Section: Kurang Laris (Least Popular)
+                        AnalyticSection(
+                            title: "Perlu Evaluasi",
+                            icon: "arrow.down.right.circle.fill",
+                            iconColor: Color(hex: "#EF4444")
+                        ) {
+                            ForEach(
+                                Array(
+                                    viewModel.leastPopular.prefix(3)
+                                        .enumerated()
+                                ),
+                                id: \.element.productName
+                            ) { index, item in
+                                AnalyticRow(
+                                    rank: index + 1,
+                                    name: item.productName,
+                                    detail:
+                                        "Hanya \(item.quantitySold) Terjual",
+                                    highlightColor: Color(hex: "#EF4444")
+                                )
                             }
-                            .padding().background(Color.themeBgSecondary).cornerRadius(8)
                         }
                     }
                 }
+                .padding(.vertical)
             }
-            .padding()
-        }
-        .background(Color.themeBgMain)
-        .navigationTitle("Analitik Menu")
-        .onAppear {
-            Task { await viewModel.loadAnalyticsData(branchId: branchId) }
+            .background(Color(hex: "#F9FAFB").ignoresSafeArea())
+            .navigationTitle("Analitik Menu")
+            .onAppear {
+                Task { await viewModel.loadAnalyticsData(branchId: branchId) }
+            }
+            .refreshable {
+                await viewModel.loadAnalyticsData(branchId: branchId)
+            }
         }
     }
 }
 
+struct AnalyticRow: View {
+    let rank: Int
+    let name: String
+    let detail: String
+    let highlightColor: Color
+
+    var body: some View {
+        HStack(spacing: 16) {
+            Text("#\(rank)")
+                .font(.headline)
+                .foregroundColor(Color(hex: "#6B7280"))
+                .frame(width: 30, alignment: .leading)
+
+            Text(name)
+                .font(.body)
+                .fontWeight(.semibold)
+                .foregroundColor(Color(hex: "#111827"))
+
+            Spacer()
+
+            Text(detail)
+                .font(.subheadline)
+                .fontWeight(.bold)
+                .foregroundColor(highlightColor)
+        }
+        .padding(.vertical, 16)
+        .padding(.horizontal, 20)
+
+        // Garis pemisah antar item
+        Divider().background(Color(hex: "#E5E7EB")).padding(.leading, 60)
+    }
+}
+
 #Preview {
-    //ProductAnalyticsView()
+    let previewViewModel: ProductAnalyticsViewModel = {
+        let mockOp = MockOperationalRepository()
+        let p1 = Product(
+            id: "1",
+            name: "Ayam Goreng Spesial",
+            price: 25000,
+            recipe: []
+        )
+        let p2 = Product(id: "2", name: "Nasi Putih", price: 5000, recipe: [])
+        let p3 = Product(id: "3", name: "Es Teh Manis", price: 8000, recipe: [])
+
+        mockOp.dummyOrders = [
+            Order(
+                branchId: "B-1",
+                customerId: nil,
+                items: [
+                    OrderItem(product: p1, quantity: 45),
+                    OrderItem(product: p3, quantity: 150),
+                    OrderItem(product: p2, quantity: 2),
+                ],
+                totalAmount: 0,
+                timestamp: Date()
+            )
+        ]
+
+        return ProductAnalyticsViewModel(operationalProtocol: mockOp)
+    }()
+
+    ProductAnalyticsView(viewModel: previewViewModel, branchId: "B-1")
 }

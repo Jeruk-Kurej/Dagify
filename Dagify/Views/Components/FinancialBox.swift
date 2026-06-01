@@ -1,20 +1,34 @@
-//
-//  MetricCard.swift
-//  Dagify
-//
-//  Created by Hanzelius Kwan on 30/05/26.
-//
-
 import SwiftUI
 
 struct FinancialBox: View {
-    let title: String; let amount: Double; let color: Color
+    var title: String
+    var amount: Double
+    var color: Color
+    var icon: String
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.caption).foregroundColor(.themeTextSecondary)
-            Text("Rp \(amount, specifier: "%.0f")").font(.title3).bold().foregroundColor(color)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundColor(color)
+                    .font(.title3)
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(Color(hex: "#6B7280"))  // Secondary Text
+            }
+
+            Text(String(format: "Rp %.0f", amount))
+                .font(.headline)
+                .fontWeight(.bold)
+                .foregroundColor(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
-        .padding().frame(maxWidth: .infinity, alignment: .leading).background(Color.themeBgSecondary).cornerRadius(10)
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.themeBorder, lineWidth: 1))
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(hex: "#FFFFFF"))
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
     }
 }

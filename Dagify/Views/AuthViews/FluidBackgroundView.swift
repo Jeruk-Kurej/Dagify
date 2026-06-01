@@ -1,10 +1,3 @@
-//
-//  FluidBackgroundView.swift
-//  Dagify
-//
-//  Created by Hanzelius Kwan on 31/05/26.
-//
-
 import SwiftUI
 
 struct FluidBackgroundView: View {
@@ -12,10 +5,11 @@ struct FluidBackgroundView: View {
 
     var body: some View {
         ZStack {
-            Color.themeTextPrimary.ignoresSafeArea()
+            // Background Gelap agar efek Glassmorphism terlihat
+            Color(hex: "#111827").ignoresSafeArea()
 
             Circle()
-                .fill(Color.themePrimary.opacity(0.7))
+                .fill(Color(hex: "#00A3A3").opacity(0.6))  // Primary
                 .frame(width: 300, height: 300)
                 .blur(radius: 90)
                 .offset(
@@ -24,7 +18,7 @@ struct FluidBackgroundView: View {
                 )
 
             Circle()
-                .fill(Color.purple.opacity(0.7))
+                .fill(Color(hex: "#4DBDBD").opacity(0.5))  // Primary Highlight
                 .frame(width: 350, height: 350)
                 .blur(radius: 120)
                 .offset(
@@ -33,7 +27,7 @@ struct FluidBackgroundView: View {
                 )
 
             Circle()
-                .fill(Color.themeHighlight.opacity(0.6))
+                .fill(Color(hex: "#10B981").opacity(0.4))  // Success/Green tint
                 .frame(width: 250, height: 250)
                 .blur(radius: 100)
                 .offset(x: isAnimating ? 50 : -200, y: isAnimating ? -50 : 250)
