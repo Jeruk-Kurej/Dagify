@@ -4,6 +4,8 @@
 //
 //  Created by Hanzelius Kwan on 01/06/26.
 //
+import SwiftData
+
 @MainActor
 enum TestHelper {
     /// Membuat database in-memory (RAM) yang akan langsung musnah setelah test selesai.
