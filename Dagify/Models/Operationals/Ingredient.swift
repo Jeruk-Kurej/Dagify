@@ -10,21 +10,19 @@ import FirebaseFirestore
 
 struct Ingredient: Identifiable, Codable, Equatable {
     @DocumentID var id: String?
-    let name: String
+    var name: String
     var currentStock: Double
-    let unit: String
-    let expiryDate: Date?
-    let minimumStockWarning: Double
+    var unit: String
+    var expiryDate: Date?
+    var minimumStockWarning: Double
+    var costPerUnit: Double
     
-    let costPerUnit: Double
+    var isExpired: Bool {
+        guard let expiry = expiryDate else { return false }
+        return expiry < Date()
+    }
     
-    init(id: String? = nil, name: String, currentStock: Double, unit: String, expiryDate: Date?, minimumStockWarning: Double, costPerUnit: Double) {
-        self.id = id
-        self.name = name
-        self.currentStock = currentStock
-        self.unit = unit
-        self.expiryDate = expiryDate
-        self.minimumStockWarning = minimumStockWarning
-        self.costPerUnit = costPerUnit
+    var isLowStock: Bool {
+        return currentStock <= minimumStockWarning
     }
 }

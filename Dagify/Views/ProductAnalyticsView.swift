@@ -6,62 +6,42 @@
 //
 
 import SwiftUI
+import Charts
 
 struct ProductAnalyticsView: View {
     var viewModel: ProductAnalyticsViewModel
     let branchId: String
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                if viewModel.isLoading {
-                    ProgressView("Menganalisis data penjualan...")
-                        .padding()
-                } else {
-                    AnalyticSection(title: "Paling Menguntungkan (Laba Bersih)", systemImage: "dollarsign.circle.fill", color: .themeSuccess) {
-                        if viewModel.mostProfitableProducts.isEmpty { Text("Belum ada data.").foregroundColor(.themeTextSecondary) }
-                        ForEach(viewModel.mostProfitableProducts.prefix(5), id: \.productName) { item in
+        VStack(spacing: 0) {
+            if viewModel.isLoading {
+                ProgressView("Menganalisis Performa Menu...").frame(maxHeight: .infinity)
+            } else if viewModel.products.isEmpty {
+                ContentUnavailableView("Belum Ada Data", systemImage: "chart.pie.fill", description: Text("Tambahkan menu di Master Data terlebih dahulu."))
+            } else {
+                List {
+                    Section(header: Text("Peringkat Harga Menu Tertinggi")) {
+                        ForEach(viewModel.mostProfitableProducts) { product in
                             HStack {
-                                Text(item.productName).bold()
+                                VStack(alignment: .leading) {
+                                    Text(product.name).font(.headline).foregroundColor(.themeTextPrimary)
+                                    Text("Menu Kasir").font(.caption).foregroundColor(.themeTextSecondary)
+                                }
                                 Spacer()
-                                Text("Laba: Rp \(item.profitMargin, specifier: "%.0f")").foregroundColor(.themeSuccess)
+                                Text("Rp \(product.price, specifier: "%.0f")")
+                                    .bold()
+                                    .foregroundColor(.themeSuccess)
                             }
-                            .padding().background(Color.themeBgSecondary).cornerRadius(8)
-                        }
-                    }
-                    
-                    AnalyticSection(title: "Terlaris (Kuantitas Penjualan)", systemImage: "flame.fill", color: .themeWarning) {
-                        if viewModel.bestSellers.isEmpty { Text("Belum ada data.").foregroundColor(.themeTextSecondary) }
-                        ForEach(viewModel.bestSellers.prefix(5), id: \.productName) { item in
-                            HStack {
-                                Text(item.productName).bold()
-                                Spacer()
-                                Text("\(item.quantitySold) Terjual").foregroundColor(.themeWarning)
-                            }
-                            .padding().background(Color.themeBgSecondary).cornerRadius(8)
-                        }
-                    }
-                    
-                    AnalyticSection(title: "Evaluasi Menu (Kurang Laku)", systemImage: "arrow.down.right.circle.fill", color: .themeDestructive) {
-                        if viewModel.leastPopular.isEmpty { Text("Belum ada data.").foregroundColor(.themeTextSecondary) }
-                        ForEach(viewModel.leastPopular.prefix(3), id: \.productName) { item in
-                            HStack {
-                                Text(item.productName).foregroundColor(.themeTextSecondary)
-                                Spacer()
-                                Text("Hanya \(item.quantitySold) Terjual").foregroundColor(.themeDestructive)
-                            }
-                            .padding().background(Color.themeBgSecondary).cornerRadius(8)
+                            .padding(.vertical, 4)
                         }
                     }
                 }
+                .listStyle(.insetGrouped)
+                .background(Color.themeBgMain)
             }
-            .padding()
         }
-        .background(Color.themeBgMain)
-        .navigationTitle("Analitik Menu")
-        .onAppear {
-            Task { await viewModel.loadAnalyticsData(branchId: branchId) }
-        }
+        .navigationTitle("Analitik Produk")
+        .onAppear { Task { await viewModel.loadProducts(branchId: branchId) } }
     }
 }
 
