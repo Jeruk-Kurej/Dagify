@@ -29,7 +29,7 @@ struct MainAppView: View {
             CRMView(viewModel: CRMViewModel(crmProtocol: crmService), storeId: storeId)
                 .tabItem { Label("CRM", systemImage: "person.2.fill") }
             
-            OperasionalView(branchId: branchId, storeId: storeId, operationalService: operationalService, cashflowService: cashflowService, syncManager: syncManager, networkMonitor: networkMonitor)
+            OperationalView(branchId: branchId, storeId: storeId, operationalService: operationalService, cashflowService: cashflowService, syncManager: syncManager, networkMonitor: networkMonitor)
                 .tabItem { Label("Operational", systemImage: "briefcase.fill") }
             
             SettingsView(authViewModel: authViewModel, operationalService: operationalService)
