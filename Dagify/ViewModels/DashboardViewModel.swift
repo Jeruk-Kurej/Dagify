@@ -5,6 +5,7 @@
 //  Created by Bryan Carlie Lukito Setiawan on 28/05/26.
 //
 
+import Charts
 import Foundation
 import Observation
 import SwiftUI
@@ -64,8 +65,7 @@ class DashboardViewModel {
             dict[keyDate, default: 0] += record.amount
         }
 
-        let sortedKeys = dict.keys.sorted()
-        return sortedKeys.map { (date: $0, amount: dict[$0]!) }
+        return dict.keys.sorted().map { (date: $0, amount: dict[$0]!) }
     }
 
     func loadDashboardSummary(storeId: String, branchId: String) async {
@@ -94,11 +94,120 @@ class DashboardViewModel {
                 0
             ) { $0 + $1.amount }
             todayNetProfit = todayRevenue - todayExpense
+
             totalLoyalCustomers = customers.filter { $0.isLoyal }.count
             lowStockAlertsCount =
                 ingredients.filter { $0.currentStock <= $0.minimumStockWarning }
                 .count
         } catch { print("Error Loading Dashboard") }
         isLoading = false
+    }
+}
+
+struct DashboardView: View {
+    @Bindable var viewModel: DashboardViewModel
+    let storeId: String
+    let branchId: String
+    let columns = [GridItem(.adaptive(minimum: 160))]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 20) {
+                    if viewModel.isLoading {
+                        ProgressView("Menyiapkan Metrik...").frame(
+                            maxHeight: .infinity
+                        )
+                    } else {
+                        LazyVGrid(columns: columns, spacing: 16) {
+                            DashItemCard(
+                                title: "Pendapatan Hari Ini",
+                                value:
+                                    "Rp \(viewModel.todayRevenue, specifier: "%.0f")",
+                                icon: "arrow.up.circle.fill",
+                                color: .themeSuccess
+                            )
+                            DashItemCard(
+                                title: "Laba Bersih",
+                                value:
+                                    "Rp \(viewModel.todayNetProfit, specifier: "%.0f")",
+                                icon: "banknote.fill",
+                                color: .themePrimary
+                            )
+                            DashItemCard(
+                                title: "Pelanggan Loyal",
+                                value: "\(viewModel.totalLoyalCustomers)",
+                                icon: "person.2.fill",
+                                color: .themeWarning
+                            )
+                            DashItemCard(
+                                title: "Stok Menipis",
+                                value: "\(viewModel.lowStockAlertsCount)",
+                                icon: "exclamationmark.triangle.fill",
+                                color: .themeDestructive
+                            )
+                        }
+                        VStack(alignment: .leading) {
+                            HStack {
+                                Text("Tren Penjualan").font(.headline)
+                                Spacer()
+                                Picker(
+                                    "Periode",
+                                    selection: $viewModel.selectedPeriod
+                                ) {
+                                    ForEach(ChartPeriod.allCases, id: \.self) {
+                                        Text($0.rawValue).tag($0)
+                                    }
+                                }.pickerStyle(.menu)
+                            }
+                            if viewModel.revenueTrend.isEmpty {
+                                ContentUnavailableView(
+                                    "Tidak Ada Data",
+                                    systemImage: "chart.xyaxis.line"
+                                ).frame(height: 200)
+                            } else {
+                                Chart {
+                                    ForEach(viewModel.revenueTrend, id: \.date)
+                                    { item in
+                                        LineMark(
+                                            x: .value("Tanggal", item.date),
+                                            y: .value("Total", item.amount)
+                                        ).foregroundStyle(Color.themePrimary)
+                                            .symbol(
+                                                Circle().strokeBorder(
+                                                    lineWidth: 2
+                                                )
+                                            )
+                                        AreaMark(
+                                            x: .value("Tanggal", item.date),
+                                            y: .value("Total", item.amount)
+                                        ).foregroundStyle(
+                                            LinearGradient(
+                                                gradient: Gradient(colors: [
+                                                    Color.themePrimary.opacity(
+                                                        0.4
+                                                    ), .clear,
+                                                ]),
+                                                startPoint: .top,
+                                                endPoint: .bottom
+                                            )
+                                        )
+                                    }
+                                }.frame(height: 250)
+                            }
+                        }.padding().background(Color.themeBgSecondary)
+                            .cornerRadius(12)
+                    }
+                }.padding()
+            }.navigationTitle("Dashboard").background(Color.themeBgMain)
+                .onAppear {
+                    Task {
+                        await viewModel.loadDashboardSummary(
+                            storeId: storeId,
+                            branchId: branchId
+                        )
+                    }
+                }
+        }
     }
 }
