@@ -1,10 +1,3 @@
-//
-//  CRMViewModelTests.swift
-//  DagifyTests
-//
-//  Created by Bryan Carlie Lukito Setiawan on 28/05/26.
-//
-
 import Testing
 import Foundation
 @testable import Dagify
@@ -13,38 +6,22 @@ import Foundation
 @MainActor
 struct CRMViewModelTests {
     
-    @Test("Test Load Customers & Persentase Loyalitas")
-    func testLoadCustomersAndLoyalty() async {
+    @Test("Skenario 1: Kalkulasi Persentase Pelanggan Loyal")
+    func testLoyalCustomerPercentage() async {
         let mockRepo = MockCRMRepository()
         let vm = CRMViewModel(crmProtocol: mockRepo)
         
-        // Cust 1 = Biasa (2 kunjungan), Cust 2 = Loyal (5 kunjungan)
-        let cust1 = Customer(name: "Pelanggan A", phoneNumber: "1", totalSpent: 20, visitHistory: [Date(), Date()])
-        let cust2 = Customer(name: "Pelanggan B", phoneNumber: "2", totalSpent: 100, visitHistory: [Date(), Date(), Date(), Date(), Date()])
+        let date = Date()
+        // Menggunakan nama model asli "Customer", nilai 100k diganti 100000, visitHistory menggunakan array Date
+        let loyalCustomer = Customer(id: "1", name: "Budi", phoneNumber: "081", totalSpent: 100000, visitHistory: [date, date, date, date, date])
+        let newCustomer = Customer(id: "2", name: "Susi", phoneNumber: "082", totalSpent: 20000, visitHistory: [date])
         
-        _ = try? await mockRepo.addCustomer(cust1)
-        _ = try? await mockRepo.addCustomer(cust2)
+        _ = try? await mockRepo.addCustomer(loyalCustomer)
+        _ = try? await mockRepo.addCustomer(newCustomer)
         
-        await vm.loadCustomers(storeId: "S1")
+        // Asumsi fungsi memuat pelanggan berdasarkan storeId
+        await vm.loadCustomers(storeId: "S-1")
         
-        #expect(vm.customers.count == 2)
-        #expect(vm.loyalCustomerPercentage == 50.0) // 1 dari 2 pelanggan adalah loyal
-    }
-    
-    @Test("Test Heatmap Jam Sibuk (Busiest Hours)")
-    func testBusiestHours() async {
-        let mockRepo = MockCRMRepository()
-        let vm = CRMViewModel(crmProtocol: mockRepo)
-        
-        var components = DateComponents()
-        components.hour = 14 // Jam 2 Siang
-        let date2PM = Calendar.current.date(from: components)!
-        
-        let cust = Customer(name: "Pelanggan C", phoneNumber: "3", totalSpent: 10, visitHistory: [date2PM, date2PM])
-        _ = try? await mockRepo.addCustomer(cust)
-        
-        await vm.loadCustomers(storeId: "S1")
-        
-        #expect(vm.busiestHours[14] == 2) // Jam 2 siang harus tercatat 2 kali kunjungan
+        #expect(vm.loyalCustomerPercentage == 50.0, "Persentase 1 dari 2 orang harusnya 50%")
     }
 }

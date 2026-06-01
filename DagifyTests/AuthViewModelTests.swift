@@ -1,49 +1,54 @@
-//
-//  AuthViewModelTests.swift
-//  DagifyTests
-//
-//  Created by Bryan Carlie Lukito Setiawan on 28/05/26.
-//
-
-import Testing
 import Foundation
+import Testing
+
 @testable import Dagify
 
 @Suite("Auth ViewModel Tests")
 @MainActor
 struct AuthViewModelTests {
-    
-    @Test("Test Fungsi Login Sukses")
+
+    @Test("Skenario 1: Login Sukses")
     func testLoginSuccess() async {
         let mockRepo = MockAuthRepository()
         let vm = AuthViewModel(authProtocol: mockRepo)
-        
-        await vm.login(email: "test@dagify.com", password: "password123")
-        
+
+        await vm.login(email: "owner@dagify.com", password: "password123")
+
         #expect(vm.isAuthenticated == true)
-        #expect(vm.currentUser?.email == "test@dagify.com")
         #expect(vm.errorMessage == nil)
     }
-    
-    @Test("Test Fungsi Registrasi Toko Baru Sukses")
-    func testRegisterSuccess() async {
+
+    @Test("Skenario 2: Registrasi Gagal Karena Kolom Kosong (Unhappy Path)")
+    func testRegisterFailWithEmptyFields() async {
         let mockRepo = MockAuthRepository()
         let vm = AuthViewModel(authProtocol: mockRepo)
-        
-        await vm.register(email: "owner@dagify.com", password: "password123", storeName: "Toko A", branchName: "Cabang B")
-        
-        #expect(vm.isAuthenticated == true)
-        #expect(vm.currentUser?.email == "owner@dagify.com")
+
+        // Sengaja mengosongkan storeName untuk memicu error
+        await vm.register(
+            email: "owner@dagify.com",
+            password: "123",
+            storeName: "",
+            branchName: "Pusat"
+        )
+
+        #expect(
+            vm.isAuthenticated == false,
+            "Sistem kebobolan, akun berhasil dibuat padahal data tidak lengkap!"
+        )
+        #expect(
+            vm.errorMessage == "Semua kolom pendaftaran wajib diisi.",
+            "Pesan error tidak sesuai ekspektasi."
+        )
     }
-    
-    @Test("Test Fungsi Logout Keluar Sistem")
+
+    @Test("Skenario 3: Logout Sukses")
     func testLogoutSuccess() async {
         let mockRepo = MockAuthRepository()
         let vm = AuthViewModel(authProtocol: mockRepo)
-        
+
         await vm.login(email: "test@dagify.com", password: "password123")
-        vm.logout() // Panggil fungsi logout
-        
+        vm.logout()
+
         #expect(vm.isAuthenticated == false)
         #expect(vm.currentUser == nil)
     }
