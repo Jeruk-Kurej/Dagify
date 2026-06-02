@@ -46,9 +46,9 @@ struct AddEditProductView: View {
             Form {
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Nama Produk").font(.caption).foregroundColor(Color(hex: "#6B7280"))
+                        Text("Nama Produk").font(.caption).foregroundColor(Color("#6B7280"))
                         TextField("Cth: Kopi Susu Aren", text: $productName)
-                            .font(.body).foregroundColor(Color(hex: "#111827"))
+                            .font(.body).foregroundColor(Color("#111827"))
                         
                         if isNameDuplicate {
                             Text("⚠️ Menu dengan nama ini sudah terdaftar!")
@@ -58,10 +58,10 @@ struct AddEditProductView: View {
                     }.padding(.vertical, 4)
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Harga Jual (Rp)").font(.caption).foregroundColor(Color(hex: "#6B7280"))
+                        Text("Harga Jual (Rp)").font(.caption).foregroundColor(Color("#6B7280"))
                         TextField("Cth: 18000", text: $productPrice)
                             .keyboardType(.decimalPad)
-                            .font(.body).foregroundColor(Color(hex: "#111827"))
+                            .font(.body).foregroundColor(Color("#111827"))
                             // ✅ UX FIX: Membuang huruf asing secara otomatis
                             .onChange(of: productPrice) { oldValue, newValue in
                                 let filtered = newValue.filter { "0123456789.,".contains($0) }
@@ -91,7 +91,7 @@ struct AddEditProductView: View {
                             TextField("Takaran", text: $draft.qtyString)
                                 .keyboardType(.decimalPad)
                                 .multilineTextAlignment(.trailing)
-                                .frame(width: 60).foregroundColor(Color(hex: "#00A3A3")).fontWeight(.bold)
+                                .frame(width: 60).foregroundColor(Color("#00A3A3")).fontWeight(.bold)
                                 // ✅ UX FIX: Membuang huruf asing di takaran resep juga
                                 .onChange(of: draft.qtyString) { oldValue, newValue in
                                     let filtered = newValue.filter { "0123456789.,".contains($0) }
@@ -100,7 +100,7 @@ struct AddEditProductView: View {
                                     }
                                 }
                             
-                            Text(draft.ingredient.unit).font(.caption).foregroundColor(Color(hex: "#6B7280"))
+                            Text(draft.ingredient.unit).font(.caption).foregroundColor(Color("#6B7280"))
                             
                             Button(action: { recipeDrafts.removeAll { $0.id == draft.id } }) {
                                 Image(systemName: "minus.circle.fill").foregroundColor(.red)
@@ -111,7 +111,7 @@ struct AddEditProductView: View {
                         HStack {
                             Image(systemName: "plus.circle.fill")
                             Text(recipeDrafts.isEmpty ? "Buat Resep Menu" : "Tambah Bahan Baku")
-                        }.foregroundColor(Color(hex: "#00A3A3")).fontWeight(.semibold)
+                        }.foregroundColor(Color("#00A3A3")).fontWeight(.semibold)
                     }
                 } header: { Text("Resep Bahan Baku (Opsional)") }
                   footer: { Text("Bahan baku ini otomatis dipotong dari Gudang setiap menu terjual.") }
@@ -137,10 +137,10 @@ struct AddEditProductView: View {
                             showIngredientPicker = false
                         }) {
                             HStack {
-                                Text(ingredient.name).foregroundColor(Color(hex: "#111827")).fontWeight(.medium)
+                                Text(ingredient.name).foregroundColor(Color("#111827")).fontWeight(.medium)
                                 Spacer()
                                 Text("Sisa: \(String(format: "%.1f", ingredient.currentStock)) \(ingredient.unit)")
-                                    .font(.caption).foregroundColor(Color(hex: "#6B7280"))
+                                    .font(.caption).foregroundColor(Color("#6B7280"))
                             }
                         }
                     }
