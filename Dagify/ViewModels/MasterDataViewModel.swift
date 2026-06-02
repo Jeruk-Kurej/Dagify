@@ -30,8 +30,7 @@ class MasterDataViewModel {
         costPerUnit: Double
     ) async {
         guard !name.isEmpty, currentStock >= 0 else {
-            errorMessage =
-                "Nama bahan baku tidak boleh kosong dan stok harus valid."
+            errorMessage = "Nama bahan baku tidak boleh kosong dan stok harus valid."
             return
         }
 
@@ -52,15 +51,14 @@ class MasterDataViewModel {
             _ = try await operationalProtocol.addIngredient(newIngredient)
             isSuccess = true
         } catch {
-            errorMessage =
-                "Gagal menyimpan bahan baku: \(error.localizedDescription)"
+            errorMessage = "Gagal menyimpan bahan baku: \(error.localizedDescription)"
         }
 
         isLoading = false
     }
 
-    func createProduct(name: String, price: Double, recipe: [RecipeItem]) async
-    {
+    // ✅ DITAMBAHKAN: Menerima branchId sebagai parameter
+    func createProduct(branchId: String, name: String, price: Double, recipe: [RecipeItem]) async {
         guard !name.isEmpty, price >= 0 else {
             errorMessage = "Nama menu dan harga harus valid."
             return
@@ -70,7 +68,9 @@ class MasterDataViewModel {
         errorMessage = nil
         isSuccess = false
 
+        // ✅ DITAMBAHKAN: Memasukkan branchId ke dalam Produk baru
         let newProduct = Product(
+            branchId: branchId,
             name: name,
             price: price,
             recipe: recipe
@@ -80,8 +80,7 @@ class MasterDataViewModel {
             _ = try await operationalProtocol.addProduct(newProduct)
             isSuccess = true
         } catch {
-            errorMessage =
-                "Gagal menyimpan menu baru: \(error.localizedDescription)"
+            errorMessage = "Gagal menyimpan menu baru: \(error.localizedDescription)"
         }
 
         isLoading = false

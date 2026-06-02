@@ -44,21 +44,23 @@ struct OperationalView: View {
                                 title: "Kasir (POS)",
                                 icon: "cart.fill",
                                 color: Color(hex: "#00A3A3")
-                            )  // Primary
+                            )
                         }
 
                         NavigationLink(
+                            // ✅ DITAMBAHKAN: Melempar branchId ke MasterDataView
                             destination: MasterDataView(
                                 viewModel: MasterDataViewModel(
                                     operationalProtocol: operationalService
-                                )
+                                ),
+                                branchId: branchId
                             )
                         ) {
                             OperationalMenuCard(
                                 title: "Master Data",
                                 icon: "folder.fill.badge.plus",
                                 color: Color(hex: "#4DBDBD")
-                            )  // Highlight
+                            )
                         }
 
                         NavigationLink(
