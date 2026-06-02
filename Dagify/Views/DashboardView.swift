@@ -1,114 +1,81 @@
 import SwiftUI
+import Charts // ✅ WAJIB UNTUK GRAFIK
 
 struct DashboardView: View {
     var viewModel: DashboardViewModel
     let storeId: String
     let branchId: String
-
-    let columns = [
-        GridItem(.flexible(), spacing: 16),
-        GridItem(.flexible(), spacing: 16),
-    ]
-
+    
+    let columns = [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)]
+    
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
                     if viewModel.isLoading {
-                        ProgressView("Mengolah rekam data...")
-                            .frame(maxWidth: .infinity, minHeight: 200)
+                        ProgressView("Mengolah rekam data...").frame(maxWidth: .infinity, minHeight: 200)
                     } else {
-                        // ✅ NAMA TOKO & CABANG
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("Ringkasan Hari Ini")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(Color(hex: "#111827"))
-
+                            Text("Ringkasan Hari Ini").font(.title2).fontWeight(.bold).foregroundColor(Color(hex: "#111827"))
                             HStack {
                                 Image(systemName: "mappin.and.ellipse")
-                                Text(
-                                    "\(viewModel.storeName) - \(viewModel.branchName)"
-                                )
-                            }
-                            .font(.subheadline)
-                            .foregroundColor(Color(hex: "#00A3A3"))
-                            .fontWeight(.semibold)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal)
-
+                                Text("\(viewModel.storeName) - \(viewModel.branchName)")
+                            }.font(.subheadline).foregroundColor(Color(hex: "#00A3A3")).fontWeight(.semibold)
+                        }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal)
+                        
                         LazyVGrid(columns: columns, spacing: 16) {
-                            DashItemCard(
-                                title: "Total Omzet",
-                                value:
-                                    "Rp \(viewModel.todayRevenue, default: "%.0f")",
-                                icon: "banknote.fill",
-                                color: Color(hex: "#10B981")
-                            )
-                            DashItemCard(
-                                title: "Total Pengeluaran",
-                                value:
-                                    "Rp \(viewModel.todayExpense, default: "%.0f")",
-                                icon: "arrow.down.backward.circle.fill",
-                                color: Color(hex: "#EF4444")
-                            )
-                            DashItemCard(
-                                title: "Untung Bersih",
-                                value:
-                                    "Rp \(viewModel.todayNetProfit, default: "%.0f")",
-                                icon: "chart.bar.doc.horizontal",
-                                color: Color(hex: "#00A3A3")
-                            )
-                            DashItemCard(
-                                title: "Peringatan Stok",
-                                value: "\(viewModel.lowStockAlertsCount) Item",
-                                icon: "exclamationmark.triangle.fill",
-                                color: Color(hex: "#F59E0B")
-                            )
-                        }
-                        .padding(.horizontal)
+                            DashItemCard(title: "Total Omzet", value: "Rp \(viewModel.todayRevenue, default: "%.0f")", icon: "banknote.fill", color: Color(hex: "#10B981"))
+                            DashItemCard(title: "Total Pengeluaran", value: "Rp \(viewModel.todayExpense, default: "%.0f")", icon: "arrow.down.backward.circle.fill", color: Color(hex: "#EF4444"))
+                            DashItemCard(title: "Untung Bersih", value: "Rp \(viewModel.todayNetProfit, default: "%.0f")", icon: "chart.bar.doc.horizontal", color: Color(hex: "#00A3A3"))
+                            DashItemCard(title: "Peringatan Stok", value: "\(viewModel.lowStockAlertsCount) Item", icon: "exclamationmark.triangle.fill", color: Color(hex: "#F59E0B"))
+                        }.padding(.horizontal)
                     }
-
+                    
+                    // ✅ CHART BARU DI DASHBOARD
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Analitik Menu")
-                            .font(.headline)
-                            .foregroundColor(Color(hex: "#111827"))
-                            .padding(.horizontal)
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Color(hex: "#FFFFFF"))
-                            .frame(height: 150)
-                            .padding(.horizontal)
-                            .overlay(
-                                Text("Grafik Penjualan Akan Muncul Di Sini")
-                                    .foregroundColor(Color(hex: "#6B7280"))
-                            )
+                        HStack {
+                            Text("Grafik Penjualan")
+                                .font(.headline)
+                                .foregroundColor(Color(hex: "#111827"))
+                            Spacer()
+                            // ✅ TOMBOL FILTER KATEGORI DI KANAN ATAS
+                            Menu {
+                                Button("Semua Kategori") { viewModel.selectedCategoryId = nil }
+                                ForEach(viewModel.categories) { cat in
+                                    Button(cat.name) { viewModel.selectedCategoryId = cat.id }
+                                }
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Text(viewModel.selectedCategoryId == nil ? "Semua" : viewModel.categories.first(where: { $0.id == viewModel.selectedCategoryId })?.name ?? "Filter")
+                                    Image(systemName: "line.3.horizontal.decrease.circle")
+                                }
+                                .font(.caption).padding(.horizontal, 10).padding(.vertical, 6)
+                                .background(Color(hex: "#00A3A3").opacity(0.1))
+                                .foregroundColor(Color(hex: "#00A3A3")).clipShape(Capsule())
+                            }
+                        }.padding(.horizontal)
+                        
+                        VStack {
+                            if viewModel.chartData.isEmpty {
+                                Text("Belum ada data penjualan.").foregroundColor(.gray)
+                            } else {
+                                Chart(viewModel.chartData) { data in
+                                    BarMark(
+                                        x: .value("Menu", data.productName),
+                                        y: .value("Terjual", data.quantity)
+                                    )
+                                    .foregroundStyle(Color(hex: "#00A3A3").gradient)
+                                    .cornerRadius(4)
+                                }
+                            }
+                        }
+                        .padding().frame(height: 250).background(Color.white).cornerRadius(16).shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2).padding(.horizontal)
                     }
-                }
-                .padding(.vertical)
+                }.padding(.vertical)
             }
             .navigationTitle("Dasbor")
             .background(Color(hex: "#F9FAFB"))
-            .onAppear {
-                Task {
-                    await viewModel.loadDashboardSummary(
-                        storeId: storeId,
-                        branchId: branchId
-                    )
-                }
-            }
+            .onAppear { Task { await viewModel.loadDashboardSummary(storeId: storeId, branchId: branchId) } }
         }
     }
-}
-
-#Preview {
-    let mockOp = MockOperationalRepository()
-    let vm = DashboardViewModel(
-        cashflowProtocol: MockCashflowRepository(),
-        crmProtocol: MockCRMRepository(),
-        operationalProtocol: mockOp,
-        storeProtocol: mockOp
-    )
-
-    return DashboardView(viewModel: vm, storeId: "S-1", branchId: "B-1")
 }

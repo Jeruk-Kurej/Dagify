@@ -6,6 +6,7 @@ class MockOperationalRepository: OperationalProtocol, StoreProtocol {
     public var dummyIngredients: [Ingredient] = []
     public var dummyOrders: [Order] = []
     public var submitCallCount = 0
+    public var dummyCategories: [ProductCategory] = []
 
     // ✅ Menggunakan properti variabel untuk simulasi store
     public var dummyStore = Store(
@@ -102,4 +103,17 @@ class MockOperationalRepository: OperationalProtocol, StoreProtocol {
         }
         return false
     }
+    public func fetchCategories(for branchId: String) async throws -> [ProductCategory] {
+            return dummyCategories.filter { $0.branchId == branchId }
+        }
+        public func addCategory(_ category: ProductCategory) async throws -> Bool {
+            var newCat = category
+            if newCat.id == nil { newCat.id = UUID().uuidString }
+            dummyCategories.append(newCat)
+            return true
+        }
+        public func deleteCategory(categoryId: String) async throws -> Bool {
+            dummyCategories.removeAll(where: { $0.id == categoryId })
+            return true
+        }
 }

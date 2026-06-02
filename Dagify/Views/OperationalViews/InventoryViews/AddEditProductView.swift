@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct RecipeDraft: Identifiable {
     let id = UUID()
@@ -16,6 +17,12 @@ struct AddEditProductView: View {
     @State private var productPrice = ""
     @State private var recipeDrafts: [RecipeDraft] = []
     @State private var showIngredientPicker = false
+    @State private var isSaving = false
+    
+    // ✅ STATE GAMBAR & KATEGORI BARU
+    @State private var selectedCategoryId: String = ""
+    @State private var selectedImageItem: PhotosPickerItem? = nil
+    @State private var selectedImageData: Data? = nil
 
     var isNameDuplicate: Bool {
         if let edit = productToEdit, edit.name.lowercased() == productName.lowercased() { return false }
@@ -30,46 +37,69 @@ struct AddEditProductView: View {
     
     var isPriceValid: Bool {
         let clean = productPrice.replacingOccurrences(of: ",", with: ".")
-        return Double(clean) != nil && (Double(clean) ?? 0) >= 0
+        return (Double(clean) ?? 0) > 0
+    }
+    
+    var priceValidationMessage: String? {
+        if productPrice.isEmpty { return "Harga jual wajib diisi." }
+        let clean = productPrice.replacingOccurrences(of: ",", with: ".")
+        if Double(clean) == nil { return "Format harga tidak valid." }
+        else if let val = Double(clean), val <= 0 { return "Harga jual harus lebih dari 0." }
+        return nil
+    }
+    
+    var isRecipeValid: Bool {
+        for draft in recipeDrafts {
+            let clean = draft.qtyString.replacingOccurrences(of: ",", with: ".")
+            if let val = Double(clean), val > 0 { continue } else { return false }
+        }
+        return true
     }
 
     var body: some View {
         NavigationStack {
             Form {
+                // ✅ FORM GAMBAR & KATEGORI (Baru)
+                Section("Media & Pengelompokan") {
+                    HStack {
+                        Spacer()
+                        if let data = selectedImageData, let uiImage = UIImage(data: data) {
+                            Image(uiImage: uiImage).resizable().scaledToFill().frame(width: 120, height: 120).clipShape(RoundedRectangle(cornerRadius: 12)).shadow(radius: 3)
+                        } else {
+                            Image(systemName: "cup.and.saucer.fill").resizable().scaledToFit().frame(width: 50, height: 50).foregroundColor(.gray).frame(width: 120, height: 120).background(Color(hex: "#F3F4F6")).clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        Spacer()
+                    }
+                    
+                    PhotosPicker(selection: $selectedImageItem, matching: .images, photoLibrary: .shared()) {
+                        Text("Ganti Gambar Menu").frame(maxWidth: .infinity).foregroundColor(Color(hex: "#00A3A3"))
+                    }
+                    .onChange(of: selectedImageItem) { _, newItem in
+                        Task { if let data = try? await newItem?.loadTransferable(type: Data.self) { selectedImageData = data } }
+                    }
+                    
+                    Picker("Pilih Kategori", selection: $selectedCategoryId) {
+                        if viewModel.categories.isEmpty { Text("Memuat...").tag("") }
+                        else { ForEach(viewModel.categories) { cat in Text(cat.name).tag(cat.id ?? "") } }
+                    }
+                }
+                
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Nama Produk").font(.caption).foregroundColor(Color(hex: "#6B7280"))
-                        TextField("Cth: Kopi Susu Aren", text: $productName)
-                            .font(.body).foregroundColor(Color(hex: "#111827"))
-                        
-                        if isNameDuplicate {
-                            Text("⚠️ Menu dengan nama ini sudah terdaftar!")
-                                .font(.caption2)
-                                .foregroundColor(.red)
-                        }
+                        TextField("Cth: Kopi Susu Aren", text: $productName).font(.body).foregroundColor(Color(hex: "#111827"))
+                        if isNameDuplicate { Text("⚠️ Menu dengan nama ini sudah terdaftar!").font(.caption2).foregroundColor(.red) }
                     }.padding(.vertical, 4)
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Harga Jual (Rp)").font(.caption).foregroundColor(Color(hex: "#6B7280"))
-                        TextField("Cth: 18000", text: $productPrice)
-                            .keyboardType(.decimalPad)
-                            .font(.body).foregroundColor(Color(hex: "#111827"))
+                        TextField("Cth: 18000", text: $productPrice).keyboardType(.decimalPad).font(.body).foregroundColor(Color(hex: "#111827"))
                             .onChange(of: productPrice) { oldValue, newValue in
                                 let filtered = newValue.filter { "0123456789.,".contains($0) }
-                                if filtered != newValue {
-                                    productPrice = filtered
-                                }
+                                if filtered != newValue { productPrice = filtered }
                             }
-                        
-                        if !productPrice.isEmpty && !isPriceValid {
-                            Text("⚠️ Format harga tidak valid.")
-                                .font(.caption2)
-                                .foregroundColor(.red)
-                        } else if isPriceDuplicate {
-                            Text("💡 Info: Anda memiliki menu lain dengan harga ini.")
-                                .font(.caption2)
-                                .foregroundColor(.orange)
-                        }
+                        if let msg = priceValidationMessage { Text(msg).font(.caption2).foregroundColor(.red) }
+                        else if isPriceDuplicate { Text("💡 Info: Anda memiliki menu lain dengan harga ini.").font(.caption2).foregroundColor(.orange) }
                     }.padding(.vertical, 4)
                 } header: { Text("Informasi Menu Baru") }
 
@@ -78,30 +108,17 @@ struct AddEditProductView: View {
                         HStack {
                             Text(draft.ingredient.name).font(.body)
                             Spacer()
-                            TextField("Takaran", text: $draft.qtyString)
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.trailing)
-                                .frame(width: 60).foregroundColor(Color(hex: "#00A3A3")).fontWeight(.bold)
+                            TextField("Takaran", text: $draft.qtyString).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80).foregroundColor(Color(hex: "#00A3A3")).fontWeight(.bold)
                                 .onChange(of: draft.qtyString) { oldValue, newValue in
                                     let filtered = newValue.filter { "0123456789.,".contains($0) }
-                                    if filtered != newValue {
-                                        draft.qtyString = filtered
-                                    }
+                                    if filtered != newValue { draft.qtyString = filtered }
                                 }
-                            
                             Text(draft.ingredient.unit).font(.caption).foregroundColor(Color(hex: "#6B7280"))
-                            
-                            // ✅ UX FIX: Mengganti Button menjadi Image murni dengan onTapGesture
-                            // SwiftUI tidak akan lagi bingung saat kamu tidak sengaja memencet teks.
-                            Image(systemName: "minus.circle.fill")
-                                .foregroundColor(.red)
-                                .font(.title3)
-                                .padding(.leading, 8)
-                                .contentShape(Rectangle()) // Mengunci area responsif
-                                .onTapGesture {
-                                    recipeDrafts.removeAll { $0.id == draft.id }
-                                }
+                            Image(systemName: "minus.circle.fill").foregroundColor(.red).font(.title3).padding(.leading, 8).contentShape(Rectangle())
+                                .onTapGesture { recipeDrafts.removeAll { $0.id == draft.id } }
                         }
+                        let cleanQty = draft.qtyString.replacingOccurrences(of: ",", with: ".")
+                        if !draft.qtyString.isEmpty && (Double(cleanQty) ?? 0) <= 0 { Text("Takaran harus lebih dari 0").font(.caption2).foregroundColor(.red) }
                     }
                     Button(action: { showIngredientPicker = true }) {
                         HStack {
@@ -110,7 +127,12 @@ struct AddEditProductView: View {
                         }.foregroundColor(Color(hex: "#00A3A3")).fontWeight(.semibold)
                     }
                 } header: { Text("Resep Bahan Baku (Opsional)") }
-                  footer: { Text("Bahan baku ini otomatis dipotong dari Gudang setiap menu terjual.") }
+                  footer: {
+                      VStack(alignment: .leading, spacing: 4) {
+                          Text("Bahan baku ini otomatis dipotong dari Gudang setiap menu terjual.")
+                          if !isRecipeValid && !recipeDrafts.isEmpty { Text("⚠️ Masih ada takaran bahan baku yang kosong/tidak valid.").foregroundColor(.red).fontWeight(.semibold) }
+                      }
+                  }
             }
             .navigationTitle(productToEdit == nil ? "Tambah Menu" : "Edit Menu")
             .navigationBarTitleDisplayMode(.inline)
@@ -118,7 +140,7 @@ struct AddEditProductView: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Batal") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Simpan") { saveProduct() }
-                        .disabled(productName.isEmpty || productPrice.isEmpty || !isPriceValid || viewModel.isLoading || isNameDuplicate)
+                        .disabled(productName.isEmpty || !isPriceValid || viewModel.isLoading || isNameDuplicate || !isRecipeValid || isSaving || selectedCategoryId.isEmpty)
                 }
             }
             .onAppear(perform: loadExistingData)
@@ -126,27 +148,19 @@ struct AddEditProductView: View {
                 NavigationStack {
                     List(viewModel.availableIngredients) { ingredient in
                         Button(action: {
-                            if !recipeDrafts.contains(where: { $0.ingredient.id == ingredient.id }) {
-                                recipeDrafts.append(RecipeDraft(ingredient: ingredient, qtyString: ""))
-                            }
+                            if !recipeDrafts.contains(where: { $0.ingredient.id == ingredient.id }) { recipeDrafts.append(RecipeDraft(ingredient: ingredient, qtyString: "")) }
                             showIngredientPicker = false
                         }) {
                             HStack {
                                 Text(ingredient.name).foregroundColor(Color(hex: "#111827")).fontWeight(.medium)
                                 Spacer()
-                                Text("Sisa: \(String(format: "%.1f", ingredient.currentStock)) \(ingredient.unit)")
-                                    .font(.caption).foregroundColor(Color(hex: "#6B7280"))
+                                Text("Sisa: \(String(format: "%.1f", ingredient.currentStock)) \(ingredient.unit)").font(.caption).foregroundColor(Color(hex: "#6B7280"))
                             }
                         }
                     }
                     .navigationTitle("Pilih Bahan Baku").navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Tutup") { showIngredientPicker = false }
-                        }
-                    }
-                }
-                .presentationDetents([.medium, .large])
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Tutup") { showIngredientPicker = false } } }
+                }.presentationDetents([.medium, .large])
             }
         }
     }
@@ -155,6 +169,8 @@ struct AddEditProductView: View {
         if let product = productToEdit {
             productName = product.name
             productPrice = String(format: "%.0f", product.price)
+            selectedCategoryId = product.categoryId
+            selectedImageData = product.imageData
             
             recipeDrafts = product.recipe.compactMap { recipeItem -> RecipeDraft? in
                 if let ingredient = viewModel.availableIngredients.first(where: { $0.id == recipeItem.ingredientId }) {
@@ -162,27 +178,30 @@ struct AddEditProductView: View {
                 }
                 return nil
             }
+        } else {
+            selectedCategoryId = viewModel.categories.first?.id ?? ""
         }
     }
 
     private func saveProduct() {
+        guard !isSaving else { return }
         let cleanPrice = productPrice.replacingOccurrences(of: ",", with: ".")
         guard let price = Double(cleanPrice) else { return }
         
         let finalRecipe = recipeDrafts.compactMap { draft -> RecipeItem? in
-            guard let id = draft.ingredient.id,
-                  let qty = Double(draft.qtyString.replacingOccurrences(of: ",", with: ".")),
-                  qty > 0 else { return nil }
+            guard let id = draft.ingredient.id, let qty = Double(draft.qtyString.replacingOccurrences(of: ",", with: ".")), qty > 0 else { return nil }
             return RecipeItem(ingredientId: id, quantityRequired: qty)
         }
         
+        isSaving = true
         Task {
             if let edit = productToEdit {
-                let updatedProduct = Product(id: edit.id, branchId: branchId, name: productName, price: price, recipe: finalRecipe)
+                let updatedProduct = Product(id: edit.id, branchId: branchId, categoryId: selectedCategoryId, name: productName, price: price, recipe: finalRecipe, imageData: selectedImageData)
                 await viewModel.updateProduct(product: updatedProduct)
             } else {
-                await viewModel.createProduct(branchId: branchId, name: productName, price: price, recipe: finalRecipe)
+                await viewModel.createProduct(branchId: branchId, categoryId: selectedCategoryId, name: productName, price: price, recipe: finalRecipe, imageData: selectedImageData)
             }
+            isSaving = false
             dismiss()
         }
     }

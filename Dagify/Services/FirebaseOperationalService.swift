@@ -58,6 +58,7 @@ class FirebaseOperationalService: OperationalProtocol, StoreProtocol {
             try? $0.data(as: Ingredient.self)
         }
     }
+    
 
     func submitOrderAndUpdateInventory(order: Order) async throws -> Bool {
         let batch = db.batch()
@@ -115,4 +116,20 @@ class FirebaseOperationalService: OperationalProtocol, StoreProtocol {
         ])
         return true
     }
+    
+    func fetchCategories(for branchId: String) async throws -> [ProductCategory] {
+            let snapshot = try await db.collection("categories").whereField("branchId", isEqualTo: branchId).getDocuments()
+            return snapshot.documents.compactMap { try? $0.data(as: ProductCategory.self) }
+        }
+        
+        func addCategory(_ category: ProductCategory) async throws -> Bool {
+            let ref = db.collection("categories").document()
+            try ref.setData(from: category)
+            return true
+        }
+        
+        func deleteCategory(categoryId: String) async throws -> Bool {
+            try await db.collection("categories").document(categoryId).delete()
+            return true
+        }
 }
