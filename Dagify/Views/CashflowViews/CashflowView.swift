@@ -84,18 +84,16 @@ struct CashflowView: View {
             }
             .background(Color(hex: "#F9FAFB"))
             .navigationTitle("Arus Kas")
+            // ... kode CashflowView di atas ...
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        let pdfView = CashflowPDFTemplate(
+                        // ✅ Menggunakan fungsi generateCashflowReport yang baru
+                        if let url = PDFGeneratorService.generateCashflowReport(
                             monthYear: "Bulan Ini",
                             records: viewModel.records,
                             totalIncome: viewModel.totalIncome,
-                            totalExpense: viewModel.totalExpense
-                        )
-
-                        if let url = PDFGeneratorService.renderViewToPDF(
-                            view: pdfView,
+                            totalExpense: viewModel.totalExpense,
                             filename: "Laporan_Keuangan_Dagify"
                         ) {
                             self.generatedPDFURL = url
@@ -107,6 +105,7 @@ struct CashflowView: View {
                     .disabled(viewModel.records.isEmpty)
                 }
             }
+            // ... kode CashflowView di bawah ...
             .onAppear {
                 Task {
                     await viewModel.loadRecords(branchId: branchId)
@@ -146,7 +145,7 @@ struct ShareSheet: UIViewControllerRepresentable {
     // Kita bungkus semua logika setup data ke dalam closure agar ViewBuilder tidak error
     let previewViewModel: CashflowViewModel = {
         let mockRepo = MockCashflowRepository()
-        
+
         mockRepo.records = [
             FinancialRecord(
                 id: "1",
@@ -165,9 +164,9 @@ struct ShareSheet: UIViewControllerRepresentable {
                 category: .operational,
                 timestamp: Date().addingTimeInterval(-3600),
                 notes: "Beli Sabun Cuci"
-            )
+            ),
         ]
-        
+
         return CashflowViewModel(cashProtocol: mockRepo)
     }()
 
