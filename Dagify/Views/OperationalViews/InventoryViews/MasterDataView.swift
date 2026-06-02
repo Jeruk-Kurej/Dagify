@@ -3,7 +3,7 @@ import SwiftUI
 enum MasterDataSheet: Identifiable {
     case add
     case edit(Product)
-    case manageCategories // ✅ TIPE SHEET BARU UNTUK KELOLA KATEGORI
+    case manageCategories
     var id: String {
         switch self {
         case .add: return "add"
@@ -34,7 +34,6 @@ struct MasterDataView: View {
                 List {
                     ForEach(viewModel.products) { product in
                         HStack(spacing: 16) {
-                            // ✅ MENAMPILKAN GAMBAR MENU KECIL DI LIST
                             if let data = product.imageData, let uiImage = UIImage(data: data) {
                                 Image(uiImage: uiImage).resizable().scaledToFill().frame(width: 50, height: 50).clipShape(RoundedRectangle(cornerRadius: 8))
                             } else {
@@ -59,13 +58,22 @@ struct MasterDataView: View {
                 }
                 .listStyle(.insetGrouped)
                 .scrollContentBackground(.hidden)
-                .overlay { if let err = viewModel.errorMessage { Text(err).font(.caption).foregroundColor(.white).padding().background(Color.red).cornerRadius(10).padding(.bottom, 20), alignment: .bottom } }
+                .overlay(alignment: .bottom) {
+                    if let err = viewModel.errorMessage {
+                        Text(err)
+                            .font(.caption)
+                            .foregroundColor(.white)
+                            .padding()
+                            .background(Color.red)
+                            .cornerRadius(10)
+                            .padding(.bottom, 20)
+                    }
+                }
             }
         }
         .navigationTitle("Master Data")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                // ✅ MENU DROPDOWN BARU: Tambah Menu ATAU Kelola Kategori
                 Menu {
                     Button("Tambah Menu Baru", systemImage: "plus.app.fill") { activeSheet = .add }
                     Button("Kelola Kategori", systemImage: "tag.fill") { activeSheet = .manageCategories }
@@ -80,13 +88,13 @@ struct MasterDataView: View {
             switch sheetType {
             case .add: AddEditProductView(viewModel: viewModel, branchId: branchId, productToEdit: nil)
             case .edit(let product): AddEditProductView(viewModel: viewModel, branchId: branchId, productToEdit: product)
-            case .manageCategories: CategoryManagerView(viewModel: viewModel, branchId: branchId) // ✅ SHEET KHUSUS KATEGORI
+            case .manageCategories: CategoryManagerView(viewModel: viewModel, branchId: branchId)
             }
         }
     }
 }
 
-// ✅ LAYAR POP-UP KHUSUS UNTUK MENAMBAH/MENGHAPUS KATEGORI MENU
+// Layar Pop-up Khusus untuk Kelola Kategori
 struct CategoryManagerView: View {
     @Bindable var viewModel: MasterDataViewModel
     let branchId: String

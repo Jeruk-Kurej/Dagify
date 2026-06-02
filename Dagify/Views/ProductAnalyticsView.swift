@@ -1,5 +1,5 @@
 import SwiftUI
-import Charts // ✅ WAJIB DITAMBAHKAN
+import Charts
 
 struct ProductAnalyticsView: View {
     var viewModel: ProductAnalyticsViewModel
@@ -14,7 +14,7 @@ struct ProductAnalyticsView: View {
                     ContentUnavailableView("Belum Ada Data", systemImage: "chart.pie", description: Text("Lakukan transaksi di Kasir terlebih dahulu."))
                 } else {
                     
-                    // ✅ GRAFIK PENJUALAN DI ANALITIK
+                    // Grafik Penjualan Dinamis berdasarkan Filter Kategori
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
                             Text("Grafik Penjualan")
@@ -77,5 +77,70 @@ struct ProductAnalyticsView: View {
         .navigationTitle("Analitik Menu")
         .onAppear { Task { await viewModel.loadAnalyticsData(branchId: branchId) } }
         .refreshable { await viewModel.loadAnalyticsData(branchId: branchId) }
+    }
+}
+
+// ✅ FIX: KOMPONEN YANG TERHAPUS DIKEMBALIKAN
+struct AnalyticSection<Content: View>: View {
+    let title: String
+    let icon: String
+    let iconColor: Color
+    let content: Content
+
+    init(title: String, icon: String, iconColor: Color, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.icon = icon
+        self.iconColor = iconColor
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundColor(iconColor)
+                Text(title)
+                    .font(.headline)
+                    .foregroundColor(Color(hex: "#111827"))
+            }
+            .padding(.horizontal)
+
+            VStack(spacing: 0) {
+                content
+            }
+            .background(Color.white)
+            .cornerRadius(12)
+            .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
+            .padding(.horizontal)
+        }
+    }
+}
+
+struct AnalyticRow: View {
+    let rank: Int
+    let name: String
+    let detail: String
+    let highlightColor: Color
+
+    var body: some View {
+        HStack(spacing: 16) {
+            Text("#\(rank)")
+                .font(.headline)
+                .foregroundColor(highlightColor)
+                .frame(width: 30, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(name)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Color(hex: "#111827"))
+                Text(detail)
+                    .font(.caption)
+                    .foregroundColor(Color(hex: "#6B7280"))
+            }
+            Spacer()
+        }
+        .padding()
+        Divider().padding(.leading, 60)
     }
 }
