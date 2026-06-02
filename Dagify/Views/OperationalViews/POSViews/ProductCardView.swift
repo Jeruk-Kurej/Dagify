@@ -2,7 +2,9 @@ import SwiftUI
 
 struct ProductCardView: View {
     var product: Product
+    var quantity: Int // ✅ DITAMBAHKAN: Untuk melacak jumlah pesanan
     var onAdd: () -> Void
+    var onDecrease: () -> Void // ✅ DITAMBAHKAN: Fungsi untuk tombol kurang
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -31,15 +33,49 @@ struct ProductCardView: View {
                     .foregroundColor(.themePrimary)
             }
 
-            Button(action: onAdd) {
-                Text("Tambah")
-                    .font(.footnote)
-                    .fontWeight(.bold)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .background(Color.themePrimary.opacity(0.15))
-                    .foregroundColor(.themePrimary)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            Spacer(minLength: 0)
+
+            // ✅ UX ALA GO-FOOD: Stepper Dinamis
+            if quantity > 0 {
+                HStack {
+                    Button(action: onDecrease) {
+                        Image(systemName: "minus")
+                            .font(.system(size: 14, weight: .bold))
+                            .frame(width: 32, height: 32)
+                            .background(Color.themePrimary.opacity(0.15))
+                            .foregroundColor(.themePrimary)
+                            .clipShape(Circle())
+                    }
+                    
+                    Spacer()
+                    
+                    Text("\(quantity)")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.themeTextPrimary)
+                    
+                    Spacer()
+                    
+                    Button(action: onAdd) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 14, weight: .bold))
+                            .frame(width: 32, height: 32)
+                            .background(Color.themePrimary)
+                            .foregroundColor(.white)
+                            .clipShape(Circle())
+                    }
+                }
+            } else {
+                Button(action: onAdd) {
+                    Text("Tambah")
+                        .font(.footnote)
+                        .fontWeight(.bold)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(Color.themePrimary.opacity(0.15))
+                        .foregroundColor(.themePrimary)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
             }
         }
         .padding(12)

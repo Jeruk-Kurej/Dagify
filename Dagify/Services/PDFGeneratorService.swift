@@ -1,11 +1,11 @@
 import Foundation
 import SwiftUI
-import PDFKit
+import UIKit // ✅ Wajib untuk memanggil UIGraphicsPDFRenderer & UIHostingController
 
 @MainActor
 class PDFGeneratorService {
     
-    // Fitur Baru: Pagination (Multi-Halaman) Otomatis
+    // Fitur Baru: Pagination (Multi-Halaman) Otomatis dengan UIKit Bridge
     static func generateCashflowReport(
         monthYear: String,
         records: [FinancialRecord],
@@ -14,46 +14,52 @@ class PDFGeneratorService {
         filename: String
     ) -> URL? {
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(filename).pdf")
-        var box = CGRect(x: 0, y: 0, width: 595, height: 842) // Ukuran Kertas A4
+        let pdfBounds = CGRect(x: 0, y: 0, width: 595, height: 842) // Standar Kertas A4
         
-        guard let pdf = CGContext(tempURL as CFURL, mediaBox: &box, nil) else { return nil }
+        // ✅ SOLUSI ENTERPRISE: Menggunakan UIGraphicsPDFRenderer (100x lebih stabil dari ImageRenderer)
+        let format = UIGraphicsPDFRendererFormat()
+        let renderer = UIGraphicsPDFRenderer(bounds: pdfBounds, format: format)
         
-        // Batasi maksimal 12 transaksi per halaman agar muat di kertas A4
+        // Batasi 12 baris per halaman agar tidak meluber
         let itemsPerPage = 12
-        // Jika records kosong, minimal buat 1 halaman
         let totalPages = max(1, Int(ceil(Double(records.count) / Double(itemsPerPage))))
         
-        for pageIndex in 0..<totalPages {
-            let start = pageIndex * itemsPerPage
-            let end = min(start + itemsPerPage, records.count)
-            let pageRecords = records.isEmpty ? [] : Array(records[start..<end])
-            
-            let pageView = CashflowPDFTemplate(
-                monthYear: monthYear,
-                records: pageRecords,
-                totalIncome: totalIncome,
-                totalExpense: totalExpense,
-                page: pageIndex + 1,
-                totalPages: totalPages
-            )
-            // ✅ UX FIX: Memaksa Light Mode agar teks tidak menjadi putih
-            .environment(\.colorScheme, .light)
-            
-            let renderer = ImageRenderer(content: pageView)
-            renderer.proposedSize = .init(width: 595, height: 842)
-            
-            pdf.beginPDFPage(nil)
-            // ✅ UX FIX: Memaksa background menjadi putih solid
-            pdf.setFillColor(UIColor.white.cgColor)
-            pdf.fill(box)
-            
-            renderer.render { size, context in
-                context(pdf)
+        do {
+            try renderer.writePDF(to: tempURL) { context in
+                for pageIndex in 0..<totalPages {
+                    context.beginPage()
+                    
+                    let start = pageIndex * itemsPerPage
+                    let end = min(start + itemsPerPage, records.count)
+                    let pageRecords = records.isEmpty ? [] : Array(records[start..<end])
+                    
+                    let pageView = CashflowPDFTemplate(
+                        monthYear: monthYear,
+                        records: pageRecords,
+                        totalIncome: totalIncome,
+                        totalExpense: totalExpense,
+                        page: pageIndex + 1,
+                        totalPages: totalPages
+                    )
+                    .environment(\.colorScheme, .light) // Paksa mode terang
+                    
+                    // ✅ BUNGKUS KE UIKIT: Paksa sistem merender UI ke dalam layer memori fisik
+                    let hostingController = UIHostingController(rootView: pageView)
+                    hostingController.view.frame = pdfBounds
+                    hostingController.view.backgroundColor = .white
+                    
+                    // Paksa kalkulasi ukuran sebelum memotret layer
+                    hostingController.view.setNeedsLayout()
+                    hostingController.view.layoutIfNeeded()
+                    
+                    // Lukis UI ke dalam kanvas PDF
+                    hostingController.view.layer.render(in: context.cgContext)
+                }
             }
-            pdf.endPDFPage()
+            return tempURL
+        } catch {
+            print("Gagal membuat PDF: \(error.localizedDescription)")
+            return nil
         }
-        
-        pdf.closePDF()
-        return tempURL
     }
 }

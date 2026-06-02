@@ -5,11 +5,13 @@ struct POSView: View {
     @Bindable var viewModel: POSViewModel
     @Environment(\.modelContext) private var context
     let branchId: String
+    
+    // ✅ STATE BARU: Mengontrol kemunculan pop up keranjang
+    @State private var showCheckoutSheet = false
 
     let columns = [GridItem(.adaptive(minimum: 160), spacing: 16)]
 
     var body: some View {
-        // ✅ NavigationStack dihapus
         ZStack(alignment: .bottom) {
             ScrollView {
                 if viewModel.isLoading {
@@ -19,18 +21,28 @@ struct POSView: View {
                     ContentUnavailableView(
                         "Menu Kosong",
                         systemImage: "square.grid.2x2",
-                        description: Text(
-                            "Silakan tambahkan menu di Master Data."
-                        )
+                        description: Text("Silakan tambahkan menu di Master Data.")
                     )
                 } else {
                     LazyVGrid(columns: columns, spacing: 16) {
                         ForEach(viewModel.availableProducts) { product in
-                            ProductCardView(product: product) {
-                                withAnimation(.spring) {
-                                    viewModel.addToCart(product: product)
+                            // ✅ AMBIL KUANTITAS DARI KERANJANG SECARA REAL-TIME
+                            let quantity = viewModel.cart.first(where: { $0.product.id == product.id })?.quantity ?? 0
+                            
+                            ProductCardView(
+                                product: product,
+                                quantity: quantity,
+                                onAdd: {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        viewModel.addToCart(product: product)
+                                    }
+                                },
+                                onDecrease: {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        viewModel.removeOrDecreaseFromCart(product: product)
+                                    }
                                 }
-                            }
+                            )
                         }
                     }
                     .padding()
@@ -39,50 +51,33 @@ struct POSView: View {
             }
             .background(Color.themeBgMain.ignoresSafeArea())
 
+            // --- FLOATING CART BOTTOM BAR ---
             if !viewModel.cart.isEmpty {
                 VStack {
                     Button(action: {
-                        Task {
-                            await viewModel.checkout(
-                                branchId: branchId,
-                                context: context
-                            )
-                        }
+                        // ✅ TAMPILKAN POP UP (SHEET) ALIH-ALIH LANGSUNG CHECKOUT
+                        showCheckoutSheet = true
                     }) {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(
-                                    "\(viewModel.cart.reduce(0){$0 + $1.quantity}) Item"
-                                )
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.8))
-                                Text(
-                                    "Rp \(viewModel.subtotal, specifier: "%.0f")"
-                                )
-                                .font(.headline)
-                                .foregroundColor(.white)
+                                Text("\(viewModel.cart.reduce(0){$0 + $1.quantity}) Item")
+                                    .font(.caption)
+                                    .foregroundColor(.white.opacity(0.8))
+                                Text("Rp \(viewModel.subtotal, specifier: "%.0f")")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
                             }
                             Spacer()
                             HStack {
                                 Text("Bayar Sekarang").fontWeight(.bold)
-                                Image(systemName: "creditcard.fill")
+                                Image(systemName: "chevron.right") // ✅ Panah visualisasi buka pop-up
                             }
                             .foregroundColor(.white)
                         }
                         .padding()
-                        .background(Color(hex: "#00A3A3"))
-                        .clipShape(
-                            RoundedRectangle(
-                                cornerRadius: 16,
-                                style: .continuous
-                            )
-                        )
-                        .shadow(
-                            color: Color(hex: "#00A3A3").opacity(0.4),
-                            radius: 10,
-                            x: 0,
-                            y: 5
-                        )
+                        .background(Color.themePrimary)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .shadow(color: Color.themePrimary.opacity(0.4), radius: 10, x: 0, y: 5)
                     }
                     .padding(.horizontal)
                     .padding(.bottom, 16)
@@ -90,26 +85,35 @@ struct POSView: View {
                 .background(
                     LinearGradient(
                         gradient: Gradient(colors: [
-                            Color(hex: "#F9FAFB").opacity(0),
-                            Color(hex: "#F9FAFB"),
+                            Color.themeBgMain.opacity(0),
+                            Color.themeBgMain,
                         ]),
                         startPoint: .top,
                         endPoint: .bottom
                     )
                 )
+                // Animasi muncul dari bawah
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .navigationTitle("Kasir (POS)")  // ✅ Tetap ada agar judul muncul saat di-push
+        .navigationTitle("Kasir (POS)")
         .onAppear {
             Task { await viewModel.loadProducts(branchId: branchId) }
         }
-        .alert("Transaksi Berhasil!", isPresented: $viewModel.isCheckoutSuccess)
-        {
+        .alert("Transaksi Berhasil!", isPresented: $viewModel.isCheckoutSuccess) {
             Button("OK", role: .cancel) { viewModel.isCheckoutSuccess = false }
         } message: {
-            Text(
-                "Pembayaran tercatat dan stok bahan baku terkait telah terpotong otomatis."
+            Text("Pembayaran tercatat dan stok bahan baku terkait telah terpotong otomatis.")
+        }
+        // ✅ PASANG SHEET POP-UP DI SINI
+        .sheet(isPresented: $showCheckoutSheet) {
+            POSCheckoutSheetView(
+                viewModel: viewModel,
+                branchId: branchId,
+                context: context,
+                isPresented: $showCheckoutSheet
             )
+            .presentationDetents([.fraction(0.85), .large]) // Sheet bergaya menutupi 85% layar
         }
     }
 }
