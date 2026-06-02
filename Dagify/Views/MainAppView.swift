@@ -9,26 +9,19 @@ import SwiftUI
 
 enum AppMenu: String, CaseIterable, Identifiable, Hashable {
     case dashboard = "Dasbor"
-    case pos = "Kasir (POS)"
-    case masterData = "Master Data"  // ✅ DITAMBAHKAN
-    case inventory = "Gudang"
     case cashflow = "Arus Kas"
-    case analytics = "Analitik Menu"
     case crm = "CRM"
-    case settings = "Pengaturan"  // ✅ DITAMBAHKAN
+    case operational = "Operasional"
+    case settings = "Pengaturan"
 
     var id: String { self.rawValue }
 
     var icon: String {
         switch self {
-        // ✅ DIPERBAIKI: Nama SF Symbol yang benar untuk Dashboard
         case .dashboard: return "square.grid.2x2.fill"
-        case .pos: return "cart.fill"
-        case .masterData: return "folder.fill.badge.plus"
-        case .inventory: return "shippingbox.fill"
         case .cashflow: return "chart.line.uptrend.xyaxis"
-        case .analytics: return "chart.pie.fill"
         case .crm: return "person.2.fill"
+        case .operational: return "briefcase.fill"  
         case .settings: return "gearshape.fill"
         }
     }
@@ -66,67 +59,12 @@ struct MainAppView: View {
             }
 
             Tab(
-                AppMenu.pos.rawValue,
-                systemImage: AppMenu.pos.icon,
-                value: .pos
-            ) {
-                POSView(
-                    viewModel: POSViewModel(
-                        operationalProtocol: operationalService,
-                        networkMonitor: NetworkMonitor(),
-                        syncManager: SyncManager.shared
-                    ),
-                    branchId: branchId
-                )
-            }
-
-            // ✅ DITAMBAHKAN: Tab Master Data agar kamu bisa mengisi menu
-            Tab(
-                AppMenu.masterData.rawValue,
-                systemImage: AppMenu.masterData.icon,
-                value: .masterData
-            ) {
-                MasterDataView(
-                    viewModel: MasterDataViewModel(
-                        operationalProtocol: operationalService
-                    )
-                )
-            }
-
-            Tab(
-                AppMenu.inventory.rawValue,
-                systemImage: AppMenu.inventory.icon,
-                value: .inventory
-            ) {
-                InventoryView(
-                    viewModel: InventoryViewModel(
-                        operationalProtocol: operationalService,
-                        cashflowProtocol: cashflowService
-                    ),
-                    branchId: branchId
-                )
-            }
-
-            Tab(
                 AppMenu.cashflow.rawValue,
                 systemImage: AppMenu.cashflow.icon,
                 value: .cashflow
             ) {
                 CashflowView(
                     viewModel: CashflowViewModel(cashProtocol: cashflowService),
-                    branchId: branchId
-                )
-            }
-
-            Tab(
-                AppMenu.analytics.rawValue,
-                systemImage: AppMenu.analytics.icon,
-                value: .analytics
-            ) {
-                ProductAnalyticsView(
-                    viewModel: ProductAnalyticsViewModel(
-                        operationalProtocol: operationalService
-                    ),
                     branchId: branchId
                 )
             }
@@ -142,7 +80,18 @@ struct MainAppView: View {
                 )
             }
 
-            // ✅ DITAMBAHKAN: Tab Pengaturan untuk Logout
+            Tab(
+                AppMenu.operational.rawValue,
+                systemImage: AppMenu.operational.icon,
+                value: .operational
+            ) {
+                OperationalView(
+                    operationalService: operationalService,
+                    cashflowService: cashflowService,
+                    branchId: branchId
+                )
+            }
+
             Tab(
                 AppMenu.settings.rawValue,
                 systemImage: AppMenu.settings.icon,
@@ -156,5 +105,6 @@ struct MainAppView: View {
             }
         }
         .tabViewStyle(.sidebarAdaptable)
+        .tint(Color(hex: "#00A3A3"))  // Warna Primary Dagify
     }
 }

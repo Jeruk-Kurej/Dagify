@@ -1,85 +1,80 @@
 import SwiftUI
 
 struct InventoryView: View {
-    // ✅ MVVM: Sesuai injeksi MainAppView
     var viewModel: InventoryViewModel
     let branchId: String
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color(hex: "#F9FAFB").ignoresSafeArea()  // Main Background
+        // ✅ NavigationStack dihapus
+        ZStack {
+            Color(hex: "#F9FAFB").ignoresSafeArea()
 
-                if viewModel.isLoading && viewModel.ingredients.isEmpty {
-                    ProgressView("Memuat data gudang...")
-                } else if viewModel.ingredients.isEmpty {
-                    ContentUnavailableView(
-                        "Gudang Kosong",
-                        systemImage: "shippingbox",
-                        description: Text("Bahan baku belum ditambahkan.")
-                    )
-                } else {
-                    List {
-                        // Section: Kritis & Basi
-                        if !viewModel.lowStockIngredients.isEmpty
-                            || !viewModel.expiredIngredients.isEmpty
-                        {
-                            Section {
-                                ForEach(viewModel.expiredIngredients, id: \.id)
-                                { item in
-                                    IngredientRowView(
-                                        ingredient: item,
-                                        isExpired: true
-                                    ) {
-                                        Task {
-                                            await viewModel.discardExpiredItem(
-                                                ingredient: item,
-                                                branchId: branchId
-                                            )
-                                        }
+            if viewModel.isLoading && viewModel.ingredients.isEmpty {
+                ProgressView("Memuat data gudang...")
+            } else if viewModel.ingredients.isEmpty {
+                ContentUnavailableView(
+                    "Gudang Kosong",
+                    systemImage: "shippingbox",
+                    description: Text("Bahan baku belum ditambahkan.")
+                )
+            } else {
+                List {
+                    if !viewModel.lowStockIngredients.isEmpty
+                        || !viewModel.expiredIngredients.isEmpty
+                    {
+                        Section {
+                            ForEach(viewModel.expiredIngredients, id: \.id) {
+                                item in
+                                IngredientRowView(
+                                    ingredient: item,
+                                    isExpired: true
+                                ) {
+                                    Task {
+                                        await viewModel.discardExpiredItem(
+                                            ingredient: item,
+                                            branchId: branchId
+                                        )
                                     }
                                 }
-                                ForEach(viewModel.lowStockIngredients, id: \.id)
-                                { item in
-                                    IngredientRowView(
-                                        ingredient: item,
-                                        isLowStock: true
-                                    )
-                                }
-                            } header: {
-                                Text("PERHATIAN SEGERA")
-                                    .foregroundColor(Color(hex: "#EF4444"))
-                                    .fontWeight(.bold)
                             }
-                        }
-
-                        // Section: Stok Aman
-                        Section {
-                            ForEach(viewModel.ingredients, id: \.id) { item in
-                                if !viewModel.lowStockIngredients.contains(
-                                    where: { $0.id == item.id })
-                                    && !viewModel.expiredIngredients.contains(
-                                        where: { $0.id == item.id })
-                                {
-                                    IngredientRowView(ingredient: item)
-                                }
+                            ForEach(viewModel.lowStockIngredients, id: \.id) {
+                                item in
+                                IngredientRowView(
+                                    ingredient: item,
+                                    isLowStock: true
+                                )
                             }
                         } header: {
-                            Text("STOK AMAN")
+                            Text("PERHATIAN SEGERA").foregroundColor(
+                                Color(hex: "#EF4444")
+                            ).fontWeight(.bold)
                         }
                     }
-                    .listStyle(.insetGrouped)
-                    .scrollContentBackground(.hidden)
+
+                    Section {
+                        ForEach(viewModel.ingredients, id: \.id) { item in
+                            if !viewModel.lowStockIngredients.contains(where: {
+                                $0.id == item.id
+                            })
+                                && !viewModel.expiredIngredients.contains(
+                                    where: { $0.id == item.id })
+                            {
+                                IngredientRowView(ingredient: item)
+                            }
+                        }
+                    } header: {
+                        Text("STOK AMAN")
+                    }
                 }
-            }
-            .navigationTitle("Gudang")
-            .onAppear {
-                Task { await viewModel.loadIngredients(branchId: branchId) }
-            }
-            .refreshable {
-                await viewModel.loadIngredients(branchId: branchId)
+                .listStyle(.insetGrouped)
+                .scrollContentBackground(.hidden)
             }
         }
+        .navigationTitle("Gudang")
+        .onAppear {
+            Task { await viewModel.loadIngredients(branchId: branchId) }
+        }
+        .refreshable { await viewModel.loadIngredients(branchId: branchId) }
     }
 }
 
@@ -91,7 +86,6 @@ struct InventoryView: View {
             value: -1,
             to: Date()
         )
-
         mockOp.dummyIngredients = [
             Ingredient(
                 id: "1",
@@ -103,15 +97,6 @@ struct InventoryView: View {
                 costPerUnit: 20000
             ),
             Ingredient(
-                id: "2",
-                name: "Susu UHT",
-                currentStock: 2,
-                unit: "L",
-                expiryDate: nil,
-                minimumStockWarning: 5,
-                costPerUnit: 15000
-            ),  // Low
-            Ingredient(
                 id: "3",
                 name: "Roti",
                 currentStock: 10,
@@ -119,14 +104,15 @@ struct InventoryView: View {
                 expiryDate: pastDate,
                 minimumStockWarning: 20,
                 costPerUnit: 5000
-            ),  // Expired
+            ),
         ]
-
         return InventoryViewModel(
             operationalProtocol: mockOp,
             cashflowProtocol: MockCashflowRepository()
         )
     }()
 
-    InventoryView(viewModel: previewViewModel, branchId: "B-1")
+    NavigationStack {
+        InventoryView(viewModel: previewViewModel, branchId: "B-1")
+    }
 }
