@@ -118,28 +118,29 @@ struct POSView: View {
     }
 }
 
+// ... (Scroll ke paling bawah, cari bagian #Preview dan ganti isinya dengan ini) ...
+
 //#Preview {
 //    let mockOp = MockOperationalRepository()
+//    let mockCash = MockCashflowRepository() // ✅ DITAMBAHKAN
 //    let mockSync = MockSyncManager()
 //    let network = NetworkMonitor()
 //
 //    mockOp.dummyProducts = [
-//        Product(id: "1", name: "Es Kopi Susu Aren", price: 22000, recipe: []),
-//        Product(id: "2", name: "Americano Dingin", price: 18000, recipe: []),
+//        Product(id: "1", branchId: "B-1", name: "Es Kopi Susu Aren", price: 22000, recipe: []),
+//        Product(id: "2", branchId: "B-1", name: "Americano Dingin", price: 18000, recipe: [])
 //    ]
 //
 //    let vm = POSViewModel(
 //        operationalProtocol: mockOp,
+//        cashflowProtocol: mockCash, 
 //        networkMonitor: network,
 //        syncManager: mockSync
 //    )
+//    
 //    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-//    let container = try! ModelContainer(
-//        for: OfflineOrderModel.self,
-//        configurations: config
-//    )
+//    let container = try! ModelContainer(for: OfflineOrderModel.self, configurations: config)
 //
-//    // ✅ Preview dibungkus NavigationStack agar preview tidak polos
 //    NavigationStack {
 //        POSView(viewModel: vm, branchId: "B-1")
 //            .modelContainer(container)

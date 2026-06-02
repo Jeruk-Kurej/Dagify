@@ -34,6 +34,7 @@ struct OperationalView: View {
                             destination: POSView(
                                 viewModel: POSViewModel(
                                     operationalProtocol: operationalService,
+                                    cashflowProtocol: cashflowService,  
                                     networkMonitor: NetworkMonitor(),
                                     syncManager: SyncManager.shared
                                 ),

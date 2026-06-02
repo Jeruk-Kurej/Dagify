@@ -12,38 +12,40 @@ import SwiftData
 @MainActor
 @Observable
 class POSViewModel {
-    var cart: [OrderItem] = []
     var availableProducts: [Product] = []
+    var cart: [OrderItem] = []
     var isLoading: Bool = false
     var errorMessage: String? = nil
     var isCheckoutSuccess: Bool = false
 
-    var subtotal: Double {
-        cart.reduce(0) { $0 + ($1.product.price * Double($1.quantity)) }
-    }
-
     private let operationalProtocol: OperationalProtocol
+    // ✅ DITAMBAHKAN: Jalur komunikasi Kasir ke Arus Kas
+    private let cashflowProtocol: CashflowProtocol
     private let networkMonitor: NetworkMonitor
     private let syncManager: SyncManagerProtocol
 
     init(
         operationalProtocol: OperationalProtocol,
+        cashflowProtocol: CashflowProtocol, // ✅ DITAMBAHKAN
         networkMonitor: NetworkMonitor,
         syncManager: SyncManagerProtocol
     ) {
         self.operationalProtocol = operationalProtocol
+        self.cashflowProtocol = cashflowProtocol
         self.networkMonitor = networkMonitor
         self.syncManager = syncManager
+    }
+
+    var subtotal: Double {
+        cart.reduce(0) { $0 + ($1.product.price * Double($1.quantity)) }
     }
 
     func loadProducts(branchId: String) async {
         isLoading = true
         do {
-            availableProducts = try await operationalProtocol.fetchProducts(
-                for: branchId
-            )
+            availableProducts = try await operationalProtocol.fetchProducts(for: branchId)
         } catch {
-            errorMessage = "Gagal memuat daftar menu."
+            errorMessage = "Gagal memuat menu."
         }
         isLoading = false
     }
@@ -66,43 +68,53 @@ class POSViewModel {
         }
     }
 
-    func checkout(
-        branchId: String,
-        customerId: String? = nil,
-        context: ModelContext
-    ) async {
-        guard !cart.isEmpty else {
-            errorMessage = "Keranjang masih kosong."
-            return
-        }
-
+    func checkout(branchId: String, context: ModelContext) async {
+        guard !cart.isEmpty else { return }
         isLoading = true
         errorMessage = nil
-        isCheckoutSuccess = false
 
         let order = Order(
             branchId: branchId,
-            customerId: customerId,
+            customerId: nil,
             items: cart,
             totalAmount: subtotal,
             timestamp: Date()
         )
 
-        do {
-            try await syncManager.handleCheckout(
-                order: order,
-                isConnected: networkMonitor.isConnected,
-                firebaseRepo: operationalProtocol,
-                context: context
-            )
+        // ✅ BUAT NOTA KEUANGAN OTOMATIS
+        let incomeRecord = FinancialRecord(
+            branchId: branchId,
+            amount: subtotal,
+            type: .income,
+            category: .none,
+            timestamp: Date(),
+            notes: "Penjualan Kasir (POS)"
+        )
 
-            cart.removeAll()
-            isCheckoutSuccess = true
-
-        } catch {
-            errorMessage = "Checkout gagal: \(error.localizedDescription)"
+        if networkMonitor.isConnected {
+            do {
+                // 1. Potong Stok Gudang & Catat Pesanan
+                _ = try await operationalProtocol.submitOrderAndUpdateInventory(order: order)
+                // 2. Setor Uang ke Arus Kas
+                _ = try await cashflowProtocol.addRecord(incomeRecord)
+                
+                isCheckoutSuccess = true
+                cart.removeAll()
+            } catch {
+                errorMessage = "Gagal memproses transaksi: \(error.localizedDescription)"
+            }
+        } else {
+            // Mode Offline (Nantinya bisa di-sync ke Cashflow saat koneksi kembali)
+            do {
+                let offlineOrder = OfflineOrderModel(branchId: branchId, customerId: nil, totalAmount: subtotal, timestamp: Date())
+                context.insert(offlineOrder)
+                try context.save()
+                isCheckoutSuccess = true
+                cart.removeAll()
+            } catch {
+                errorMessage = "Gagal menyimpan transaksi offline."
+            }
         }
-
         isLoading = false
     }
 }
