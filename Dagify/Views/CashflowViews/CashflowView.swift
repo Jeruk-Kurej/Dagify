@@ -1,5 +1,5 @@
 import SwiftUI
-import Charts // ✅ WAJIB DIIMPOR UNTUK CHART
+import Charts
 
 struct CashflowView: View {
     var viewModel: CashflowViewModel
@@ -14,14 +14,13 @@ struct CashflowView: View {
             ScrollView {
                 VStack(spacing: 20) {
                     
-                    // ✅ BAGIAN BARU: GRAFIK CASHFLOW DENGAN FILTER INDEPENDEN
+                    // --- GRAFIK CASHFLOW DENGAN FILTER INDEPENDEN ---
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
                             Text("Grafik Cashflow")
                                 .font(.headline)
                                 .foregroundColor(Color(hex: "#111827"))
                             Spacer()
-                            // Tombol Filter Khusus Chart
                             Menu {
                                 ForEach(ChartFilter.allCases) { filter in
                                     Button(filter.rawValue) {
@@ -48,7 +47,7 @@ struct CashflowView: View {
                                 .padding(.vertical, 30)
                         } else {
                             Chart(viewModel.chartData) { data in
-                                // 1. Bar Pemasukan (Ke Atas / Positif)
+                                // 1. Bar Pemasukan
                                 BarMark(
                                     x: .value("Waktu", data.date, unit: viewModel.chartUnit),
                                     y: .value("Pemasukan", data.income)
@@ -56,15 +55,15 @@ struct CashflowView: View {
                                 .foregroundStyle(Color(hex: "#10B981"))
                                 .position(by: .value("Tipe", "Pemasukan"))
                                 
-                                // 2. Bar Pengeluaran (Ke Bawah / Negatif)
+                                // 2. Bar Pengeluaran (✅ DIBUAT POSITIF AGAR BERDAMPINGAN KE ATAS)
                                 BarMark(
                                     x: .value("Waktu", data.date, unit: viewModel.chartUnit),
-                                    y: .value("Pengeluaran", -data.expense)
+                                    y: .value("Pengeluaran", data.expense)
                                 )
-                                .foregroundStyle(Color(hex: "#F59E0B")) // Oranye ala Expenses di foto
+                                .foregroundStyle(Color(hex: "#EF4444"))
                                 .position(by: .value("Tipe", "Pengeluaran"))
                                 
-                                // 3. Garis Tren Kumulatif (Cash Flow)
+                                // 3. Garis Kumulatif Cashflow
                                 LineMark(
                                     x: .value("Waktu", data.date, unit: viewModel.chartUnit),
                                     y: .value("Cash Flow", data.cumulativeNet)
@@ -84,10 +83,10 @@ struct CashflowView: View {
                                 AxisMarks(position: .leading)
                             }
                             
-                            // Legend Penjelasan
+                            // Legend
                             HStack(spacing: 16) {
-                                HStack(spacing: 4) { Circle().fill(Color(hex: "#10B981")).frame(width: 8, height: 8); Text("Income").font(.caption2).foregroundColor(.gray) }
-                                HStack(spacing: 4) { Circle().fill(Color(hex: "#F59E0B")).frame(width: 8, height: 8); Text("Expenses").font(.caption2).foregroundColor(.gray) }
+                                HStack(spacing: 4) { Circle().fill(Color(hex: "#10B981")).frame(width: 8, height: 8); Text("Pemasukan").font(.caption2).foregroundColor(.gray) }
+                                HStack(spacing: 4) { Circle().fill(Color(hex: "#EF4444")).frame(width: 8, height: 8); Text("Pengeluaran").font(.caption2).foregroundColor(.gray) }
                                 HStack(spacing: 4) { Circle().fill(Color.blue).frame(width: 8, height: 8); Text("Cash Flow").font(.caption2).foregroundColor(.gray) }
                             }
                             .frame(maxWidth: .infinity, alignment: .center)
@@ -115,7 +114,7 @@ struct CashflowView: View {
                     }
                     .padding(.horizontal)
                     
-                    // --- SECTION 1: RINGKASAN SALDO ---
+                    // --- RINGKASAN SALDO ---
                     VStack(spacing: 12) {
                         FinancialBox(title: "Laba Bersih Bulan Ini", amount: viewModel.netProfit, color: Color(hex: "#00A3A3"), icon: "building.columns.fill")
                         HStack(spacing: 12) {
@@ -125,7 +124,7 @@ struct CashflowView: View {
                     }
                     .padding(.horizontal)
                     
-                    // --- SECTION 2: RIWAYAT TRANSAKSI ---
+                    // --- RIWAYAT TRANSAKSI ---
                     VStack(alignment: .leading, spacing: 0) {
                         HStack {
                             Text("Riwayat Transaksi").font(.headline).foregroundColor(Color(hex: "#111827"))
@@ -179,7 +178,7 @@ struct CashflowView: View {
     }
 }
 
-// MARK: - Komponen Pembungkus Share Sheet iOS
+// MARK: - Share Sheet
 struct ShareSheet: UIViewControllerRepresentable {
     var activityItems: [Any]
     func makeUIViewController(context: Context) -> UIActivityViewController {

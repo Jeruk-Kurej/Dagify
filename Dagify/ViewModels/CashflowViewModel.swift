@@ -1,7 +1,6 @@
 import Foundation
 import Observation
 
-// ✅ ENUM & STRUKTUR BARU UNTUK GRAFIK
 enum ChartFilter: String, CaseIterable, Identifiable {
     case all = "Semua"
     case thisYear = "Tahun Ini"
@@ -15,7 +14,7 @@ struct CashflowChartData: Identifiable {
     let date: Date
     let income: Double
     let expense: Double
-    let cumulativeNet: Double // Untuk garis "Cash Flow"
+    let cumulativeNet: Double
 }
 
 @MainActor
@@ -25,10 +24,7 @@ class CashflowViewModel {
     var isLoading: Bool = false
     var errorMessage: String? = nil
     
-    // --- STATE TRANSAKSI LIST & PDF ---
     var currentMonthDate: Date = Date()
-    
-    // ✅ STATE GRAFIK (Independen dari List)
     var chartFilter: ChartFilter = .thisMonth
     
     private let cashProtocol: CashflowProtocol
@@ -37,7 +33,6 @@ class CashflowViewModel {
         self.cashProtocol = cashProtocol
     }
 
-    // --- LOGIKA TRANSAKSI LIST & PDF ---
     var filteredRecords: [FinancialRecord] {
         let calendar = Calendar.current
         return records.filter {
@@ -65,7 +60,6 @@ class CashflowViewModel {
         if let newDate = Calendar.current.date(byAdding: .month, value: 1, to: currentMonthDate) { currentMonthDate = newDate }
     }
 
-    // --- ✅ LOGIKA GRAFIK (KOMPUTASI DATA) ---
     var chartUnit: Calendar.Component {
         switch chartFilter {
         case .all: return .year
@@ -79,30 +73,22 @@ class CashflowViewModel {
         let calendar = Calendar.current
         let now = Date()
         
-        // 1. Filter data mentah sesuai pilihan
         let baseRecords: [FinancialRecord]
         switch chartFilter {
-        case .all:
-            baseRecords = records
-        case .thisYear:
-            baseRecords = records.filter { calendar.isDate($0.timestamp, equalTo: now, toGranularity: .year) }
-        case .thisMonth:
-            baseRecords = records.filter { calendar.isDate($0.timestamp, equalTo: now, toGranularity: .month) && calendar.isDate($0.timestamp, equalTo: now, toGranularity: .year) }
-        case .today:
-            baseRecords = records.filter { calendar.isDateInToday($0.timestamp) }
+        case .all: baseRecords = records
+        case .thisYear: baseRecords = records.filter { calendar.isDate($0.timestamp, equalTo: now, toGranularity: .year) }
+        case .thisMonth: baseRecords = records.filter { calendar.isDate($0.timestamp, equalTo: now, toGranularity: .month) && calendar.isDate($0.timestamp, equalTo: now, toGranularity: .year) }
+        case .today: baseRecords = records.filter { calendar.isDateInToday($0.timestamp) }
         }
         
-        // 2. Gabungkan transaksi berdasarkan unit waktu
         var grouped: [Date: (income: Double, expense: Double)] = [:]
-        
         for record in baseRecords {
             var components = calendar.dateComponents([.year, .month, .day, .hour], from: record.timestamp)
-            // Normalisasi Tanggal agar Chart menumpuknya dengan rapi
             switch chartFilter {
             case .all: components.month = 1; components.day = 1; components.hour = 0
             case .thisYear: components.day = 1; components.hour = 0
             case .thisMonth: components.hour = 0
-            case .today: break // Pertahankan Jam
+            case .today: break
             }
             guard let normalizedDate = calendar.date(from: components) else { continue }
             
@@ -111,22 +97,18 @@ class CashflowViewModel {
             else { grouped[normalizedDate] = (current.income, current.expense + record.amount) }
         }
         
-        // 3. Sortir dan hitung kumulatif (Cash Flow)
         let sortedKeys = grouped.keys.sorted()
         var result: [CashflowChartData] = []
         var runningNet: Double = 0
         
         for key in sortedKeys {
             let val = grouped[key]!
-            let net = val.income - val.expense
-            runningNet += net
+            runningNet += (val.income - val.expense)
             result.append(CashflowChartData(date: key, income: val.income, expense: val.expense, cumulativeNet: runningNet))
         }
-        
         return result
     }
 
-    // --- CORE OPERATIONS ---
     func loadRecords(branchId: String) async {
         isLoading = true
         errorMessage = nil
@@ -135,9 +117,10 @@ class CashflowViewModel {
         isLoading = false
     }
 
-    func addTransaction(branchId: String, amount: Double, type: TransactionType, category: ExpenseCategory, notes: String) async {
+    // ✅ FITUR BARU: Menerima Parameter 'date'
+    func addTransaction(branchId: String, amount: Double, type: TransactionType, category: ExpenseCategory, notes: String, date: Date) async {
         isLoading = true
-        let record = FinancialRecord(id: UUID().uuidString, branchId: branchId, amount: amount, type: type, category: category, timestamp: Date(), notes: notes)
+        let record = FinancialRecord(id: UUID().uuidString, branchId: branchId, amount: amount, type: type, category: category, timestamp: date, notes: notes)
         do {
             _ = try await cashProtocol.addRecord(record)
             currentMonthDate = Date()

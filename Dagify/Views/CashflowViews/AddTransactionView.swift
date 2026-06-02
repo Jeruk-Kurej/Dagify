@@ -2,32 +2,26 @@ import SwiftUI
 
 struct AddTransactionView: View {
     @Environment(\.dismiss) private var dismiss
-
     var viewModel: CashflowViewModel
     var branchId: String
 
-    @State private var amountString: String = ""
     @State private var type: TransactionType = .expense
+    @State private var transactionDate: Date = Date() // ✅ KALENDER WAKTU
     @State private var notes: String = ""
+    @State private var amountString: String = ""
     
-    // ✅ Mencegah double-submission (klik ganda)
-    @State private var isSaving: Bool = false
+    @State private var hasAttemptedSave = false // ✅ TRIGGER VALIDASI SOPAN
 
-    // ✅ LOGIKA VALIDASI REAL-TIME YANG LEBIH JELAS
     var isAmountValid: Bool {
         let clean = amountString.replacingOccurrences(of: ",", with: ".")
-        return (Double(clean) ?? 0) > 0
+        return Double(clean) != nil && (Double(clean) ?? 0) > 0
     }
     
     var validationMessage: String? {
-        if amountString.isEmpty {
+        if hasAttemptedSave && amountString.isEmpty {
             return "Nominal wajib diisi."
-        }
-        let clean = amountString.replacingOccurrences(of: ",", with: ".")
-        if Double(clean) == nil {
-            return "Format angka tidak valid. Gunakan titik/koma dengan benar."
-        } else if let val = Double(clean), val <= 0 {
-            return "Nominal harus lebih besar dari 0."
+        } else if !amountString.isEmpty && !isAmountValid {
+            return "Format angka tidak valid."
         }
         return nil
     }
@@ -36,13 +30,21 @@ struct AddTransactionView: View {
         NavigationStack {
             Form {
                 Section(header: Text("Detail Transaksi")) {
+                    // 1. Jenis
                     Picker("Jenis Transaksi", selection: $type) {
                         Text("Pengeluaran").tag(TransactionType.expense)
                         Text("Pemasukan").tag(TransactionType.income)
                     }
                     .pickerStyle(.segmented)
                     .padding(.vertical, 8)
+                    
+                    // 2. Tanggal Transaksi
+                    DatePicker("Waktu Transaksi", selection: $transactionDate)
+                    
+                    // 3. Catatan
+                    TextField("Catatan (Opsional)", text: $notes)
 
+                    // 4. Nominal (Tergabung dengan error text di bawahnya)
                     VStack(alignment: .leading, spacing: 4) {
                         TextField("Nominal (Rp)", text: $amountString)
                             .keyboardType(.decimalPad)
@@ -53,15 +55,12 @@ struct AddTransactionView: View {
                                 }
                             }
                         
-                        // ✅ PERINGATAN VISUAL YANG JELAS BAGI USER
                         if let msg = validationMessage {
                             Text(msg)
                                 .font(.caption2)
                                 .foregroundColor(.red)
                         }
                     }
-
-                    TextField("Catatan (Opsional)", text: $notes)
                 }
 
                 if let errorMessage = viewModel.errorMessage {
@@ -80,28 +79,28 @@ struct AddTransactionView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Simpan") {
-                        guard !isSaving else { return }
-                        isSaving = true // Matikan tombol
-                        
-                        Task {
-                            let cleanString = amountString.replacingOccurrences(of: ",", with: ".")
-                            if let amount = Double(cleanString) {
-                                await viewModel.addTransaction(
-                                    branchId: branchId,
-                                    amount: amount,
-                                    type: type,
-                                    category: .none,
-                                    notes: notes.isEmpty ? (type == .income ? "Pemasukan Manual" : "Pengeluaran Manual") : notes
-                                )
-                                isSaving = false
-                                dismiss()
-                            } else {
-                                isSaving = false
+                        // ✅ JIKA KOSONG: Munculkan pesan error (Jangan kunci tombol secara buta)
+                        if amountString.isEmpty || !isAmountValid {
+                            withAnimation { hasAttemptedSave = true }
+                        } else {
+                            // ✅ JIKA VALID: Eksekusi penyimpanan
+                            Task {
+                                let cleanString = amountString.replacingOccurrences(of: ",", with: ".")
+                                if let amount = Double(cleanString) {
+                                    await viewModel.addTransaction(
+                                        branchId: branchId,
+                                        amount: amount,
+                                        type: type,
+                                        category: .none,
+                                        notes: notes.isEmpty ? (type == .income ? "Pemasukan Manual" : "Pengeluaran Manual") : notes,
+                                        date: transactionDate // ✅ Kirim tanggal pilihan
+                                    )
+                                    dismiss()
+                                }
                             }
                         }
                     }
-                    // ✅ UX: Tombol simpan DITOLAK selama merah, loading, atau sedang proses simpan
-                    .disabled(!isAmountValid || viewModel.isLoading || isSaving)
+                    .disabled(viewModel.isLoading)
                 }
             }
         }
