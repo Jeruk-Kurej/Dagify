@@ -30,10 +30,7 @@ class InventoryViewModel {
     private let operationalProtocol: OperationalProtocol
     private let cashflowProtocol: CashflowProtocol
 
-    init(
-        operationalProtocol: OperationalProtocol,
-        cashflowProtocol: CashflowProtocol
-    ) {
+    init(operationalProtocol: OperationalProtocol, cashflowProtocol: CashflowProtocol) {
         self.operationalProtocol = operationalProtocol
         self.cashflowProtocol = cashflowProtocol
     }
@@ -41,37 +38,41 @@ class InventoryViewModel {
     func loadIngredients(branchId: String) async {
         isLoading = true
         do {
-            ingredients = try await operationalProtocol.fetchIngredients(
-                for: branchId
-            )
+            ingredients = try await operationalProtocol.fetchIngredients(for: branchId)
         } catch {
             errorMessage = "Gagal memuat data gudang."
         }
         isLoading = false
     }
 
+    // ✅ FUNGSI BARU: Tambah Bahan Baku ke Firebase
+    func createIngredient(branchId: String, name: String, currentStock: Double, unit: String, expiryDate: Date?, minimumStockWarning: Double, costPerUnit: Double) async {
+        guard !name.isEmpty, currentStock >= 0 else {
+            errorMessage = "Nama bahan baku tidak boleh kosong dan stok harus valid."
+            return
+        }
+        isLoading = true
+        let newIngredient = Ingredient(branchId: branchId, name: name, currentStock: currentStock, unit: unit, expiryDate: expiryDate, minimumStockWarning: minimumStockWarning, costPerUnit: costPerUnit)
+        
+        do {
+            _ = try await operationalProtocol.addIngredient(newIngredient)
+            await loadIngredients(branchId: branchId) // Refresh otomatis
+        } catch {
+            errorMessage = "Gagal menyimpan bahan baku."
+        }
+        isLoading = false
+    }
+
     func discardExpiredItem(ingredient: Ingredient, branchId: String) async {
         guard let id = ingredient.id else { return }
-
         isLoading = true
         do {
-            _ = try await operationalProtocol.recordWaste(
-                ingredientId: id,
-                amountToDeduct: ingredient.currentStock
-            )
+            _ = try await operationalProtocol.recordWaste(ingredientId: id, amountToDeduct: ingredient.currentStock)
             let totalLoss = ingredient.currentStock * ingredient.costPerUnit
             if totalLoss > 0 {
-                let lossRecord = FinancialRecord(
-                    branchId: branchId,
-                    amount: totalLoss,
-                    type: .expense,
-                    category: .incidental,
-                    timestamp: Date(),
-                    notes: "Kerugian: Bahan \(ingredient.name) kedaluwarsa"
-                )
+                let lossRecord = FinancialRecord(branchId: branchId, amount: totalLoss, type: .expense, category: .incidental, timestamp: Date(), notes: "Kerugian: Bahan \(ingredient.name) kedaluwarsa")
                 _ = try await cashflowProtocol.addRecord(lossRecord)
             }
-
             await loadIngredients(branchId: branchId)
         } catch {
             errorMessage = "Gagal membuang stok basi."

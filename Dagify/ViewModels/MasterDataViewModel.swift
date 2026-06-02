@@ -14,6 +14,9 @@ class MasterDataViewModel {
     var isLoading: Bool = false
     var errorMessage: String? = nil
     var isSuccess: Bool = false
+    
+    // ✅ ARRAY UNTUK MENYIMPAN DAFTAR BAHAN BAKU DARI GUDANG
+    var availableIngredients: [Ingredient] = []
 
     private let operationalProtocol: OperationalProtocol
 
@@ -21,68 +24,32 @@ class MasterDataViewModel {
         self.operationalProtocol = operationalProtocol
     }
 
-    func createIngredient(
-        name: String,
-        currentStock: Double,
-        unit: String,
-        expiryDate: Date?,
-        minimumStockWarning: Double,
-        costPerUnit: Double
-    ) async {
-        guard !name.isEmpty, currentStock >= 0 else {
-            errorMessage = "Nama bahan baku tidak boleh kosong dan stok harus valid."
-            return
-        }
-
-        isLoading = true
-        errorMessage = nil
-        isSuccess = false
-
-        let newIngredient = Ingredient(
-            name: name,
-            currentStock: currentStock,
-            unit: unit,
-            expiryDate: expiryDate,
-            minimumStockWarning: minimumStockWarning,
-            costPerUnit: costPerUnit
-        )
-
+    // ✅ FUNGSI TARIK DATA GUDANG
+    func loadIngredients(branchId: String) async {
         do {
-            _ = try await operationalProtocol.addIngredient(newIngredient)
-            isSuccess = true
+            availableIngredients = try await operationalProtocol.fetchIngredients(for: branchId)
         } catch {
-            errorMessage = "Gagal menyimpan bahan baku: \(error.localizedDescription)"
+            errorMessage = "Gagal memuat daftar bahan baku."
         }
-
-        isLoading = false
     }
 
-    // ✅ DITAMBAHKAN: Menerima branchId sebagai parameter
     func createProduct(branchId: String, name: String, price: Double, recipe: [RecipeItem]) async {
         guard !name.isEmpty, price >= 0 else {
             errorMessage = "Nama menu dan harga harus valid."
             return
         }
-
         isLoading = true
         errorMessage = nil
         isSuccess = false
 
-        // ✅ DITAMBAHKAN: Memasukkan branchId ke dalam Produk baru
-        let newProduct = Product(
-            branchId: branchId,
-            name: name,
-            price: price,
-            recipe: recipe
-        )
+        let newProduct = Product(branchId: branchId, name: name, price: price, recipe: recipe)
 
         do {
             _ = try await operationalProtocol.addProduct(newProduct)
             isSuccess = true
         } catch {
-            errorMessage = "Gagal menyimpan menu baru: \(error.localizedDescription)"
+            errorMessage = "Gagal menyimpan menu baru."
         }
-
         isLoading = false
     }
 }
