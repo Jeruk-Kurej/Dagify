@@ -1,186 +1,95 @@
 import SwiftUI
 
-struct RecipeDraft: Identifiable {
-    let id = UUID()
-    var ingredient: Ingredient
-    var qtyString: String
-}
-
 struct MasterDataView: View {
     @Bindable var viewModel: MasterDataViewModel
     let branchId: String
-
-    @State private var productName = ""
-    @State private var productPrice = ""
     
-    @State private var recipeDrafts: [RecipeDraft] = []
-    @State private var showIngredientPicker = false
+    @State private var showForm = false
+    @State private var productToEdit: Product? = nil
 
     var body: some View {
-        List {
-            Section {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Nama Produk").font(.caption).foregroundColor(Color(hex: "#6B7280"))
-                    TextField("Cth: Kopi Susu Aren", text: $productName).font(.body)
-                }
-                .padding(.vertical, 4)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Harga Jual (Rp)").font(.caption).foregroundColor(Color(hex: "#6B7280"))
-                    TextField("Cth: 18000", text: $productPrice).keyboardType(.numberPad).font(.body)
-                }
-                .padding(.vertical, 4)
-            } header: { Text("Informasi Menu Baru") }
-
-            Section {
-                ForEach($recipeDrafts) { $draft in
-                    HStack {
-                        Text(draft.ingredient.name)
-                            .font(.body)
-                            .foregroundColor(Color(hex: "#111827"))
-                        Spacer()
-                        TextField("Takaran", text: $draft.qtyString)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 60)
-                            .foregroundColor(Color(hex: "#00A3A3"))
-                            .fontWeight(.bold)
-                        Text(draft.ingredient.unit)
-                            .font(.caption)
-                            .foregroundColor(Color(hex: "#6B7280"))
-                        
-                        Button(action: {
-                            recipeDrafts.removeAll { $0.id == draft.id }
-                        }) {
-                            Image(systemName: "minus.circle.fill").foregroundColor(Color(hex: "#EF4444"))
-                        }
-                        .padding(.leading, 8)
-                    }
-                }
-                
-                Button(action: { showIngredientPicker = true }) {
-                    HStack {
-                        Image(systemName: "plus.circle.fill")
-                        Text(recipeDrafts.isEmpty ? "Buat Resep Menu" : "Tambah Bahan Baku")
-                    }
-                    .foregroundColor(Color(hex: "#00A3A3"))
-                    .fontWeight(.semibold)
-                }
-            } header: {
-                Text("Resep Bahan Baku (Opsional)")
-            } footer: {
-                Text("Bahan baku ini akan otomatis dipotong dari Gudang setiap kali menu ini terjual di Kasir (POS).")
-            }
-
-            Section {
-                Button(action: saveProduct) {
-                    HStack {
-                        Spacer()
-                        if viewModel.isLoading {
-                            ProgressView().tint(.white)
-                        } else {
-                            Text("Simpan ke Database").fontWeight(.bold)
-                        }
-                        Spacer()
-                    }
-                }
-                .disabled(productName.isEmpty || productPrice.isEmpty || viewModel.isLoading)
-                .listRowBackground((productName.isEmpty || productPrice.isEmpty) ? Color(hex: "#E5E7EB") : Color(hex: "#00A3A3"))
-                .disabled(
-                    productName.isEmpty || productPrice.isEmpty
-                        || viewModel.isLoading
-                )
-                .listRowBackground(
-                    (productName.isEmpty || productPrice.isEmpty)
-                        ? Color(hex: "#E5E7EB")
-                        : Color(hex: "#00A3A3")
-                )
-                .foregroundColor(.white)
-            }
-
-            if let err = viewModel.errorMessage {
-                Section { Text(err).font(.footnote).foregroundColor(Color(hex: "#EF4444")) }.listRowBackground(Color.clear)
-                Section {
-                    Text(err)
-                        .font(.footnote)
-                        .foregroundColor(Color(hex: "#EF4444"))
-                }
-                .listRowBackground(Color.clear)
-            }
-        }
-        .navigationTitle("Tambah Menu")
-        .listStyle(.insetGrouped)
-        .background(Color(hex: "#F9FAFB").ignoresSafeArea())
-        .scrollContentBackground(.hidden)
-        .onAppear {
-            Task { await viewModel.loadIngredients(branchId: branchId) }
-        }
-        .sheet(isPresented: $showIngredientPicker) {
-            NavigationStack {
-                List(viewModel.availableIngredients) { ingredient in
-                    Button(action: {
-                        if !recipeDrafts.contains(where: { $0.ingredient.id == ingredient.id }) {
-                            recipeDrafts.append(RecipeDraft(ingredient: ingredient, qtyString: ""))
-                        }
-                        showIngredientPicker = false
-                    }) {
+        ZStack {
+            Color(hex: "#F9FAFB").ignoresSafeArea()
+            
+            if viewModel.isLoading && viewModel.products.isEmpty {
+                ProgressView("Memuat daftar menu...")
+            } else if viewModel.products.isEmpty {
+                ContentUnavailableView("Menu Kosong", systemImage: "takeoutbag.and.cup.and.straw", description: Text("Silakan daftarkan menu F&B baru untuk Kasir."))
+            } else {
+                List {
+                    ForEach(viewModel.products) { product in
                         HStack {
-                            Text(ingredient.name).foregroundColor(Color(hex: "#111827")).fontWeight(.medium)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(product.name)
+                                    .font(.headline)
+                                    .foregroundColor(Color(hex: "#111827"))
+                                Text(String(format: "Rp %.0f", product.price))
+                                    .font(.subheadline)
+                                    .foregroundColor(Color(hex: "#00A3A3"))
+                                    .fontWeight(.bold)
+                            }
                             Spacer()
-                            Text("Sisa: \(String(format: "%.1f", ingredient.currentStock)) \(ingredient.unit)")
+                            Text("\(product.recipe.count) Bahan")
                                 .font(.caption)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color(hex: "#E5E7EB"))
                                 .foregroundColor(Color(hex: "#6B7280"))
+                                .clipShape(Capsule())
+                        }
+                        .contentShape(Rectangle())
+                        // ✅ Fitur Edit Saat Menu Diklik
+                        .onTapGesture {
+                            productToEdit = product
+                            showForm = true
+                        }
+                    }
+                    // ✅ Fitur Swipe untuk Hapus
+                    .onDelete { indexSet in
+                        for index in indexSet {
+                            if let id = viewModel.products[index].id {
+                                Task { await viewModel.deleteProduct(productId: id, branchId: branchId) }
+                            }
                         }
                     }
                 }
-                .navigationTitle("Pilih Bahan Baku")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Tutup") { showIngredientPicker = false }
-                    }
+                .listStyle(.insetGrouped)
+                .scrollContentBackground(.hidden)
+            }
+        }
+        .navigationTitle("Master Data")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button(action: {
+                    productToEdit = nil
+                    showForm = true
+                }) {
+                    Image(systemName: "plus")
+                        .fontWeight(.bold)
+                        .foregroundColor(Color(hex: "#00A3A3"))
                 }
             }
-            .presentationDetents([.medium, .large])
         }
-        .alert("Berhasil", isPresented: $viewModel.isSuccess) {
-            Button("OK") {
-                productName = ""
-                productPrice = ""
-                recipeDrafts.removeAll()
+        .onAppear {
+            Task {
+                await viewModel.loadProducts(branchId: branchId)
+                await viewModel.loadIngredients(branchId: branchId) // Siapkan data gudang untuk resep
             }
-        } message: { Text("Produk & Resep berhasil disimpan.") }
-    }
-
-    private func saveProduct() {
-        guard let price = Double(productPrice) else { return }
-        
-        let finalRecipe = recipeDrafts.compactMap { draft -> RecipeItem? in
-            guard let id = draft.ingredient.id,
-                  let qty = Double(draft.qtyString.replacingOccurrences(of: ",", with: ".")),
-                  qty > 0 else { return nil }
-            return RecipeItem(ingredientId: id, quantityRequired: qty)
         }
-        
-        Task {
-            await viewModel.createProduct(branchId: branchId, name: productName, price: price, recipe: finalRecipe)
-            await viewModel.createProduct(
-                branchId: branchId,
-                name: productName,
-                price: price,
-                recipe: []
-            )
+        .refreshable {
+            await viewModel.loadProducts(branchId: branchId)
+        }
+        .sheet(isPresented: $showForm) {
+            AddEditProductView(viewModel: viewModel, branchId: branchId, productToEdit: productToEdit)
         }
     }
 }
 
 #Preview {
-    MasterDataView(viewModel: MasterDataViewModel(operationalProtocol: MockOperationalRepository()), branchId: "B-1")
     let previewViewModel: MasterDataViewModel = {
         let repo = MockOperationalRepository()
         return MasterDataViewModel(operationalProtocol: repo)
     }()
-
     NavigationStack {
         MasterDataView(viewModel: previewViewModel, branchId: "B-1")
     }

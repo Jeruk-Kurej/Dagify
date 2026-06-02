@@ -87,6 +87,19 @@ class FirebaseOperationalService: OperationalProtocol, StoreProtocol {
         return true
     }
 
+    // ✅ FUNGSI BARU: Update Menu F&B
+    func updateProduct(_ product: Product) async throws -> Bool {
+        guard let id = product.id else { return false }
+        try db.collection("products").document(id).setData(from: product)
+        return true
+    }
+
+    // ✅ FUNGSI BARU: Hapus Menu F&B
+    func deleteProduct(productId: String) async throws -> Bool {
+        try await db.collection("products").document(productId).delete()
+        return true
+    }
+
     func addIngredient(_ ingredient: Ingredient) async throws -> Bool {
         let ref = db.collection("ingredients").document()
         try ref.setData(from: ingredient)

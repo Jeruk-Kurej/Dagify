@@ -67,6 +67,21 @@ class MockOperationalRepository: OperationalProtocol, StoreProtocol {
         return true
     }
 
+    // ✅ FUNGSI BARU UNTUK PREVIEW
+    public func updateProduct(_ product: Product) async throws -> Bool {
+        if let index = dummyProducts.firstIndex(where: { $0.id == product.id })
+        {
+            dummyProducts[index] = product
+            return true
+        }
+        return false
+    }
+
+    public func deleteProduct(productId: String) async throws -> Bool {
+        dummyProducts.removeAll(where: { $0.id == productId })
+        return true
+    }
+
     public func addIngredient(_ ingredient: Ingredient) async throws -> Bool {
         if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
         var newIngredient = ingredient
