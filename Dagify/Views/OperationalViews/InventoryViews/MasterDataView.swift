@@ -87,13 +87,34 @@ struct MasterDataView: View {
                         Spacer()
                     }
                 }
+<<<<<<< HEAD
                 .disabled(productName.isEmpty || productPrice.isEmpty || viewModel.isLoading)
                 .listRowBackground((productName.isEmpty || productPrice.isEmpty) ? Color(hex: "#E5E7EB") : Color(hex: "#00A3A3"))
+=======
+                .disabled(
+                    productName.isEmpty || productPrice.isEmpty
+                        || viewModel.isLoading
+                )
+                .listRowBackground(
+                    (productName.isEmpty || productPrice.isEmpty)
+                        ? Color(hex: "#E5E7EB")
+                        : Color(hex: "#00A3A3")
+                )
+>>>>>>> 02ef93d0bc1a69488cca74d3ed2c84f8a3bd1956
                 .foregroundColor(.white)
             }
 
             if let err = viewModel.errorMessage {
+<<<<<<< HEAD
                 Section { Text(err).font(.footnote).foregroundColor(Color(hex: "#EF4444")) }.listRowBackground(Color.clear)
+=======
+                Section {
+                    Text(err)
+                        .font(.footnote)
+                        .foregroundColor(Color(hex: "#EF4444"))
+                }
+                .listRowBackground(Color.clear)
+>>>>>>> 02ef93d0bc1a69488cca74d3ed2c84f8a3bd1956
             }
         }
         .navigationTitle("Tambah Menu")
@@ -154,11 +175,31 @@ struct MasterDataView: View {
         }
         
         Task {
+<<<<<<< HEAD
             await viewModel.createProduct(branchId: branchId, name: productName, price: price, recipe: finalRecipe)
+=======
+            await viewModel.createProduct(
+                branchId: branchId,
+                name: productName,
+                price: price,
+                recipe: []
+            )
+>>>>>>> 02ef93d0bc1a69488cca74d3ed2c84f8a3bd1956
         }
     }
 }
 
 #Preview {
+<<<<<<< HEAD
     MasterDataView(viewModel: MasterDataViewModel(operationalProtocol: MockOperationalRepository()), branchId: "B-1")
+=======
+    let previewViewModel: MasterDataViewModel = {
+        let repo = MockOperationalRepository()
+        return MasterDataViewModel(operationalProtocol: repo)
+    }()
+
+    NavigationStack {
+        MasterDataView(viewModel: previewViewModel, branchId: "B-1")
+    }
+>>>>>>> 02ef93d0bc1a69488cca74d3ed2c84f8a3bd1956
 }
