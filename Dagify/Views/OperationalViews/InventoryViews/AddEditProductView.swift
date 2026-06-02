@@ -35,7 +35,6 @@ struct AddEditProductView: View {
         return viewModel.products.contains { $0.price == p }
     }
     
-    // ✅ LOGIKA VALIDASI: Memastikan harga bukan huruf dan bernilai valid
     var isPriceValid: Bool {
         let clean = productPrice.replacingOccurrences(of: ",", with: ".")
         return Double(clean) != nil && (Double(clean) ?? 0) >= 0
@@ -46,9 +45,9 @@ struct AddEditProductView: View {
             Form {
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Nama Produk").font(.caption).foregroundColor(Color("#6B7280"))
+                        Text("Nama Produk").font(.caption).foregroundColor(Color(hex: "#6B7280"))
                         TextField("Cth: Kopi Susu Aren", text: $productName)
-                            .font(.body).foregroundColor(Color("#111827"))
+                            .font(.body).foregroundColor(Color(hex: "#111827"))
                         
                         if isNameDuplicate {
                             Text("⚠️ Menu dengan nama ini sudah terdaftar!")
@@ -58,11 +57,10 @@ struct AddEditProductView: View {
                     }.padding(.vertical, 4)
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Harga Jual (Rp)").font(.caption).foregroundColor(Color("#6B7280"))
+                        Text("Harga Jual (Rp)").font(.caption).foregroundColor(Color(hex: "#6B7280"))
                         TextField("Cth: 18000", text: $productPrice)
                             .keyboardType(.decimalPad)
-                            .font(.body).foregroundColor(Color("#111827"))
-                            // ✅ UX FIX: Membuang huruf asing secara otomatis
+                            .font(.body).foregroundColor(Color(hex: "#111827"))
                             .onChange(of: productPrice) { oldValue, newValue in
                                 let filtered = newValue.filter { "0123456789.,".contains($0) }
                                 if filtered != newValue {
@@ -70,7 +68,6 @@ struct AddEditProductView: View {
                                 }
                             }
                         
-                        // ✅ PERINGATAN HARGA INVALID
                         if !productPrice.isEmpty && !isPriceValid {
                             Text("⚠️ Format harga tidak valid.")
                                 .font(.caption2)
@@ -91,8 +88,7 @@ struct AddEditProductView: View {
                             TextField("Takaran", text: $draft.qtyString)
                                 .keyboardType(.decimalPad)
                                 .multilineTextAlignment(.trailing)
-                                .frame(width: 60).foregroundColor(Color("#00A3A3")).fontWeight(.bold)
-                                // ✅ UX FIX: Membuang huruf asing di takaran resep juga
+                                .frame(width: 60).foregroundColor(Color(hex: "#00A3A3")).fontWeight(.bold)
                                 .onChange(of: draft.qtyString) { oldValue, newValue in
                                     let filtered = newValue.filter { "0123456789.,".contains($0) }
                                     if filtered != newValue {
@@ -100,7 +96,7 @@ struct AddEditProductView: View {
                                     }
                                 }
                             
-                            Text(draft.ingredient.unit).font(.caption).foregroundColor(Color("#6B7280"))
+                            Text(draft.ingredient.unit).font(.caption).foregroundColor(Color(hex: "#6B7280"))
                             
                             Button(action: { recipeDrafts.removeAll { $0.id == draft.id } }) {
                                 Image(systemName: "minus.circle.fill").foregroundColor(.red)
@@ -111,7 +107,7 @@ struct AddEditProductView: View {
                         HStack {
                             Image(systemName: "plus.circle.fill")
                             Text(recipeDrafts.isEmpty ? "Buat Resep Menu" : "Tambah Bahan Baku")
-                        }.foregroundColor(Color("#00A3A3")).fontWeight(.semibold)
+                        }.foregroundColor(Color(hex: "#00A3A3")).fontWeight(.semibold)
                     }
                 } header: { Text("Resep Bahan Baku (Opsional)") }
                   footer: { Text("Bahan baku ini otomatis dipotong dari Gudang setiap menu terjual.") }
@@ -122,7 +118,6 @@ struct AddEditProductView: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Batal") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Simpan") { saveProduct() }
-                        // ✅ TOMBOL TERKUNCI jika nama kosong, harga kosong, HARGA INVALID, atau nama duplikat!
                         .disabled(productName.isEmpty || productPrice.isEmpty || !isPriceValid || viewModel.isLoading || isNameDuplicate)
                 }
             }
@@ -137,14 +132,19 @@ struct AddEditProductView: View {
                             showIngredientPicker = false
                         }) {
                             HStack {
-                                Text(ingredient.name).foregroundColor(Color("#111827")).fontWeight(.medium)
+                                Text(ingredient.name).foregroundColor(Color(hex: "#111827")).fontWeight(.medium)
                                 Spacer()
                                 Text("Sisa: \(String(format: "%.1f", ingredient.currentStock)) \(ingredient.unit)")
-                                    .font(.caption).foregroundColor(Color("#6B7280"))
+                                    .font(.caption).foregroundColor(Color(hex: "#6B7280"))
                             }
                         }
                     }
                     .navigationTitle("Pilih Bahan Baku").navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Tutup") { showIngredientPicker = false }
+                        }
+                    }
                 }
                 .presentationDetents([.medium, .large])
             }
@@ -155,7 +155,9 @@ struct AddEditProductView: View {
         if let product = productToEdit {
             productName = product.name
             productPrice = String(format: "%.0f", product.price)
-            recipeDrafts = product.recipe.compactMap { recipeItem in
+            
+            // ✅ FIX 2: Tambahkan "-> RecipeDraft? in" agar mesin inferensi tipe data Swift tidak bingung
+            recipeDrafts = product.recipe.compactMap { recipeItem -> RecipeDraft? in
                 if let ingredient = viewModel.availableIngredients.first(where: { $0.id == recipeItem.ingredientId }) {
                     return RecipeDraft(ingredient: ingredient, qtyString: String(format: "%.1f", recipeItem.quantityRequired))
                 }
