@@ -1,6 +1,5 @@
 import SwiftUI
 
-// Struktur lokal untuk meracik resep di memori sementara
 struct RecipeDraft: Identifiable {
     let id = UUID()
     var ingredient: Ingredient
@@ -14,7 +13,6 @@ struct MasterDataView: View {
     @State private var productName = ""
     @State private var productPrice = ""
     
-    // ✅ STATE MERACIK RESEP
     @State private var recipeDrafts: [RecipeDraft] = []
     @State private var showIngredientPicker = false
 
@@ -34,7 +32,6 @@ struct MasterDataView: View {
                 .padding(.vertical, 4)
             } header: { Text("Informasi Menu Baru") }
 
-            // ✅ SECTION PERAKITAN RESEP DINAMIS
             Section {
                 ForEach($recipeDrafts) { $draft in
                     HStack {
@@ -87,10 +84,8 @@ struct MasterDataView: View {
                         Spacer()
                     }
                 }
-<<<<<<< HEAD
                 .disabled(productName.isEmpty || productPrice.isEmpty || viewModel.isLoading)
                 .listRowBackground((productName.isEmpty || productPrice.isEmpty) ? Color(hex: "#E5E7EB") : Color(hex: "#00A3A3"))
-=======
                 .disabled(
                     productName.isEmpty || productPrice.isEmpty
                         || viewModel.isLoading
@@ -100,21 +95,17 @@ struct MasterDataView: View {
                         ? Color(hex: "#E5E7EB")
                         : Color(hex: "#00A3A3")
                 )
->>>>>>> 02ef93d0bc1a69488cca74d3ed2c84f8a3bd1956
                 .foregroundColor(.white)
             }
 
             if let err = viewModel.errorMessage {
-<<<<<<< HEAD
                 Section { Text(err).font(.footnote).foregroundColor(Color(hex: "#EF4444")) }.listRowBackground(Color.clear)
-=======
                 Section {
                     Text(err)
                         .font(.footnote)
                         .foregroundColor(Color(hex: "#EF4444"))
                 }
                 .listRowBackground(Color.clear)
->>>>>>> 02ef93d0bc1a69488cca74d3ed2c84f8a3bd1956
             }
         }
         .navigationTitle("Tambah Menu")
@@ -124,12 +115,10 @@ struct MasterDataView: View {
         .onAppear {
             Task { await viewModel.loadIngredients(branchId: branchId) }
         }
-        // ✅ POP-UP PEMILIH BAHAN BAKU
         .sheet(isPresented: $showIngredientPicker) {
             NavigationStack {
                 List(viewModel.availableIngredients) { ingredient in
                     Button(action: {
-                        // Cek agar tidak double bahan
                         if !recipeDrafts.contains(where: { $0.ingredient.id == ingredient.id }) {
                             recipeDrafts.append(RecipeDraft(ingredient: ingredient, qtyString: ""))
                         }
@@ -152,13 +141,13 @@ struct MasterDataView: View {
                     }
                 }
             }
-            .presentationDetents([.medium, .large]) // Pop-up setengah layar
+            .presentationDetents([.medium, .large])
         }
         .alert("Berhasil", isPresented: $viewModel.isSuccess) {
             Button("OK") {
                 productName = ""
                 productPrice = ""
-                recipeDrafts.removeAll() // Bersihkan formulir
+                recipeDrafts.removeAll()
             }
         } message: { Text("Produk & Resep berhasil disimpan.") }
     }
@@ -166,7 +155,6 @@ struct MasterDataView: View {
     private func saveProduct() {
         guard let price = Double(productPrice) else { return }
         
-        // Menerjemahkan resep sementara menjadi objek RecipeItem resmi
         let finalRecipe = recipeDrafts.compactMap { draft -> RecipeItem? in
             guard let id = draft.ingredient.id,
                   let qty = Double(draft.qtyString.replacingOccurrences(of: ",", with: ".")),
@@ -175,24 +163,19 @@ struct MasterDataView: View {
         }
         
         Task {
-<<<<<<< HEAD
             await viewModel.createProduct(branchId: branchId, name: productName, price: price, recipe: finalRecipe)
-=======
             await viewModel.createProduct(
                 branchId: branchId,
                 name: productName,
                 price: price,
                 recipe: []
             )
->>>>>>> 02ef93d0bc1a69488cca74d3ed2c84f8a3bd1956
         }
     }
 }
 
 #Preview {
-<<<<<<< HEAD
     MasterDataView(viewModel: MasterDataViewModel(operationalProtocol: MockOperationalRepository()), branchId: "B-1")
-=======
     let previewViewModel: MasterDataViewModel = {
         let repo = MockOperationalRepository()
         return MasterDataViewModel(operationalProtocol: repo)
@@ -201,5 +184,4 @@ struct MasterDataView: View {
     NavigationStack {
         MasterDataView(viewModel: previewViewModel, branchId: "B-1")
     }
->>>>>>> 02ef93d0bc1a69488cca74d3ed2c84f8a3bd1956
 }

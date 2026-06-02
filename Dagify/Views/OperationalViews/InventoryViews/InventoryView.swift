@@ -4,7 +4,6 @@ struct InventoryView: View {
     var viewModel: InventoryViewModel
     let branchId: String
     
-    // ✅ STATE UNTUK BUKA POP UP FORM GUDANG
     @State private var showAddIngredient = false
     
     var body: some View {
@@ -47,7 +46,6 @@ struct InventoryView: View {
         }
         .navigationTitle("Gudang")
         .toolbar {
-            // ✅ TOMBOL PLUS DI POJOK KANAN ATAS
             ToolbarItem(placement: .primaryAction) {
                 Button(action: { showAddIngredient = true }) {
                     Image(systemName: "plus")
