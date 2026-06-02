@@ -2,13 +2,12 @@ import SwiftUI
 
 struct MasterDataView: View {
     @Bindable var viewModel: MasterDataViewModel
-    let branchId: String // ✅ DITAMBAHKAN: Untuk mengetahui kita sedang di cabang mana
+    let branchId: String
 
     @State private var productName = ""
     @State private var productPrice = ""
 
     var body: some View {
-        // NavigationStack dihapus agar tidak terjadi double-navigation-bar
         List {
             Section {
                 VStack(alignment: .leading, spacing: 8) {
@@ -70,8 +69,8 @@ struct MasterDataView: View {
                 )
                 .listRowBackground(
                     (productName.isEmpty || productPrice.isEmpty)
-                        ? Color(hex: "#E5E7EB")  // Disabled Color
-                        : Color(hex: "#00A3A3")  // Primary Color
+                        ? Color(hex: "#E5E7EB")
+                        : Color(hex: "#00A3A3")
                 )
                 .foregroundColor(.white)
             }
@@ -80,14 +79,14 @@ struct MasterDataView: View {
                 Section {
                     Text(err)
                         .font(.footnote)
-                        .foregroundColor(Color(hex: "#EF4444"))  // Destructive
+                        .foregroundColor(Color(hex: "#EF4444"))
                 }
                 .listRowBackground(Color.clear)
             }
         }
         .navigationTitle("Tambah Menu")
         .listStyle(.insetGrouped)
-        .background(Color(hex: "#F9FAFB").ignoresSafeArea())  // Main BG
+        .background(Color(hex: "#F9FAFB").ignoresSafeArea())
         .scrollContentBackground(.hidden)
         .alert("Berhasil", isPresented: $viewModel.isSuccess) {
             Button("OK") {
@@ -102,7 +101,6 @@ struct MasterDataView: View {
     private func saveProduct() {
         guard let price = Double(productPrice) else { return }
         Task {
-            // ✅ DITAMBAHKAN: Mengirim branchId ke ViewModel
             await viewModel.createProduct(
                 branchId: branchId,
                 name: productName,
@@ -120,18 +118,6 @@ struct MasterDataView: View {
     }()
 
     NavigationStack {
-        // ✅ DITAMBAHKAN: Kirim Dummy branchId
         MasterDataView(viewModel: previewViewModel, branchId: "B-1")
-    }
-}
-
-#Preview {
-    let previewViewModel: MasterDataViewModel = {
-        let repo = MockOperationalRepository()
-        return MasterDataViewModel(operationalProtocol: repo)
-    }()
-
-    NavigationStack {
-        MasterDataView(viewModel: previewViewModel)
     }
 }
