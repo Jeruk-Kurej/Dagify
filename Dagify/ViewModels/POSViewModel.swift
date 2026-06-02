@@ -2,14 +2,7 @@ import Foundation
 import Observation
 import SwiftData
 
-// ✅ 1. DEPENDENCY INVERSION PRINCIPLE (DIP)
-// Kita buat abstraksi untuk Network Monitor, bukan bergantung pada Class konkret.
-protocol NetworkMonitorProtocol {
-    var isConnected: Bool { get }
-}
-
-// ✅ 2. LISKOV SUBSTITUTION PRINCIPLE (LSP)
-// Kita buat NetworkMonitor bawaanmu otomatis mematuhi protokol di atas.
+protocol NetworkMonitorProtocol { var isConnected: Bool { get } }
 extension NetworkMonitor: NetworkMonitorProtocol {}
 
 @MainActor
@@ -20,120 +13,94 @@ class POSViewModel {
     var isLoading: Bool = false
     var errorMessage: String? = nil
     var isCheckoutSuccess: Bool = false
+    
+    var customerPhone: String = ""
+    var customerName: String = ""
 
     private let operationalProtocol: OperationalProtocol
     private let cashflowProtocol: CashflowProtocol
-    
-    // Menerima abstraksi (Protocol), bukan class konkret
+    private let crmProtocol: CRMProtocol
     private let networkMonitor: NetworkMonitorProtocol
     private let syncManager: SyncManagerProtocol
 
-    init(
-        operationalProtocol: OperationalProtocol,
-        cashflowProtocol: CashflowProtocol,
-        networkMonitor: NetworkMonitorProtocol,
-        syncManager: SyncManagerProtocol
-    ) {
+    init(operationalProtocol: OperationalProtocol, cashflowProtocol: CashflowProtocol, crmProtocol: CRMProtocol, networkMonitor: NetworkMonitorProtocol, syncManager: SyncManagerProtocol) {
         self.operationalProtocol = operationalProtocol
         self.cashflowProtocol = cashflowProtocol
+        self.crmProtocol = crmProtocol
         self.networkMonitor = networkMonitor
         self.syncManager = syncManager
     }
 
-    var subtotal: Double {
-        cart.reduce(0) { $0 + ($1.product.price * Double($1.quantity)) }
+    var subtotal: Double { cart.reduce(0) { $0 + ($1.product.price * Double($1.quantity)) } }
+
+    // ✅ FUNGSI PEMBANTU BARU: Mencegah Xcode Timeout Error di layar Kasir
+    func getCartQuantity(for product: Product) -> Int {
+        return cart.first(where: { $0.product.id == product.id })?.quantity ?? 0
     }
 
     func loadProducts(branchId: String) async {
         isLoading = true
-        do {
-            availableProducts = try await operationalProtocol.fetchProducts(for: branchId)
-        } catch {
-            errorMessage = "Gagal memuat menu."
-        }
+        do { availableProducts = try await operationalProtocol.fetchProducts(for: branchId) } catch { errorMessage = "Gagal memuat menu." }
         isLoading = false
     }
 
     func addToCart(product: Product) {
-        if let index = cart.firstIndex(where: { $0.product.id == product.id }) {
-            cart[index].quantity += 1
-        } else {
-            cart.append(OrderItem(product: product, quantity: 1))
-        }
+        if let index = cart.firstIndex(where: { $0.product.id == product.id }) { cart[index].quantity += 1 } else { cart.append(OrderItem(product: product, quantity: 1)) }
     }
 
     func removeOrDecreaseFromCart(product: Product) {
         if let index = cart.firstIndex(where: { $0.product.id == product.id }) {
-            if cart[index].quantity > 1 {
-                cart[index].quantity -= 1
-            } else {
-                cart.remove(at: index)
-            }
+            if cart[index].quantity > 1 { cart[index].quantity -= 1 } else { cart.remove(at: index) }
         }
     }
 
-    func checkout(branchId: String, context: ModelContext) async {
+    func checkout(storeId: String, branchId: String, context: ModelContext) async {
         guard !cart.isEmpty else { return }
         isLoading = true
         errorMessage = nil
 
-        let order = Order(
-            id: UUID().uuidString,
-            branchId: branchId,
-            customerId: nil,
-            items: cart,
-            totalAmount: subtotal,
-            timestamp: Date()
-        )
+        var finalCustomerId: String? = nil
+        
+        if !customerPhone.isEmpty && networkMonitor.isConnected {
+            do {
+                let customers = try await crmProtocol.fetchCustomers(for: storeId)
+                if let existingCustomer = customers.first(where: { $0.phoneNumber == customerPhone }) {
+                    // ✅ FIX 1: Menggunakan recordNewVisit sesuai CRMProtocol
+                    if let cid = existingCustomer.id {
+                        _ = try await crmProtocol.recordNewVisit(customerId: cid, spent: subtotal, date: Date())
+                        finalCustomerId = cid
+                    }
+                } else {
+                    let newName = customerName.isEmpty ? "Pelanggan" : customerName
+                    // ✅ FIX 2: Menambahkan storeId ke dalam pembuatan Customer baru
+                    let newCustomer = Customer(id: UUID().uuidString, storeId: storeId, name: newName, phoneNumber: customerPhone, totalSpent: subtotal, visitHistory: [Date()])
+                    _ = try await crmProtocol.addCustomer(newCustomer) // ✅ Cukup kirim 1 argumen
+                    finalCustomerId = newCustomer.id
+                }
+            } catch { print("Peringatan: Gagal memproses data CRM.") }
+        }
 
-        let incomeRecord = FinancialRecord(
-            id: UUID().uuidString,
-            branchId: branchId,
-            amount: subtotal,
-            type: .income,
-            category: .none,
-            timestamp: Date(),
-            notes: "Penjualan Kasir (POS)"
-        )
+        let order = Order(id: UUID().uuidString, branchId: branchId, customerId: finalCustomerId, items: cart, totalAmount: subtotal, timestamp: Date())
+        let incomeRecord = FinancialRecord(id: UUID().uuidString, branchId: branchId, amount: subtotal, type: .income, category: .none, timestamp: Date(), notes: "POS: \(customerName.isEmpty ? "Pelanggan Umum" : customerName)")
 
         if networkMonitor.isConnected {
             do {
-                // ✅ 3. SINGLE RESPONSIBILITY & OPEN/CLOSED PRINCIPLE
-                // Kita eksekusi Kas terlebih dahulu secara mandiri.
                 _ = try await cashflowProtocol.addRecord(incomeRecord)
-                
-                // Lalu kita proses Gudang. Dibungkus try-catch agar jika Gudang gagal/error,
-                // pencatatan Kas tidak ikut terbatal (Data tetap valid).
-                do {
-                    _ = try await operationalProtocol.submitOrderAndUpdateInventory(order: order)
-                } catch {
-                    print("Peringatan: Inventori gagal diperbarui, namun pendapatan Kas berhasil dicatat.")
-                }
-                
+                do { _ = try await operationalProtocol.submitOrderAndUpdateInventory(order: order) } catch { }
                 isCheckoutSuccess = true
                 cart.removeAll()
-            } catch {
-                errorMessage = "Gagal menyetor Kas ke server: \(error.localizedDescription)"
-            }
+                customerName = ""
+                customerPhone = ""
+            } catch { errorMessage = "Gagal menyetor Kas." }
         } else {
-            // Mode Offline
             do {
                 let encoder = JSONEncoder()
-                let encodedOrderData = try encoder.encode(order)
-                
-                let offlineOrder = OfflineOrderModel(
-                    id: UUID().uuidString,
-                    orderData: encodedOrderData,
-                    timestamp: Date()
-                )
-                
+                let offlineOrder = OfflineOrderModel(id: UUID().uuidString, orderData: try encoder.encode(order), timestamp: Date())
                 context.insert(offlineOrder)
                 try context.save()
                 isCheckoutSuccess = true
                 cart.removeAll()
-            } catch {
-                errorMessage = "Gagal menyimpan transaksi offline: \(error.localizedDescription)"
-            }
+            } catch { errorMessage = "Gagal menyimpan transaksi offline." }
         }
         isLoading = false
     }

@@ -8,46 +8,43 @@
 import Foundation
 import Observation
 
+// Struktur Data untuk Grafik
+struct TrafficData: Identifiable {
+    let id = UUID()
+    let label: String
+    let count: Int
+}
+
 @MainActor
 @Observable
 class CRMViewModel {
     var customers: [Customer] = []
     var isLoading: Bool = false
     var errorMessage: String? = nil
+
+    var loyalCustomers: [Customer] { customers.filter { $0.isLoyal } }
     
-    var loyalCustomerPercentage: Double {
-        guard !customers.isEmpty else { return 0 }
-        let loyalCount = customers.filter { $0.isLoyal }.count
-        return (Double(loyalCount) / Double(customers.count)) * 100
-    }
-
-    var busiestHours: [Int: Int] {
-        var hourFrequencies: [Int: Int] = [:]
+    // ✅ FITUR C: SEGMENTASI WAKTU KUNJUNGAN (Jam Sibuk)
+    var peakHoursData: [TrafficData] {
+        var counts = [Int: Int]()
         let calendar = Calendar.current
-
         for customer in customers {
             for visit in customer.visitHistory {
                 let hour = calendar.component(.hour, from: visit)
-                hourFrequencies[hour, default: 0] += 1
+                counts[hour, default: 0] += 1
             }
         }
-        return hourFrequencies
+        // Urutkan dari jam 00 sampai 23
+        return counts.keys.sorted().map { TrafficData(label: String(format: "%02d:00", $0), count: counts[$0]!) }
     }
-    
+
     private let crmProtocol: CRMProtocol
 
-    init(crmProtocol: CRMProtocol) {
-        self.crmProtocol = crmProtocol
-    }
+    init(crmProtocol: CRMProtocol) { self.crmProtocol = crmProtocol }
 
     func loadCustomers(storeId: String) async {
         isLoading = true
-        do {
-            customers = try await crmProtocol.fetchCustomers(for: storeId)
-        } catch {
-            errorMessage = "Gagal memuat data pelanggan."
-        }
+        do { customers = try await crmProtocol.fetchCustomers(for: storeId) } catch { errorMessage = "Gagal memuat CRM." }
         isLoading = false
     }
-
 }

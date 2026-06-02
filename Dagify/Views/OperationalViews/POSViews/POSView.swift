@@ -4,9 +4,9 @@ import SwiftUI
 struct POSView: View {
     @Bindable var viewModel: POSViewModel
     @Environment(\.modelContext) private var context
+    let storeId: String
     let branchId: String
     
-    // ✅ STATE BARU: Mengontrol kemunculan pop up keranjang
     @State private var showCheckoutSheet = false
 
     let columns = [GridItem(.adaptive(minimum: 160), spacing: 16)]
@@ -26,12 +26,10 @@ struct POSView: View {
                 } else {
                     LazyVGrid(columns: columns, spacing: 16) {
                         ForEach(viewModel.availableProducts) { product in
-                            // ✅ AMBIL KUANTITAS DARI KERANJANG SECARA REAL-TIME
-                            let quantity = viewModel.cart.first(where: { $0.product.id == product.id })?.quantity ?? 0
-                            
+                            // ✅ FIX: Menggunakan getCartQuantity() untuk mencegah Xcode Error
                             ProductCardView(
                                 product: product,
-                                quantity: quantity,
+                                quantity: viewModel.getCartQuantity(for: product),
                                 onAdd: {
                                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                         viewModel.addToCart(product: product)
@@ -49,13 +47,11 @@ struct POSView: View {
                     .padding(.bottom, viewModel.cart.isEmpty ? 20 : 100)
                 }
             }
-            .background(Color.themeBgMain.ignoresSafeArea())
+            .background(Color(hex: "#F9FAFB").ignoresSafeArea())
 
-            // --- FLOATING CART BOTTOM BAR ---
             if !viewModel.cart.isEmpty {
                 VStack {
                     Button(action: {
-                        // ✅ TAMPILKAN POP UP (SHEET) ALIH-ALIH LANGSUNG CHECKOUT
                         showCheckoutSheet = true
                     }) {
                         HStack {
@@ -70,14 +66,14 @@ struct POSView: View {
                             Spacer()
                             HStack {
                                 Text("Bayar Sekarang").fontWeight(.bold)
-                                Image(systemName: "chevron.right") // ✅ Panah visualisasi buka pop-up
+                                Image(systemName: "chevron.right")
                             }
                             .foregroundColor(.white)
                         }
                         .padding()
-                        .background(Color.themePrimary)
+                        .background(Color(hex: "#00A3A3"))
                         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .shadow(color: Color.themePrimary.opacity(0.4), radius: 10, x: 0, y: 5)
+                        .shadow(color: Color(hex: "#00A3A3").opacity(0.4), radius: 10, x: 0, y: 5)
                     }
                     .padding(.horizontal)
                     .padding(.bottom, 16)
@@ -85,14 +81,13 @@ struct POSView: View {
                 .background(
                     LinearGradient(
                         gradient: Gradient(colors: [
-                            Color.themeBgMain.opacity(0),
-                            Color.themeBgMain,
+                            Color(hex: "#F9FAFB").opacity(0),
+                            Color(hex: "#F9FAFB")
                         ]),
                         startPoint: .top,
                         endPoint: .bottom
                     )
                 )
-                // Animasi muncul dari bawah
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
@@ -105,24 +100,24 @@ struct POSView: View {
         } message: {
             Text("Pembayaran tercatat dan stok bahan baku terkait telah terpotong otomatis.")
         }
-        // ✅ PASANG SHEET POP-UP DI SINI
         .sheet(isPresented: $showCheckoutSheet) {
             POSCheckoutSheetView(
                 viewModel: viewModel,
+                storeId: storeId,
                 branchId: branchId,
                 context: context,
                 isPresented: $showCheckoutSheet
             )
-            .presentationDetents([.fraction(0.85), .large]) // Sheet bergaya menutupi 85% layar
+            .presentationDetents([.fraction(0.85), .large])
         }
     }
 }
 
-// ... (Scroll ke paling bawah, cari bagian #Preview dan ganti isinya dengan ini) ...
-
+// ✅ FIX: Memperbaiki Parameter Mock di #Preview
 //#Preview {
 //    let mockOp = MockOperationalRepository()
-//    let mockCash = MockCashflowRepository() // ✅ DITAMBAHKAN
+//    let mockCash = MockCashflowRepository()
+//    let mockCRM = MockCRMRepository()
 //    let mockSync = MockSyncManager()
 //    let network = NetworkMonitor()
 //
@@ -133,7 +128,8 @@ struct POSView: View {
 //
 //    let vm = POSViewModel(
 //        operationalProtocol: mockOp,
-//        cashflowProtocol: mockCash, 
+//        cashflowProtocol: mockCash,
+//        crmProtocol: mockCRM,
 //        networkMonitor: network,
 //        syncManager: mockSync
 //    )
@@ -142,7 +138,7 @@ struct POSView: View {
 //    let container = try! ModelContainer(for: OfflineOrderModel.self, configurations: config)
 //
 //    NavigationStack {
-//        POSView(viewModel: vm, branchId: "B-1")
+//        POSView(viewModel: vm, storeId: "S-1", branchId: "B-1")
 //            .modelContainer(container)
 //    }
 //}

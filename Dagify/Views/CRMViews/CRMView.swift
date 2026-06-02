@@ -1,112 +1,71 @@
 import SwiftUI
+import Charts // ✅ WAJIB UNTUK GRAFIK
 
 struct CRMView: View {
-    // ✅ MVVM: Sesuai injeksi MainAppView
     var viewModel: CRMViewModel
     let storeId: String
-
+    
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    // Kotak Ringkasan Persentase
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Persentase Loyalitas")
-                                .font(.subheadline)
-                                .foregroundColor(Color(hex: "#6B7280"))
-                            Text(
-                                String(
-                                    format: "%.1f%%",
-                                    viewModel.loyalCustomerPercentage
-                                )
-                            )
-                            .font(.title)
-                            .fontWeight(.bold)
-                            .foregroundColor(Color(hex: "#00A3A3"))
-                        }
-                        Spacer()
-                        Image(systemName: "heart.fill")
-                            .font(.largeTitle)
-                            .foregroundColor(Color(hex: "#EF4444").opacity(0.8))
-                    }
-                    .padding()
-                    .background(Color(hex: "#FFFFFF"))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(
-                        color: Color.black.opacity(0.04),
-                        radius: 5,
-                        x: 0,
-                        y: 2
-                    )
-                    .padding(.horizontal)
-                    .padding(.top)
+                    // Metrik Retensi
+                    HStack(spacing: 16) {
+                        FinancialBox(title: "Total Pelanggan", amount: Double(viewModel.customers.count), color: Color(hex: "#00A3A3"), icon: "person.3.fill", isCurrency: false)
+                        FinancialBox(title: "Pelanggan Setia (Loyal)", amount: Double(viewModel.loyalCustomers.count), color: Color(hex: "#F59E0B"), icon: "star.circle.fill", isCurrency: false)
+                    }.padding(.horizontal)
 
-                    // Daftar Member
-                    VStack(alignment: .leading) {
-                        Text("Daftar Member")
+                    // ✅ GRAFIK SEGMENTASI WAKTU (REQUIREMENT C)
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Grafik Jam Sibuk Kunjungan")
                             .font(.headline)
                             .foregroundColor(Color(hex: "#111827"))
-                            .padding(.horizontal)
+                        
+                        VStack {
+                            if viewModel.peakHoursData.isEmpty {
+                                Text("Belum ada data kunjungan yang cukup.").foregroundColor(.gray).padding()
+                            } else {
+                                Chart(viewModel.peakHoursData) { item in
+                                    BarMark(
+                                        x: .value("Jam", item.label),
+                                        y: .value("Total Kunjungan", item.count)
+                                    )
+                                    .foregroundStyle(Color(hex: "#00A3A3").gradient)
+                                    .cornerRadius(4)
+                                }
+                                .frame(height: 200)
+                            }
+                        }
+                        .padding()
+                        .background(Color.white)
+                        .cornerRadius(16)
+                        .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
+                    }.padding(.horizontal)
 
-                        if viewModel.isLoading && viewModel.customers.isEmpty {
-                            ProgressView()
-                                .frame(maxWidth: .infinity)
-                                .padding()
+                    // Daftar Profil Pelanggan
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Direktori Pelanggan")
+                            .font(.headline)
+                            .foregroundColor(Color(hex: "#111827"))
+                        
+                        if viewModel.isLoading {
+                            ProgressView().frame(maxWidth: .infinity).padding()
                         } else if viewModel.customers.isEmpty {
-                            ContentUnavailableView(
-                                "Belum Ada Member",
-                                systemImage: "person.crop.circle.badge.plus"
-                            )
+                            ContentUnavailableView("CRM Kosong", systemImage: "person.crop.circle.badge.questionmark", description: Text("Catat nomor HP pelanggan di layar Kasir."))
                         } else {
                             LazyVStack(spacing: 12) {
-                                ForEach(viewModel.customers, id: \.id) {
-                                    customer in
+                                ForEach(viewModel.customers, id: \.id) { customer in
                                     CustomerCardView(customer: customer)
-                                        .padding(.horizontal)
                                 }
                             }
                         }
-                    }
-                }
-                .padding(.bottom, 24)
+                    }.padding(.horizontal)
+                }.padding(.vertical)
             }
-            .background(Color(hex: "#F9FAFB").ignoresSafeArea())
-            .navigationTitle("Pelanggan (CRM)")
-            .onAppear {
-                Task { await viewModel.loadCustomers(storeId: storeId) }
-            }
-            .refreshable {
-                await viewModel.loadCustomers(storeId: storeId)
-            }
+            .background(Color(hex: "#F9FAFB"))
+            .navigationTitle("CRM")
+            .onAppear { Task { await viewModel.loadCustomers(storeId: storeId) } }
+            .refreshable { await viewModel.loadCustomers(storeId: storeId) }
         }
     }
-}
-
-#Preview {
-    let previewViewModel: CRMViewModel = {
-        let mockRepo = MockCRMRepository()
-        let date = Date()
-
-        mockRepo.customers = [
-            Customer(
-                id: "1",
-                name: "Bryan Setiawan",
-                phoneNumber: "0812",
-                totalSpent: 450000,
-                visitHistory: [date, date, date, date, date]
-            ),  // Loyal
-            Customer(
-                id: "2",
-                name: "Hanzelius",
-                phoneNumber: "0898",
-                totalSpent: 25000,
-                visitHistory: [date]
-            ),
-        ]
-
-        return CRMViewModel(crmProtocol: mockRepo)
-    }()
-
-    CRMView(viewModel: previewViewModel, storeId: "S-1")
 }

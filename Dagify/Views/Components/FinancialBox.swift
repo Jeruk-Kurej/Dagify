@@ -5,6 +5,7 @@ struct FinancialBox: View {
     var amount: Double
     var color: Color
     var icon: String
+    var isCurrency: Bool = true // ✅ DITAMBAHKAN: Sakelar Rupiah
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -15,10 +16,11 @@ struct FinancialBox: View {
                 Text(title)
                     .font(.subheadline)
                     .fontWeight(.medium)
-                    .foregroundColor(Color(hex: "#6B7280"))  // Secondary Text
+                    .foregroundColor(Color(hex: "#6B7280"))
             }
 
-            Text(String(format: "Rp %.0f", amount))
+            // ✅ LOGIKA BARU: Jika isCurrency false, buang tulisan "Rp"
+            Text(isCurrency ? String(format: "Rp %.0f", amount) : String(format: "%.0f", amount))
                 .font(.headline)
                 .fontWeight(.bold)
                 .foregroundColor(color)
