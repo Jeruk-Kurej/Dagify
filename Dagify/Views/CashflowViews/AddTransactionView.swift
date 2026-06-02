@@ -3,7 +3,7 @@ import SwiftUI
 struct AddTransactionView: View {
     @Environment(\.dismiss) private var dismiss
 
-    // ✅ MVVM: Menggunakan nama parameter 'viewModel' dan menerima 'branchId'
+    // ✅ MVVM SOLID: Menggunakan properti viewModel hasil injeksi luar
     var viewModel: CashflowViewModel
     var branchId: String
 
@@ -25,7 +25,8 @@ struct AddTransactionView: View {
                     TextField("Nominal (Rp)", text: $amountString)
                         .keyboardType(.numberPad)
 
-                    TextField("Catatan (Cth: Bayar Listrik)", text: $notes)
+                    // Mengubah petunjuk placeholder menjadi opsional
+                    TextField("Catatan (Opsional)", text: $notes)
                 }
 
                 if let errorMessage = viewModel.errorMessage {
@@ -45,23 +46,23 @@ struct AddTransactionView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Simpan") {
                         Task {
-                            if let amount = Double(amountString) {
-                                // Eksekusi dengan mengirimkan branchId juga
+                            // Sanitasi input string dari koma/titik agar konversi Double selalu aman dan berhasil
+                            let cleanString = amountString.filter { $0.isNumber || $0 == "." || $0 == "," }.replacingOccurrences(of: ",", with: ".")
+                            if let amount = Double(cleanString) {
                                 await viewModel.addTransaction(
                                     branchId: branchId,
                                     amount: amount,
                                     type: type,
                                     category: .none,
-                                    notes: notes
+                                    // Jika catatan kosong, beri penamaan default otomatis sesuai tipe transaksi
+                                    notes: notes.isEmpty ? (type == .income ? "Pemasukan Manual" : "Pengeluaran Manual") : notes
                                 )
                                 dismiss()
                             }
                         }
                     }
-                    .disabled(
-                        amountString.isEmpty || notes.isEmpty
-                            || viewModel.isLoading
-                    )
+                    // ✅ FIX UX: Catatan tidak wajib diisi lagi, tombol akan langsung aktif saat nominal terisi!
+                    .disabled(amountString.isEmpty || viewModel.isLoading)
                 }
             }
         }
