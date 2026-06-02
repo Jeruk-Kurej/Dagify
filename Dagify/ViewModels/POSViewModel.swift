@@ -1,10 +1,3 @@
-//
-//  POSViewModel.swift
-//  Dagify
-//
-//  Created by Mario Ruby Ariesusandi  on 28-05-2026.
-//
-
 import Foundation
 import Observation
 import SwiftData
@@ -19,14 +12,13 @@ class POSViewModel {
     var isCheckoutSuccess: Bool = false
 
     private let operationalProtocol: OperationalProtocol
-    // ✅ DITAMBAHKAN: Jalur komunikasi Kasir ke Arus Kas
     private let cashflowProtocol: CashflowProtocol
     private let networkMonitor: NetworkMonitor
     private let syncManager: SyncManagerProtocol
 
     init(
         operationalProtocol: OperationalProtocol,
-        cashflowProtocol: CashflowProtocol, // ✅ DITAMBAHKAN
+        cashflowProtocol: CashflowProtocol,
         networkMonitor: NetworkMonitor,
         syncManager: SyncManagerProtocol
     ) {
@@ -81,7 +73,6 @@ class POSViewModel {
             timestamp: Date()
         )
 
-        // ✅ BUAT NOTA KEUANGAN OTOMATIS
         let incomeRecord = FinancialRecord(
             branchId: branchId,
             amount: subtotal,
@@ -104,15 +95,25 @@ class POSViewModel {
                 errorMessage = "Gagal memproses transaksi: \(error.localizedDescription)"
             }
         } else {
-            // Mode Offline (Nantinya bisa di-sync ke Cashflow saat koneksi kembali)
+            // Mode Offline
             do {
-                let offlineOrder = OfflineOrderModel(branchId: branchId, customerId: nil, totalAmount: subtotal, timestamp: Date())
+                // ✅ FIX: Konversi objek Order menjadi struktur "Data" biner menggunakan JSONEncoder
+                let encoder = JSONEncoder()
+                let encodedOrderData = try encoder.encode(order)
+                
+                // Masukkan sesuai dengan properti di model OfflineOrderModel milikmu
+                let offlineOrder = OfflineOrderModel(
+                    id: UUID().uuidString,
+                    orderData: encodedOrderData,
+                    timestamp: Date()
+                )
+                
                 context.insert(offlineOrder)
                 try context.save()
                 isCheckoutSuccess = true
                 cart.removeAll()
             } catch {
-                errorMessage = "Gagal menyimpan transaksi offline."
+                errorMessage = "Gagal menyimpan transaksi offline: \(error.localizedDescription)"
             }
         }
         isLoading = false
