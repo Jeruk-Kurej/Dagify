@@ -12,12 +12,48 @@ struct CashflowView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
+                    
+                    // ✅ UX BARU: NAVIGATOR BULAN
+                    HStack {
+                        Button(action: {
+                            withAnimation(.easeInOut) { viewModel.previousMonth() }
+                        }) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 14, weight: .bold))
+                                .frame(width: 36, height: 36)
+                                .background(Color(hex: "#00A3A3").opacity(0.1))
+                                .foregroundColor(Color(hex: "#00A3A3"))
+                                .clipShape(Circle())
+                        }
+                        
+                        Spacer()
+                        
+                        Text(viewModel.currentMonthString)
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color(hex: "#111827"))
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            withAnimation(.easeInOut) { viewModel.nextMonth() }
+                        }) {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .bold))
+                                .frame(width: 36, height: 36)
+                                .background(Color(hex: "#00A3A3").opacity(0.1))
+                                .foregroundColor(Color(hex: "#00A3A3"))
+                                .clipShape(Circle())
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.top)
 
                     // --- SECTION 1: RINGKASAN SALDO ---
                     VStack(spacing: 12) {
                         FinancialBox(
-                            title: "Laba Bersih Saat Ini",
-                            amount: viewModel.netProfit,
+                            title: "Laba Bersih Bulan Ini",
+                            amount: viewModel.netProfit, // Otomatis ter-update mengikuti bulan
                             color: Color(hex: "#00A3A3"),
                             icon: "building.columns.fill"
                         )
@@ -38,7 +74,6 @@ struct CashflowView: View {
                         }
                     }
                     .padding(.horizontal)
-                    .padding(.top)
 
                     // --- SECTION 2: RIWAYAT TRANSAKSI ---
                     VStack(alignment: .leading, spacing: 0) {
@@ -56,18 +91,20 @@ struct CashflowView: View {
                         }
                         .padding()
 
-                        if viewModel.isLoading && viewModel.records.isEmpty {
+                        if viewModel.isLoading && viewModel.filteredRecords.isEmpty {
                             ProgressView()
                                 .frame(maxWidth: .infinity)
                                 .padding()
-                        } else if viewModel.records.isEmpty {
+                        } else if viewModel.filteredRecords.isEmpty {
                             ContentUnavailableView(
                                 "Belum Ada Transaksi",
-                                systemImage: "doc.text.magnifyingglass"
+                                systemImage: "doc.text.magnifyingglass",
+                                description: Text("Tidak ada catatan kas untuk bulan ini.")
                             )
                         } else {
                             LazyVStack(spacing: 0) {
-                                ForEach(viewModel.records, id: \.id) { record in
+                                // ✅ HANYA MENGAMBIL DATA FILTER BULAN
+                                ForEach(viewModel.filteredRecords, id: \.id) { record in
                                     TransactionRowView(record: record)
                                         .padding(.horizontal)
                                     Divider()
@@ -87,13 +124,13 @@ struct CashflowView: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        // ✅ MENGGUNAKAN FUNGSI MULTI-HALAMAN TERBARU
+                        // ✅ PDF SEKARANG HANYA MENCETAK LAPORAN BULAN YANG SEDANG DIBUKA
                         if let url = PDFGeneratorService.generateCashflowReport(
-                            monthYear: "Bulan Ini",
-                            records: viewModel.records,
+                            monthYear: viewModel.currentMonthString,
+                            records: viewModel.filteredRecords,
                             totalIncome: viewModel.totalIncome,
                             totalExpense: viewModel.totalExpense,
-                            filename: "Laporan_Keuangan_Dagify"
+                            filename: "Laporan_Kas_\(viewModel.currentMonthString.replacingOccurrences(of: " ", with: "_"))"
                         ) {
                             self.generatedPDFURL = url
                             self.isShowingShareSheet = true
@@ -101,8 +138,6 @@ struct CashflowView: View {
                     } label: {
                         Label("Ekspor PDF", systemImage: "square.and.arrow.up")
                     }
-                    // Mengizinkan cetak PDF meskipun transaksi kosong agar pengguna tahu fiturnya jalan
-                    // .disabled(viewModel.records.isEmpty)
                 }
             }
             .onAppear {
@@ -120,68 +155,4 @@ struct CashflowView: View {
             }
         }
     }
-}
-
-// MARK: - Komponen Pembungkus Share Sheet iOS
-struct ShareSheet: UIViewControllerRepresentable {
-    var activityItems: [Any]
-
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(
-            activityItems: activityItems,
-            applicationActivities: nil
-        )
-    }
-
-    func updateUIViewController(
-        _ uiViewController: UIActivityViewController,
-        context: Context
-    ) {}
-}
-
-#Preview {
-    let previewViewModel: CashflowViewModel = {
-        let mockRepo = MockCashflowRepository()
-        
-        mockRepo.records = [
-            FinancialRecord(id: "1", branchId: "B-1", amount: 150000, type: .income, category: .none, timestamp: Date(), notes: "Penjualan Kasir"),
-            FinancialRecord(id: "2", branchId: "B-1", amount: 50000, type: .expense, category: .operational, timestamp: Date().addingTimeInterval(-3600), notes: "Beli Sabun Cuci")
-        ]
-        
-        return CashflowViewModel(cashProtocol: mockRepo)
-    }()
-
-    CashflowView(viewModel: previewViewModel, branchId: "B-1")
-}
-
-#Preview {
-    // Kita bungkus semua logika setup data ke dalam closure agar ViewBuilder tidak error
-    let previewViewModel: CashflowViewModel = {
-        let mockRepo = MockCashflowRepository()
-
-        mockRepo.records = [
-            FinancialRecord(
-                id: "1",
-                branchId: "B-1",
-                amount: 150000,
-                type: .income,
-                category: .none,
-                timestamp: Date(),
-                notes: "Penjualan Kasir"
-            ),
-            FinancialRecord(
-                id: "2",
-                branchId: "B-1",
-                amount: 50000,
-                type: .expense,
-                category: .operational,
-                timestamp: Date().addingTimeInterval(-3600),
-                notes: "Beli Sabun Cuci"
-            ),
-        ]
-
-        return CashflowViewModel(cashProtocol: mockRepo)
-    }()
-
-    CashflowView(viewModel: previewViewModel, branchId: "B-1")
 }

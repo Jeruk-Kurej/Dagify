@@ -2,54 +2,39 @@ import SwiftUI
 
 struct TransactionRowView: View {
     var record: FinancialRecord
-
+    
     var body: some View {
         HStack(spacing: 16) {
             ZStack {
                 Circle()
-                    .fill(
-                        record.type == .income
-                            ? Color.themeSuccess.opacity(0.15)
-                            : Color.themeWarning.opacity(0.15)
-                    )
-                    .frame(width: 44, height: 44)
-
-                Image(
-                    systemName: record.type == .income
-                        ? "arrow.down.left" : "arrow.up.right"
-                )
-                .foregroundColor(
-                    record.type == .income ? .themeSuccess : .themeWarning
-                )
-                .font(.headline)
+                    .fill(record.type == .income ? Color(hex: "#10B981").opacity(0.15) : Color(hex: "#EF4444").opacity(0.15))
+                    .frame(width: 48, height: 48)
+                
+                Image(systemName: record.type == .income ? "arrow.down.left" : "arrow.up.right")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(record.type == .income ? Color(hex: "#10B981") : Color(hex: "#EF4444"))
             }
-
+            
             VStack(alignment: .leading, spacing: 4) {
-                Text(record.notes.isEmpty ? "Transaksi Kasir" : record.notes)
-                    .font(.subheadline)
+                Text(record.notes.isEmpty ? (record.type == .income ? "Pemasukan" : "Pengeluaran") : record.notes)
+                    .font(.body)
                     .fontWeight(.semibold)
-                    .foregroundColor(.themeTextPrimary)
-
-                Text(record.timestamp, style: .date)
+                    .foregroundColor(Color(hex: "#111827"))
+                
+                // ✅ UPDATE: Menampilkan Jam & Tanggal Spesifik secara detail
+                Text(record.timestamp.formatted(date: .abbreviated, time: .shortened))
                     .font(.caption)
-                    .foregroundColor(.themeTextSecondary)
+                    .foregroundColor(Color(hex: "#6B7280"))
             }
-
+            
             Spacer()
-
-            Text(
-                String(
-                    format: "%@Rp %.0f",
-                    record.type == .income ? "+" : "-",
-                    record.amount
-                )
-            )
-            .font(.subheadline)
-            .fontWeight(.bold)
-            .foregroundColor(
-                record.type == .income ? .themeSuccess : .themeTextPrimary
-            )
+            
+            Text(String(format: "%@Rp %.0f", record.type == .income ? "+" : "-", record.amount))
+                .font(.headline)
+                .fontWeight(.bold)
+                .foregroundColor(record.type == .income ? Color(hex: "#10B981") : Color(hex: "#EF4444"))
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 12)
     }
 }

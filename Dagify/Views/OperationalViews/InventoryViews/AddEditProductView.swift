@@ -16,9 +16,6 @@ struct AddEditProductView: View {
     @State private var productPrice = ""
     @State private var recipeDrafts: [RecipeDraft] = []
     @State private var showIngredientPicker = false
-    
-    // ✅ Mengunci tombol simpan agar mencegah "Double Save" (bug 1 dengan resep, 1 tanpa resep)
-    @State private var isSaving = false
 
     var isNameDuplicate: Bool {
         if let edit = productToEdit, edit.name.lowercased() == productName.lowercased() { return false }
@@ -31,36 +28,9 @@ struct AddEditProductView: View {
         return viewModel.products.contains { $0.price == p }
     }
     
-    // ✅ Validasi Harga Jual yang lebih ketat
     var isPriceValid: Bool {
         let clean = productPrice.replacingOccurrences(of: ",", with: ".")
-        return (Double(clean) ?? 0) > 0
-    }
-    
-    var priceValidationMessage: String? {
-        if productPrice.isEmpty {
-            return "Harga jual wajib diisi."
-        }
-        let clean = productPrice.replacingOccurrences(of: ",", with: ".")
-        if Double(clean) == nil {
-            return "Format harga tidak valid."
-        } else if let val = Double(clean), val <= 0 {
-            return "Harga jual harus lebih dari 0."
-        }
-        return nil
-    }
-    
-    // ✅ Validasi Resep agar tidak lolos tanpa takaran (mencegah bug resep hilang saat disave)
-    var isRecipeValid: Bool {
-        for draft in recipeDrafts {
-            let clean = draft.qtyString.replacingOccurrences(of: ",", with: ".")
-            if let val = Double(clean), val > 0 {
-                continue
-            } else {
-                return false
-            }
-        }
-        return true
+        return Double(clean) != nil && (Double(clean) ?? 0) >= 0
     }
 
     var body: some View {
@@ -91,9 +61,8 @@ struct AddEditProductView: View {
                                 }
                             }
                         
-                        // ✅ Peringatan visual untuk harga
-                        if let msg = priceValidationMessage {
-                            Text(msg)
+                        if !productPrice.isEmpty && !isPriceValid {
+                            Text("⚠️ Format harga tidak valid.")
                                 .font(.caption2)
                                 .foregroundColor(.red)
                         } else if isPriceDuplicate {
@@ -106,35 +75,32 @@ struct AddEditProductView: View {
 
                 Section {
                     ForEach($recipeDrafts) { $draft in
-                        VStack(alignment: .trailing, spacing: 4) {
-                            HStack {
-                                Text(draft.ingredient.name).font(.body)
-                                Spacer()
-                                TextField("Takaran", text: $draft.qtyString)
-                                    .keyboardType(.decimalPad)
-                                    .multilineTextAlignment(.trailing)
-                                    .frame(width: 80).foregroundColor(Color(hex: "#00A3A3")).fontWeight(.bold)
-                                    .onChange(of: draft.qtyString) { oldValue, newValue in
-                                        let filtered = newValue.filter { "0123456789.,".contains($0) }
-                                        if filtered != newValue {
-                                            draft.qtyString = filtered
-                                        }
+                        HStack {
+                            Text(draft.ingredient.name).font(.body)
+                            Spacer()
+                            TextField("Takaran", text: $draft.qtyString)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 60).foregroundColor(Color(hex: "#00A3A3")).fontWeight(.bold)
+                                .onChange(of: draft.qtyString) { oldValue, newValue in
+                                    let filtered = newValue.filter { "0123456789.,".contains($0) }
+                                    if filtered != newValue {
+                                        draft.qtyString = filtered
                                     }
-                                
-                                Text(draft.ingredient.unit).font(.caption).foregroundColor(Color(hex: "#6B7280"))
-                                
-                                Button(action: { recipeDrafts.removeAll { $0.id == draft.id } }) {
-                                    Image(systemName: "minus.circle.fill").foregroundColor(.red)
-                                }.padding(.leading, 8)
-                            }
+                                }
                             
-                            // ✅ Peringatan jika pengguna memasukkan takaran 0 atau membiarkannya kosong
-                            let cleanQty = draft.qtyString.replacingOccurrences(of: ",", with: ".")
-                            if !draft.qtyString.isEmpty && (Double(cleanQty) ?? 0) <= 0 {
-                                Text("Takaran harus lebih dari 0")
-                                    .font(.caption2)
-                                    .foregroundColor(.red)
-                            }
+                            Text(draft.ingredient.unit).font(.caption).foregroundColor(Color(hex: "#6B7280"))
+                            
+                            // ✅ UX FIX: Mengganti Button menjadi Image murni dengan onTapGesture
+                            // SwiftUI tidak akan lagi bingung saat kamu tidak sengaja memencet teks.
+                            Image(systemName: "minus.circle.fill")
+                                .foregroundColor(.red)
+                                .font(.title3)
+                                .padding(.leading, 8)
+                                .contentShape(Rectangle()) // Mengunci area responsif
+                                .onTapGesture {
+                                    recipeDrafts.removeAll { $0.id == draft.id }
+                                }
                         }
                     }
                     Button(action: { showIngredientPicker = true }) {
@@ -144,16 +110,7 @@ struct AddEditProductView: View {
                         }.foregroundColor(Color(hex: "#00A3A3")).fontWeight(.semibold)
                     }
                 } header: { Text("Resep Bahan Baku (Opsional)") }
-                  footer: {
-                      VStack(alignment: .leading, spacing: 4) {
-                          Text("Bahan baku ini otomatis dipotong dari Gudang setiap menu terjual.")
-                          if !isRecipeValid && !recipeDrafts.isEmpty {
-                              Text("⚠️ Masih ada takaran bahan baku yang kosong/tidak valid.")
-                                  .foregroundColor(.red)
-                                  .fontWeight(.semibold)
-                          }
-                      }
-                  }
+                  footer: { Text("Bahan baku ini otomatis dipotong dari Gudang setiap menu terjual.") }
             }
             .navigationTitle(productToEdit == nil ? "Tambah Menu" : "Edit Menu")
             .navigationBarTitleDisplayMode(.inline)
@@ -161,8 +118,7 @@ struct AddEditProductView: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Batal") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Simpan") { saveProduct() }
-                        // ✅ Tombol terkunci sampai semua rules/validasi terpenuhi, termasuk resep & sistem sedang menyimpan
-                        .disabled(productName.isEmpty || !isPriceValid || viewModel.isLoading || isNameDuplicate || !isRecipeValid || isSaving)
+                        .disabled(productName.isEmpty || productPrice.isEmpty || !isPriceValid || viewModel.isLoading || isNameDuplicate)
                 }
             }
             .onAppear(perform: loadExistingData)
@@ -210,8 +166,6 @@ struct AddEditProductView: View {
     }
 
     private func saveProduct() {
-        guard !isSaving else { return }
-        
         let cleanPrice = productPrice.replacingOccurrences(of: ",", with: ".")
         guard let price = Double(cleanPrice) else { return }
         
@@ -222,8 +176,6 @@ struct AddEditProductView: View {
             return RecipeItem(ingredientId: id, quantityRequired: qty)
         }
         
-        isSaving = true // ✅ Matikan tombol seketika saat proses simpan berjalan
-        
         Task {
             if let edit = productToEdit {
                 let updatedProduct = Product(id: edit.id, branchId: branchId, name: productName, price: price, recipe: finalRecipe)
@@ -231,7 +183,6 @@ struct AddEditProductView: View {
             } else {
                 await viewModel.createProduct(branchId: branchId, name: productName, price: price, recipe: finalRecipe)
             }
-            isSaving = false
             dismiss()
         }
     }
