@@ -15,15 +15,15 @@ struct CashflowPDFTemplate: View {
             // Kop Surat
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Laporan Arus Kas")
-                        .font(.system(size: 32, weight: .heavy))
+                    Text("Laporan Mutasi Arus Kas")
+                        .font(.system(size: 30, weight: .heavy))
                         .foregroundColor(.black)
                     Text("Periode: \(monthYear)")
                         .font(.title3)
                         .foregroundColor(.gray)
                 }
                 Spacer()
-                Image(systemName: "chart.line.uptrend.xyaxis")
+                Image(systemName: "building.columns.fill")
                     .font(.system(size: 40))
                     .foregroundColor(Color(hex: "#00A3A3"))
             }
@@ -35,58 +35,82 @@ struct CashflowPDFTemplate: View {
             if page == 1 {
                 HStack {
                     VStack(alignment: .leading) {
-                        Text("Total Pemasukan")
+                        Text("Total Debit (Masuk)")
                             .font(.headline)
                             .foregroundColor(.gray)
                         Text(String(format: "Rp %.0f", totalIncome))
-                            .font(.title)
+                            .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(Color(hex: "#10B981"))
                     }
                     Spacer()
                     VStack(alignment: .trailing) {
-                        Text("Total Pengeluaran")
+                        Text("Total Kredit (Keluar)")
                             .font(.headline)
                             .foregroundColor(.gray)
                         Text(String(format: "Rp %.0f", totalExpense))
-                            .font(.title)
+                            .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(Color(hex: "#EF4444"))
                     }
                 }
                 .padding(.vertical, 8)
-                Divider()
             }
             
-            Text(page == 1 ? "Rincian Transaksi" : "Lanjutan Transaksi (Hal \(page))")
-                .font(.title2)
+            Text(page == 1 ? "Rincian Transaksi Bulanan" : "Lanjutan Transaksi (Hal \(page))")
+                .font(.title3)
                 .fontWeight(.bold)
                 .padding(.top, 10)
                 .foregroundColor(.black)
             
-            VStack(spacing: 12) {
+            // ✅ HEADER TABEL MUTASI BANK
+            VStack(spacing: 8) {
+                HStack(alignment: .center) {
+                    Text("Tanggal").font(.caption).bold().frame(width: 80, alignment: .leading)
+                    Text("Keterangan").font(.caption).bold().frame(maxWidth: .infinity, alignment: .leading)
+                    Text("Masuk (Rp)").font(.caption).bold().frame(width: 100, alignment: .trailing)
+                    Text("Keluar (Rp)").font(.caption).bold().frame(width: 100, alignment: .trailing)
+                }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 4)
+                .background(Color(hex: "#F3F4F6"))
+                .foregroundColor(.black)
+                
+                Divider()
+                
                 if records.isEmpty {
-                    Text("Tidak ada transaksi.")
+                    Text("Tidak ada mutasi di bulan ini.")
                         .foregroundColor(.gray)
                         .italic()
+                        .padding(.top, 20)
                 } else {
+                    // ✅ ISI TABEL MUTASI BANK
                     ForEach(records, id: \.id) { record in
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(record.notes.isEmpty ? "Transaksi Kasir" : record.notes)
-                                    .font(.body)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.black) // ✅ Fix untuk Dark Mode
-                                Text(record.timestamp, style: .date)
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                            }
-                            Spacer()
-                            Text(String(format: "%@Rp %.0f", record.type == .income ? "+" : "-", record.amount))
-                                .font(.body)
-                                .fontWeight(.bold)
-                                .foregroundColor(record.type == .income ? Color(hex: "#10B981") : Color(hex: "#EF4444"))
+                        HStack(alignment: .center) {
+                            Text(record.timestamp.formatted(date: .numeric, time: .omitted))
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                                .frame(width: 80, alignment: .leading)
+                            
+                            Text(record.notes.isEmpty ? "Sistem Otomatis" : record.notes)
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(.black)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            
+                            Text(record.type == .income ? String(format: "%.0f", record.amount) : "-")
+                                .font(.caption)
+                                .foregroundColor(record.type == .income ? Color(hex: "#10B981") : .black)
+                                .frame(width: 100, alignment: .trailing)
+                            
+                            Text(record.type == .expense ? String(format: "%.0f", record.amount) : "-")
+                                .font(.caption)
+                                .foregroundColor(record.type == .expense ? Color(hex: "#EF4444") : .black)
+                                .frame(width: 100, alignment: .trailing)
                         }
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 4)
+                        
                         Divider()
                     }
                 }
@@ -101,13 +125,12 @@ struct CashflowPDFTemplate: View {
                     .font(.caption)
                     .foregroundColor(.gray)
                 Spacer()
-                Text("Dihasilkan secara otomatis oleh Dagify")
+                Text("Sistem Rekapitulasi Dagify")
                     .font(.caption)
                     .foregroundColor(.gray)
             }
         }
         .padding(40)
-        // ✅ Alignment Top sangat krusial agar UI selalu dirender mulai dari atas kertas!
         .frame(width: 595, height: 842, alignment: .top)
         .background(Color.white)
     }

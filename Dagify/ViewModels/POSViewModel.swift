@@ -16,6 +16,17 @@ class POSViewModel {
     
     var customerPhone: String = ""
     var customerName: String = ""
+    
+    // ✅ CRM AUTO-SUGGESTION STATE
+    var allCustomers: [Customer] = []
+    
+    // Komputasi pintar untuk memunculkan dropdown jika nomor diketik
+    var suggestedCustomers: [Customer] {
+        guard !customerPhone.isEmpty else { return [] }
+        // Sembunyikan jika nomornya sudah persis / sudah dipilih
+        if allCustomers.contains(where: { $0.phoneNumber == customerPhone }) { return [] }
+        return allCustomers.filter { $0.phoneNumber.contains(customerPhone) }
+    }
 
     private let operationalProtocol: OperationalProtocol
     private let cashflowProtocol: CashflowProtocol
@@ -33,7 +44,6 @@ class POSViewModel {
 
     var subtotal: Double { cart.reduce(0) { $0 + ($1.product.price * Double($1.quantity)) } }
 
-    // ✅ FUNGSI PEMBANTU BARU: Mencegah Xcode Timeout Error di layar Kasir
     func getCartQuantity(for product: Product) -> Int {
         return cart.first(where: { $0.product.id == product.id })?.quantity ?? 0
     }
@@ -42,6 +52,17 @@ class POSViewModel {
         isLoading = true
         do { availableProducts = try await operationalProtocol.fetchProducts(for: branchId) } catch { errorMessage = "Gagal memuat menu." }
         isLoading = false
+    }
+    
+    // ✅ TARIK DATA PELANGGAN DI LATAR BELAKANG
+    func loadCustomersForSuggestions(storeId: String) async {
+        do { allCustomers = try await crmProtocol.fetchCustomers(for: storeId) } catch { }
+    }
+    
+    // ✅ AKSI SAAT KASIR MEMILIH NOMOR DARI DROPDOWN
+    func selectCustomer(_ customer: Customer) {
+        customerPhone = customer.phoneNumber
+        customerName = customer.name
     }
 
     func addToCart(product: Product) {
@@ -58,23 +79,20 @@ class POSViewModel {
         guard !cart.isEmpty else { return }
         isLoading = true
         errorMessage = nil
-
         var finalCustomerId: String? = nil
         
         if !customerPhone.isEmpty && networkMonitor.isConnected {
             do {
                 let customers = try await crmProtocol.fetchCustomers(for: storeId)
                 if let existingCustomer = customers.first(where: { $0.phoneNumber == customerPhone }) {
-                    // ✅ FIX 1: Menggunakan recordNewVisit sesuai CRMProtocol
                     if let cid = existingCustomer.id {
                         _ = try await crmProtocol.recordNewVisit(customerId: cid, spent: subtotal, date: Date())
                         finalCustomerId = cid
                     }
                 } else {
                     let newName = customerName.isEmpty ? "Pelanggan" : customerName
-                    // ✅ FIX 2: Menambahkan storeId ke dalam pembuatan Customer baru
                     let newCustomer = Customer(id: UUID().uuidString, storeId: storeId, name: newName, phoneNumber: customerPhone, totalSpent: subtotal, visitHistory: [Date()])
-                    _ = try await crmProtocol.addCustomer(newCustomer) // ✅ Cukup kirim 1 argumen
+                    _ = try await crmProtocol.addCustomer(newCustomer)
                     finalCustomerId = newCustomer.id
                 }
             } catch { print("Peringatan: Gagal memproses data CRM.") }

@@ -3,7 +3,7 @@ import SwiftData
 
 struct POSCheckoutSheetView: View {
     @Bindable var viewModel: POSViewModel
-    let storeId: String // ✅ DITAMBAHKAN
+    let storeId: String
     let branchId: String
     var context: ModelContext
     @Binding var isPresented: Bool
@@ -12,14 +12,41 @@ struct POSCheckoutSheetView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 List {
-                    // ✅ FORM CRM (PROFILING)
+                    // ✅ FORM CRM (PROFILING) DENGAN AUTO-SUGGEST
                     Section {
-                        TextField("Nomor HP (Cth: 0812345...)", text: $viewModel.customerPhone)
-                            .keyboardType(.phonePad)
-                            .onChange(of: viewModel.customerPhone) { oldValue, newValue in
-                                let filtered = newValue.filter { "0123456789".contains($0) }
-                                if filtered != newValue { viewModel.customerPhone = filtered }
+                        VStack(alignment: .leading, spacing: 0) {
+                            TextField("Nomor HP (Cth: 0812345...)", text: $viewModel.customerPhone)
+                                .keyboardType(.phonePad)
+                                .onChange(of: viewModel.customerPhone) { oldValue, newValue in
+                                    let filtered = newValue.filter { "0123456789".contains($0) }
+                                    if filtered != newValue { viewModel.customerPhone = filtered }
+                                }
+                            
+                            // ✅ DROPDOWN SUGESTI
+                            if !viewModel.suggestedCustomers.isEmpty {
+                                Divider().padding(.vertical, 8)
+                                ScrollView {
+                                    VStack(alignment: .leading, spacing: 12) {
+                                        ForEach(viewModel.suggestedCustomers, id: \.id) { cust in
+                                            Button(action: {
+                                                withAnimation { viewModel.selectCustomer(cust) }
+                                            }) {
+                                                HStack {
+                                                    Image(systemName: "magnifyingglass")
+                                                    Text(cust.phoneNumber).fontWeight(.bold)
+                                                    Text("- \(cust.name)").foregroundColor(.gray)
+                                                    Spacer()
+                                                }
+                                            }
+                                            .foregroundColor(Color(hex: "#00A3A3"))
+                                            .buttonStyle(PlainButtonStyle())
+                                        }
+                                    }
+                                }
+                                .frame(maxHeight: 120) // Batasi tinggi dropdown
                             }
+                        }
+                        
                         TextField("Nama Panggilan (Opsional)", text: $viewModel.customerName)
                     } header: { Text("Identitas Pelanggan (CRM)") }
                       footer: { Text("Isi No. HP agar sistem dapat melacak tingkat loyalitas dan preferensi pelanggan ini.") }
@@ -57,7 +84,7 @@ struct POSCheckoutSheetView: View {
                     }
                     Button(action: {
                         Task {
-                            await viewModel.checkout(storeId: storeId, branchId: branchId, context: context) // ✅ DIUPDATE
+                            await viewModel.checkout(storeId: storeId, branchId: branchId, context: context)
                             isPresented = false
                         }
                     }) {
@@ -74,6 +101,10 @@ struct POSCheckoutSheetView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Tutup") { isPresented = false } } }
             .onChange(of: viewModel.cart.isEmpty) { oldValue, newValue in if newValue { isPresented = false } }
+            // ✅ TARIK DATA PELANGGAN SAAT POP-UP DIBUKA
+            .onAppear {
+                Task { await viewModel.loadCustomersForSuggestions(storeId: storeId) }
+            }
         }
     }
 }

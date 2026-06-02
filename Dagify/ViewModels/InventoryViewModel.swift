@@ -1,10 +1,3 @@
-//
-//  InventoryViewModel.swift
-//  Dagify
-//
-//  Created by Mario Ruby Ariesusandi  on 28-05-2026.
-//
-
 import Foundation
 import Observation
 
@@ -45,34 +38,51 @@ class InventoryViewModel {
         isLoading = false
     }
 
-    // ✅ FUNGSI BARU: Tambah Bahan Baku ke Firebase
+    // ✅ FITUR BARU: Otomatis mencatat pengeluaran ke Arus Kas saat beli bahan baku
     func createIngredient(branchId: String, name: String, currentStock: Double, unit: String, expiryDate: Date?, minimumStockWarning: Double, costPerUnit: Double) async {
         guard !name.isEmpty, currentStock >= 0 else {
             errorMessage = "Nama bahan baku tidak boleh kosong dan stok harus valid."
             return
         }
         isLoading = true
+        
         let newIngredient = Ingredient(branchId: branchId, name: name, currentStock: currentStock, unit: unit, expiryDate: expiryDate, minimumStockWarning: minimumStockWarning, costPerUnit: costPerUnit)
         
+        // 1. Hitung total modal yang dikeluarkan
+        let totalCost = currentStock * costPerUnit
+        
         do {
+            // 2. Simpan ke Gudang
             _ = try await operationalProtocol.addIngredient(newIngredient)
-            await loadIngredients(branchId: branchId) // Refresh otomatis
+            
+            // 3. Langsung potong uang Kas secara otomatis!
+            if totalCost > 0 {
+                let expenseRecord = FinancialRecord(
+                    id: UUID().uuidString,
+                    branchId: branchId,
+                    amount: totalCost,
+                    type: .expense,
+                    category: .cogs, // Kategori Harga Pokok Penjualan
+                    timestamp: Date(),
+                    notes: "Beli Bahan: \(name)"
+                )
+                _ = try await cashflowProtocol.addRecord(expenseRecord)
+            }
+            
+            await loadIngredients(branchId: branchId)
         } catch {
             errorMessage = "Gagal menyimpan bahan baku."
         }
         isLoading = false
     }
 
+    // ✅ FIX BUG: Buang stok basi HANYA memotong kuantitas fisik, TIDAK mengurangi Kas lagi.
     func discardExpiredItem(ingredient: Ingredient, branchId: String) async {
         guard let id = ingredient.id else { return }
         isLoading = true
         do {
+            // Murni hanya memotong stok dari Database Firebase, tidak menyentuh Cashflow
             _ = try await operationalProtocol.recordWaste(ingredientId: id, amountToDeduct: ingredient.currentStock)
-            let totalLoss = ingredient.currentStock * ingredient.costPerUnit
-            if totalLoss > 0 {
-                let lossRecord = FinancialRecord(branchId: branchId, amount: totalLoss, type: .expense, category: .incidental, timestamp: Date(), notes: "Kerugian: Bahan \(ingredient.name) kedaluwarsa")
-                _ = try await cashflowProtocol.addRecord(lossRecord)
-            }
             await loadIngredients(branchId: branchId)
         } catch {
             errorMessage = "Gagal membuang stok basi."
