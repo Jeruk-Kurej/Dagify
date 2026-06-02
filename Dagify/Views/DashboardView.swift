@@ -24,9 +24,9 @@ struct DashboardView: View {
                         }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal)
                         
                         LazyVGrid(columns: columns, spacing: 16) {
-                            DashItemCard(title: "Total Omzet", value: "Rp \(viewModel.todayRevenue, default: "%.0f")", icon: "banknote.fill", color: Color(hex: "#10B981"))
-                            DashItemCard(title: "Total Pengeluaran", value: "Rp \(viewModel.todayExpense, default: "%.0f")", icon: "arrow.down.backward.circle.fill", color: Color(hex: "#EF4444"))
-                            DashItemCard(title: "Untung Bersih", value: "Rp \(viewModel.todayNetProfit, default: "%.0f")", icon: "chart.bar.doc.horizontal", color: Color(hex: "#00A3A3"))
+                            DashItemCard(title: "Total Omzet", value: viewModel.todayRevenue.toRupiah(), icon: "banknote.fill", color: Color(hex: "#10B981"))
+                            DashItemCard(title: "Total Pengeluaran", value: viewModel.todayExpense.toRupiah(), icon: "arrow.down.backward.circle.fill", color: Color(hex: "#EF4444"))
+                            DashItemCard(title: "Untung Bersih", value: viewModel.todayNetProfit.toRupiah(), icon: "chart.bar.doc.horizontal", color: Color(hex: "#00A3A3"))
                             DashItemCard(title: "Peringatan Stok", value: "\(viewModel.lowStockAlertsCount) Item", icon: "exclamationmark.triangle.fill", color: Color(hex: "#F59E0B"))
                         }.padding(.horizontal)
                     }

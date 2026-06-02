@@ -61,7 +61,7 @@ struct ProductAnalyticsView: View {
                     }
                     AnalyticSection(title: "Margin Tertinggi", icon: "arrow.up.right.circle.fill", iconColor: Color(hex: "#10B981")) {
                         ForEach(Array(viewModel.mostProfitableProducts.prefix(3).enumerated()), id: \.element.productName) { index, item in
-                            AnalyticRow(rank: index + 1, name: item.productName, detail: "Untung Rp \(String(format: "%.0f", item.profitMargin))", highlightColor: Color(hex: "#10B981"))
+                            AnalyticRow(rank: index + 1, name: item.productName, detail: "Untung \(item.profitMargin.toRupiah())", highlightColor: Color(hex: "#10B981"))
                         }
                     }
                     AnalyticSection(title: "Perlu Evaluasi", icon: "arrow.down.right.circle.fill", iconColor: Color(hex: "#EF4444")) {

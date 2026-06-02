@@ -56,7 +56,7 @@ struct POSCheckoutSheetView: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(item.product.name).font(.body).fontWeight(.semibold).foregroundColor(.themeTextPrimary)
-                                    Text(String(format: "Rp %.0f", item.product.price)).font(.subheadline).foregroundColor(.themePrimary)
+                                    Text(item.product.price.toRupiah()).font(.subheadline).foregroundColor(.themePrimary)
                                 }
                                 Spacer()
                                 HStack(spacing: 12) {
@@ -80,7 +80,7 @@ struct POSCheckoutSheetView: View {
                     HStack {
                         Text("Total Tagihan").font(.headline).foregroundColor(.themeTextSecondary)
                         Spacer()
-                        Text(String(format: "Rp %.0f", viewModel.subtotal)).font(.title2).fontWeight(.bold).foregroundColor(.themeTextPrimary)
+                        Text(viewModel.subtotal.toRupiah()).font(.title2).fontWeight(.bold).foregroundColor(.themeTextPrimary)
                     }
                     Button(action: {
                         Task {

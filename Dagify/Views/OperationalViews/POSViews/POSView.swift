@@ -59,8 +59,7 @@ struct POSView: View {
                                 Text("\(viewModel.cart.reduce(0){$0 + $1.quantity}) Item")
                                     .font(.caption)
                                     .foregroundColor(.white.opacity(0.8))
-                                Text("Rp \(viewModel.subtotal, specifier: "%.0f")")
-                                    .font(.headline)
+                                Text(viewModel.subtotal.toRupiah())                                    .font(.headline)
                                     .foregroundColor(.white)
                             }
                             Spacer()
@@ -112,33 +111,3 @@ struct POSView: View {
         }
     }
 }
-
-// ✅ FIX: Memperbaiki Parameter Mock di #Preview
-//#Preview {
-//    let mockOp = MockOperationalRepository()
-//    let mockCash = MockCashflowRepository()
-//    let mockCRM = MockCRMRepository()
-//    let mockSync = MockSyncManager()
-//    let network = NetworkMonitor()
-//
-//    mockOp.dummyProducts = [
-//        Product(id: "1", branchId: "B-1", name: "Es Kopi Susu Aren", price: 22000, recipe: []),
-//        Product(id: "2", branchId: "B-1", name: "Americano Dingin", price: 18000, recipe: [])
-//    ]
-//
-//    let vm = POSViewModel(
-//        operationalProtocol: mockOp,
-//        cashflowProtocol: mockCash,
-//        crmProtocol: mockCRM,
-//        networkMonitor: network,
-//        syncManager: mockSync
-//    )
-//    
-//    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-//    let container = try! ModelContainer(for: OfflineOrderModel.self, configurations: config)
-//
-//    NavigationStack {
-//        POSView(viewModel: vm, storeId: "S-1", branchId: "B-1")
-//            .modelContainer(container)
-//    }
-//}

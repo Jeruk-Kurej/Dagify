@@ -22,7 +22,7 @@ struct ProductCardView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(product.name).font(.headline).foregroundColor(.themeTextPrimary).lineLimit(2).minimumScaleFactor(0.8)
-                Text(String(format: "Rp %.0f", product.price)).font(.subheadline).fontWeight(.semibold).foregroundColor(.themePrimary)
+                Text(product.price.toRupiah()).font(.subheadline).fontWeight(.semibold).foregroundColor(.themePrimary)
             }
             Spacer(minLength: 0)
 

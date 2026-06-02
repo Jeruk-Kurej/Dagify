@@ -30,7 +30,7 @@ struct TransactionRowView: View {
             
             Spacer()
             
-            Text(String(format: "%@Rp %.0f", record.type == .income ? "+" : "-", record.amount))
+            Text("\(record.type == .income ? "+" : "-") \(record.amount.toRupiah())")
                 .font(.headline)
                 .fontWeight(.bold)
                 .foregroundColor(record.type == .income ? Color(hex: "#10B981") : Color(hex: "#EF4444"))

@@ -42,7 +42,7 @@ struct MasterDataView: View {
                             
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(product.name).font(.headline).foregroundColor(Color(hex: "#111827"))
-                                Text(String(format: "Rp %.0f", product.price)).font(.subheadline).foregroundColor(Color(hex: "#00A3A3")).fontWeight(.bold)
+                                Text(product.price.toRupiah()).font(.subheadline).foregroundColor(Color(hex: "#00A3A3")).fontWeight(.bold)
                             }
                             Spacer()
                             Text("\(product.recipe.count) Bahan").font(.caption).padding(.horizontal, 8).padding(.vertical, 4).background(Color(hex: "#E5E7EB")).foregroundColor(Color(hex: "#6B7280")).clipShape(Capsule())

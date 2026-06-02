@@ -19,7 +19,6 @@ struct AddEditProductView: View {
     @State private var showIngredientPicker = false
     @State private var isSaving = false
     
-    // ✅ STATE GAMBAR & KATEGORI BARU
     @State private var selectedCategoryId: String = ""
     @State private var selectedImageItem: PhotosPickerItem? = nil
     @State private var selectedImageData: Data? = nil
@@ -59,7 +58,6 @@ struct AddEditProductView: View {
     var body: some View {
         NavigationStack {
             Form {
-                // ✅ FORM GAMBAR & KATEGORI (Baru)
                 Section("Media & Pengelompokan") {
                     HStack {
                         Spacer()
@@ -75,7 +73,16 @@ struct AddEditProductView: View {
                         Text("Ganti Gambar Menu").frame(maxWidth: .infinity).foregroundColor(Color(hex: "#00A3A3"))
                     }
                     .onChange(of: selectedImageItem) { _, newItem in
-                        Task { if let data = try? await newItem?.loadTransferable(type: Data.self) { selectedImageData = data } }
+                        Task {
+                            if let data = try? await newItem?.loadTransferable(type: Data.self),
+                               let uiImage = UIImage(data: data) {
+                                // ✅ BUG FIX GAMBAR HANTU:
+                                // Kompresi gambar menjadi 10% kualitas.
+                                // Jika tidak dikompres, gambar dari HP akan melebihi 1MB
+                                // dan Firebase akan diam-diam membatalkan proses "Simpan"!
+                                selectedImageData = uiImage.jpegData(compressionQuality: 0.1)
+                            }
+                        }
                     }
                     
                     Picker("Pilih Kategori", selection: $selectedCategoryId) {

@@ -1,11 +1,27 @@
 import SwiftUI
 
+// ✅ EXTENSION GLOBAL: Mengubah angka Double menjadi "Rp 10.000,00"
+// Karena ditaruh di sini, seluruh file di aplikasi Dagify bisa menggunakannya!
+extension Double {
+    func toRupiah() -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = "."
+        formatter.decimalSeparator = ","
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
+        
+        let formatted = formatter.string(from: NSNumber(value: self)) ?? "0,00"
+        return "Rp \(formatted)"
+    }
+}
+
 struct FinancialBox: View {
     var title: String
     var amount: Double
     var color: Color
     var icon: String
-    var isCurrency: Bool = true // ✅ DITAMBAHKAN: Sakelar Rupiah
+    var isCurrency: Bool = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -19,8 +35,8 @@ struct FinancialBox: View {
                     .foregroundColor(Color(hex: "#6B7280"))
             }
 
-            // ✅ LOGIKA BARU: Jika isCurrency false, buang tulisan "Rp"
-            Text(isCurrency ? String(format: "Rp %.0f", amount) : String(format: "%.0f", amount))
+            // ✅ MENGGUNAKAN FORMATTER RUPIAH TERBARU
+            Text(isCurrency ? amount.toRupiah() : String(format: "%.0f", amount))
                 .font(.headline)
                 .fontWeight(.bold)
                 .foregroundColor(color)
