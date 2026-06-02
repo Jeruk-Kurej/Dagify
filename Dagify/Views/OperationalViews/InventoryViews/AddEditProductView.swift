@@ -17,25 +17,28 @@ struct AddEditProductView: View {
     @Environment(\.dismiss) private var dismiss
     @Bindable var viewModel: MasterDataViewModel
     let branchId: String
-    var productToEdit: Product? // Nil jika Tambah, Terisi jika Edit
+    var productToEdit: Product?
     
     @State private var productName = ""
     @State private var productPrice = ""
     @State private var recipeDrafts: [RecipeDraft] = []
     @State private var showIngredientPicker = false
 
-    // ✅ UX WARNING: Deteksi Nama Kembar
     var isNameDuplicate: Bool {
-        // Jika sedang edit, jangan anggap namanya sendiri sebagai duplikat
         if let edit = productToEdit, edit.name.lowercased() == productName.lowercased() { return false }
         return viewModel.products.contains { $0.name.lowercased() == productName.lowercased() }
     }
 
-    // ✅ UX WARNING: Deteksi Harga Kembar (Mungkin Kasir salah ketik harga)
     var isPriceDuplicate: Bool {
         guard let p = Double(productPrice.replacingOccurrences(of: ",", with: ".")) else { return false }
         if let edit = productToEdit, edit.price == p { return false }
         return viewModel.products.contains { $0.price == p }
+    }
+    
+    // ✅ LOGIKA VALIDASI: Memastikan harga bukan huruf dan bernilai valid
+    var isPriceValid: Bool {
+        let clean = productPrice.replacingOccurrences(of: ",", with: ".")
+        return Double(clean) != nil && (Double(clean) ?? 0) >= 0
     }
 
     var body: some View {
@@ -47,7 +50,6 @@ struct AddEditProductView: View {
                         TextField("Cth: Kopi Susu Aren", text: $productName)
                             .font(.body).foregroundColor(Color(hex: "#111827"))
                         
-                        // 🚨 WARNING NAMA DUPLIKAT
                         if isNameDuplicate {
                             Text("⚠️ Menu dengan nama ini sudah terdaftar!")
                                 .font(.caption2)
@@ -60,9 +62,20 @@ struct AddEditProductView: View {
                         TextField("Cth: 18000", text: $productPrice)
                             .keyboardType(.decimalPad)
                             .font(.body).foregroundColor(Color(hex: "#111827"))
+                            // ✅ UX FIX: Membuang huruf asing secara otomatis
+                            .onChange(of: productPrice) { oldValue, newValue in
+                                let filtered = newValue.filter { "0123456789.,".contains($0) }
+                                if filtered != newValue {
+                                    productPrice = filtered
+                                }
+                            }
                         
-                        // 💡 INFO HARGA KEMBAR
-                        if isPriceDuplicate {
+                        // ✅ PERINGATAN HARGA INVALID
+                        if !productPrice.isEmpty && !isPriceValid {
+                            Text("⚠️ Format harga tidak valid.")
+                                .font(.caption2)
+                                .foregroundColor(.red)
+                        } else if isPriceDuplicate {
                             Text("💡 Info: Anda memiliki menu lain dengan harga ini.")
                                 .font(.caption2)
                                 .foregroundColor(.orange)
@@ -76,8 +89,17 @@ struct AddEditProductView: View {
                             Text(draft.ingredient.name).font(.body)
                             Spacer()
                             TextField("Takaran", text: $draft.qtyString)
-                                .keyboardType(.decimalPad).multilineTextAlignment(.trailing)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
                                 .frame(width: 60).foregroundColor(Color(hex: "#00A3A3")).fontWeight(.bold)
+                                // ✅ UX FIX: Membuang huruf asing di takaran resep juga
+                                .onChange(of: draft.qtyString) { oldValue, newValue in
+                                    let filtered = newValue.filter { "0123456789.,".contains($0) }
+                                    if filtered != newValue {
+                                        draft.qtyString = filtered
+                                    }
+                                }
+                            
                             Text(draft.ingredient.unit).font(.caption).foregroundColor(Color(hex: "#6B7280"))
                             
                             Button(action: { recipeDrafts.removeAll { $0.id == draft.id } }) {
@@ -100,8 +122,8 @@ struct AddEditProductView: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Batal") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Simpan") { saveProduct() }
-                        // ✅ Tombol terkunci kalau nama kosong, harga kosong, loading, atau Nama Duplikat!
-                        .disabled(productName.isEmpty || productPrice.isEmpty || viewModel.isLoading || isNameDuplicate)
+                        // ✅ TOMBOL TERKUNCI jika nama kosong, harga kosong, HARGA INVALID, atau nama duplikat!
+                        .disabled(productName.isEmpty || productPrice.isEmpty || !isPriceValid || viewModel.isLoading || isNameDuplicate)
                 }
             }
             .onAppear(perform: loadExistingData)

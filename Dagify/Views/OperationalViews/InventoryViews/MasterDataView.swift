@@ -1,11 +1,18 @@
 import SwiftUI
 
+// ✅ WRAPPER SOLID: Memastikan SwiftUI tidak bingung saat melempar data ke layar Pop-up
+struct ProductEditWrapper: Identifiable {
+    let id = UUID()
+    let product: Product
+}
+
 struct MasterDataView: View {
     @Bindable var viewModel: MasterDataViewModel
     let branchId: String
     
-    @State private var showForm = false
-    @State private var productToEdit: Product? = nil
+    // ✅ DIPISAH: Pintu masuk untuk Tambah dan Edit tidak lagi menggunakan variabel yang sama
+    @State private var showAddForm = false
+    @State private var productToEdit: ProductEditWrapper? = nil
 
     var body: some View {
         ZStack {
@@ -41,17 +48,15 @@ struct MasterDataView: View {
                                 .foregroundColor(Color(hex: "#6B7280"))
                                 .clipShape(Capsule())
                         }
-                        .contentShape(Rectangle()) // Memastikan seluruh area baris bisa dideteksi gesturnya
-                        // ✅ UX HIG MODERN: Hold (Long Press) untuk memunculkan Context Menu
+                        .contentShape(Rectangle())
                         .contextMenu {
                             Button {
-                                productToEdit = product
-                                showForm = true
+                                // ✅ Menggunakan Wrapper agar data dijamin masuk ke Pop-up
+                                productToEdit = ProductEditWrapper(product: product)
                             } label: {
                                 Label("Edit Menu", systemImage: "pencil")
                             }
                             
-                            // Tombol dengan role .destructive akan otomatis berwarna merah di iOS
                             Button(role: .destructive) {
                                 if let id = product.id {
                                     Task {
@@ -72,8 +77,7 @@ struct MasterDataView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button(action: {
-                    productToEdit = nil // Pastikan form kosong untuk mode Tambah Baru
-                    showForm = true
+                    showAddForm = true // ✅ Membuka pintu khusus Tambah
                 }) {
                     Image(systemName: "plus")
                         .fontWeight(.bold)
@@ -84,17 +88,26 @@ struct MasterDataView: View {
         .onAppear {
             Task {
                 await viewModel.loadProducts(branchId: branchId)
-                await viewModel.loadIngredients(branchId: branchId) // Siapkan data gudang untuk resep
+                await viewModel.loadIngredients(branchId: branchId)
             }
         }
         .refreshable {
             await viewModel.loadProducts(branchId: branchId)
         }
-        .sheet(isPresented: $showForm) {
+        // ✅ SHEET 1: KHUSUS UNTUK TAMBAH BARU
+        .sheet(isPresented: $showAddForm) {
             AddEditProductView(
                 viewModel: viewModel,
                 branchId: branchId,
-                productToEdit: productToEdit
+                productToEdit: nil
+            )
+        }
+        // ✅ SHEET 2: KHUSUS UNTUK EDIT (Sistem akan membuat ulang UI dengan data yang benar)
+        .sheet(item: $productToEdit) { wrapper in
+            AddEditProductView(
+                viewModel: viewModel,
+                branchId: branchId,
+                productToEdit: wrapper.product
             )
         }
     }
