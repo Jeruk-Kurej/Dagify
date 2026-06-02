@@ -1,11 +1,10 @@
 import Foundation
 import SwiftUI
-import UIKit // ✅ Wajib untuk menggunakan UIKit Bridge
+import UIKit // Wajib untuk mengakses UIWindow & Render Engine
 
 @MainActor
 class PDFGeneratorService {
     
-    // ✅ FIX TOTAL: UIHostingController + UIGraphicsPDFRenderer
     static func generateCashflowReport(
         monthYear: String,
         records: [FinancialRecord],
@@ -14,7 +13,7 @@ class PDFGeneratorService {
         filename: String
     ) -> URL? {
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(filename).pdf")
-        let pdfBounds = CGRect(x: 0, y: 0, width: 595, height: 842) // A4 Ukuran Presisi
+        let pdfBounds = CGRect(x: 0, y: 0, width: 595, height: 842) // A4 Presisi
         
         let format = UIGraphicsPDFRendererFormat()
         let renderer = UIGraphicsPDFRenderer(bounds: pdfBounds, format: format)
@@ -31,7 +30,6 @@ class PDFGeneratorService {
                     let end = min(start + itemsPerPage, records.count)
                     let pageRecords = records.isEmpty ? [] : Array(records[start..<end])
                     
-                    // 1. Siapkan View SwiftUI
                     let pageView = CashflowPDFTemplate(
                         monthYear: monthYear,
                         records: pageRecords,
@@ -44,17 +42,19 @@ class PDFGeneratorService {
                     .frame(width: 595, height: 842)
                     .background(Color.white)
                     
-                    // 2. Bungkus ke UIHostingController (Native UIKit Bridge)
                     let hostingController = UIHostingController(rootView: pageView)
                     hostingController.view.frame = pdfBounds
-                    hostingController.view.bounds = pdfBounds
-                    hostingController.view.backgroundColor = .white
                     
-                    // 3. PAKSA MESIN RENDER iOS UNTUK MENGGAMBAR SEKARANG JUGA (Mencegah Layar Putih)
+                    // ✅ HIG & SOLID FIX: Memaksa mesin grafis iOS merender UI secara sinkron
+                    // dengan menempelkannya ke Window transparan rahasia.
+                    let tempWindow = UIWindow(frame: pdfBounds)
+                    tempWindow.isHidden = false
+                    tempWindow.layer.opacity = 0 // Tembus pandang agar tidak berkedip di layar user
+                    tempWindow.rootViewController = hostingController
+                    
                     hostingController.view.setNeedsLayout()
                     hostingController.view.layoutIfNeeded()
                     
-                    // 4. Lukis layer fisik tersebut ke kanvas PDF
                     hostingController.view.layer.render(in: context.cgContext)
                 }
             }

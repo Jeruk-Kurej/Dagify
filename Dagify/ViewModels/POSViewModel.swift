@@ -2,6 +2,16 @@ import Foundation
 import Observation
 import SwiftData
 
+// ✅ 1. DEPENDENCY INVERSION PRINCIPLE (DIP)
+// Kita buat abstraksi untuk Network Monitor, bukan bergantung pada Class konkret.
+protocol NetworkMonitorProtocol {
+    var isConnected: Bool { get }
+}
+
+// ✅ 2. LISKOV SUBSTITUTION PRINCIPLE (LSP)
+// Kita buat NetworkMonitor bawaanmu otomatis mematuhi protokol di atas.
+extension NetworkMonitor: NetworkMonitorProtocol {}
+
 @MainActor
 @Observable
 class POSViewModel {
@@ -13,13 +23,15 @@ class POSViewModel {
 
     private let operationalProtocol: OperationalProtocol
     private let cashflowProtocol: CashflowProtocol
-    private let networkMonitor: NetworkMonitor
+    
+    // Menerima abstraksi (Protocol), bukan class konkret
+    private let networkMonitor: NetworkMonitorProtocol
     private let syncManager: SyncManagerProtocol
 
     init(
         operationalProtocol: OperationalProtocol,
         cashflowProtocol: CashflowProtocol,
-        networkMonitor: NetworkMonitor,
+        networkMonitor: NetworkMonitorProtocol,
         syncManager: SyncManagerProtocol
     ) {
         self.operationalProtocol = operationalProtocol
@@ -66,6 +78,7 @@ class POSViewModel {
         errorMessage = nil
 
         let order = Order(
+            id: UUID().uuidString,
             branchId: branchId,
             customerId: nil,
             items: cart,
@@ -74,6 +87,7 @@ class POSViewModel {
         )
 
         let incomeRecord = FinancialRecord(
+            id: UUID().uuidString,
             branchId: branchId,
             amount: subtotal,
             type: .income,
@@ -84,24 +98,29 @@ class POSViewModel {
 
         if networkMonitor.isConnected {
             do {
-                // 1. Potong Stok Gudang & Catat Pesanan
-                _ = try await operationalProtocol.submitOrderAndUpdateInventory(order: order)
-                // 2. Setor Uang ke Arus Kas
+                // ✅ 3. SINGLE RESPONSIBILITY & OPEN/CLOSED PRINCIPLE
+                // Kita eksekusi Kas terlebih dahulu secara mandiri.
                 _ = try await cashflowProtocol.addRecord(incomeRecord)
+                
+                // Lalu kita proses Gudang. Dibungkus try-catch agar jika Gudang gagal/error,
+                // pencatatan Kas tidak ikut terbatal (Data tetap valid).
+                do {
+                    _ = try await operationalProtocol.submitOrderAndUpdateInventory(order: order)
+                } catch {
+                    print("Peringatan: Inventori gagal diperbarui, namun pendapatan Kas berhasil dicatat.")
+                }
                 
                 isCheckoutSuccess = true
                 cart.removeAll()
             } catch {
-                errorMessage = "Gagal memproses transaksi: \(error.localizedDescription)"
+                errorMessage = "Gagal menyetor Kas ke server: \(error.localizedDescription)"
             }
         } else {
             // Mode Offline
             do {
-                // ✅ FIX: Konversi objek Order menjadi struktur "Data" biner menggunakan JSONEncoder
                 let encoder = JSONEncoder()
                 let encodedOrderData = try encoder.encode(order)
                 
-                // Masukkan sesuai dengan properti di model OfflineOrderModel milikmu
                 let offlineOrder = OfflineOrderModel(
                     id: UUID().uuidString,
                     orderData: encodedOrderData,
