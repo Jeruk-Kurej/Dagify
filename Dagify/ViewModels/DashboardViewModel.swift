@@ -1,10 +1,3 @@
-//
-//  DashboardViewModel.swift
-//  Dagify
-//
-//  Created by Hanzelius Kwan on 28/05/26.
-//
-
 import Foundation
 import Observation
 
@@ -14,9 +7,12 @@ class DashboardViewModel {
     var todayRevenue: Double = 0
     var totalLoyalCustomers: Int = 0
     var lowStockAlertsCount: Int = 0
-
     var todayExpense: Double = 0
     var todayNetProfit: Double = 0
+
+    // ✅ Tambahan untuk Nama Toko & Cabang
+    var storeName: String = ""
+    var branchName: String = ""
 
     var isLoading: Bool = false
     var errorMessage: String? = nil
@@ -24,21 +20,23 @@ class DashboardViewModel {
     let cashflowProtocol: CashflowProtocol
     let crmProtocol: CRMProtocol
     let operationalProtocol: OperationalProtocol
+    let storeProtocol: StoreProtocol  // ✅ Injeksi Baru
 
     init(
         cashflowProtocol: CashflowProtocol,
         crmProtocol: CRMProtocol,
-        operationalProtocol: OperationalProtocol
+        operationalProtocol: OperationalProtocol,
+        storeProtocol: StoreProtocol
     ) {
         self.cashflowProtocol = cashflowProtocol
         self.crmProtocol = crmProtocol
         self.operationalProtocol = operationalProtocol
+        self.storeProtocol = storeProtocol
     }
 
     func loadDashboardSummary(storeId: String, branchId: String) async {
         isLoading = true
         errorMessage = nil
-
         do {
             async let fetchCashflow = cashflowProtocol.fetchRecords(
                 for: branchId
@@ -47,10 +45,19 @@ class DashboardViewModel {
             async let fetchIngredients = operationalProtocol.fetchIngredients(
                 for: branchId
             )
+            async let fetchStoreInfo = storeProtocol.fetchStore(
+                storeId: storeId
+            )  // Tarik info toko
 
-            let (records, customers, ingredients) = try await (
-                fetchCashflow, fetchCustomers, fetchIngredients
+            let (records, customers, ingredients, storeInfo) = try await (
+                fetchCashflow, fetchCustomers, fetchIngredients, fetchStoreInfo
             )
+
+            // Simpan nama
+            self.storeName = storeInfo.name
+            self.branchName =
+                storeInfo.branches.first(where: { $0.id == branchId })?.name
+                ?? "Cabang Tidak Diketahui"
 
             let calendar = Calendar.current
             let todaysRecords = records.filter {
@@ -63,8 +70,8 @@ class DashboardViewModel {
                 0
             ) { $0 + $1.amount }
             todayNetProfit = todayRevenue - todayExpense
-            totalLoyalCustomers = customers.filter { $0.isLoyal }.count
 
+            totalLoyalCustomers = customers.filter { $0.isLoyal }.count
             lowStockAlertsCount =
                 ingredients.filter { $0.currentStock <= $0.minimumStockWarning }
                 .count
@@ -72,7 +79,6 @@ class DashboardViewModel {
         } catch {
             errorMessage = "Gagal memuat dashboard."
         }
-
         isLoading = false
     }
 }

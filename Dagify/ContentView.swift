@@ -1,20 +1,17 @@
-//
-//  ContentView.swift
-//  Dagify
-//
-//  Created by Bryan Carlie Lukito Setiawan on 25/05/26.
-//
-
-
 import SwiftUI
 
 struct ContentView: View {
-    @State private var authViewModel = AuthViewModel(authProtocol: FirebaseAuthService())
-    
+    @State private var authViewModel = AuthViewModel(
+        authProtocol: FirebaseAuthService()
+    )
+
     var body: some View {
         Group {
-            if authViewModel.isAuthenticated, let user = authViewModel.currentUser {
-                MainAppView(storeId: user.storeId, branchId: "B-1", authViewModel: authViewModel)
+            if authViewModel.isAuthenticated,
+                let user = authViewModel.currentUser
+            {
+                // ✅ HANYA MENGIRIMKAN STORE ID
+                MainAppView(storeId: user.storeId, authViewModel: authViewModel)
                     .transition(.opacity)
             } else {
                 AuthView(viewModel: authViewModel)
@@ -25,7 +22,6 @@ struct ContentView: View {
     }
 }
 
-
 #Preview {
-    //ContentView()
+    ContentView()
 }
