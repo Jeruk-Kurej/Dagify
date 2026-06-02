@@ -3,11 +3,11 @@ import SwiftUI
 struct CashflowView: View {
     var viewModel: CashflowViewModel
     let branchId: String
-
+    
     @State private var isShowingAdd = false
     @State private var generatedPDFURL: URL? = nil
     @State private var isShowingShareSheet = false
-
+    
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -48,7 +48,7 @@ struct CashflowView: View {
                     }
                     .padding(.horizontal)
                     .padding(.top)
-
+                    
                     // --- SECTION 1: RINGKASAN SALDO ---
                     VStack(spacing: 12) {
                         FinancialBox(
@@ -57,7 +57,7 @@ struct CashflowView: View {
                             color: Color(hex: "#00A3A3"),
                             icon: "building.columns.fill"
                         )
-
+                        
                         HStack(spacing: 12) {
                             FinancialBox(
                                 title: "Pemasukan",
@@ -74,7 +74,7 @@ struct CashflowView: View {
                         }
                     }
                     .padding(.horizontal)
-
+                    
                     // --- SECTION 2: RIWAYAT TRANSAKSI ---
                     VStack(alignment: .leading, spacing: 0) {
                         HStack {
@@ -90,7 +90,7 @@ struct CashflowView: View {
                             .foregroundColor(Color(hex: "#00A3A3"))
                         }
                         .padding()
-
+                        
                         if viewModel.isLoading && viewModel.filteredRecords.isEmpty {
                             ProgressView()
                                 .frame(maxWidth: .infinity)
@@ -154,5 +154,20 @@ struct CashflowView: View {
                 }
             }
         }
+    }
+    struct ShareSheet: UIViewControllerRepresentable {
+        var activityItems: [Any]
+        
+        func makeUIViewController(context: Context) -> UIActivityViewController {
+            UIActivityViewController(
+                activityItems: activityItems,
+                applicationActivities: nil
+            )
+        }
+        
+        func updateUIViewController(
+            _ uiViewController: UIActivityViewController,
+            context: Context
+        ) {}
     }
 }
