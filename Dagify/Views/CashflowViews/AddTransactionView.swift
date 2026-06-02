@@ -3,25 +3,31 @@ import SwiftUI
 struct AddTransactionView: View {
     @Environment(\.dismiss) private var dismiss
 
-    // ✅ MVVM SOLID: Menggunakan properti viewModel hasil injeksi luar
     var viewModel: CashflowViewModel
     var branchId: String
 
     @State private var amountString: String = ""
     @State private var type: TransactionType = .expense
     @State private var notes: String = ""
+    
+    // ✅ Mencegah double-submission (klik ganda)
+    @State private var isSaving: Bool = false
 
-    // ✅ LOGIKA VALIDASI REAL-TIME
+    // ✅ LOGIKA VALIDASI REAL-TIME YANG LEBIH JELAS
     var isAmountValid: Bool {
         let clean = amountString.replacingOccurrences(of: ",", with: ".")
-        return Double(clean) != nil && (Double(clean) ?? 0) > 0
+        return (Double(clean) ?? 0) > 0
     }
     
     var validationMessage: String? {
         if amountString.isEmpty {
             return "Nominal wajib diisi."
-        } else if !isAmountValid {
-            return "Format angka tidak valid."
+        }
+        let clean = amountString.replacingOccurrences(of: ",", with: ".")
+        if Double(clean) == nil {
+            return "Format angka tidak valid. Gunakan titik/koma dengan benar."
+        } else if let val = Double(clean), val <= 0 {
+            return "Nominal harus lebih besar dari 0."
         }
         return nil
     }
@@ -39,8 +45,7 @@ struct AddTransactionView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         TextField("Nominal (Rp)", text: $amountString)
-                            .keyboardType(.decimalPad) // Menampilkan keyboard angka + simbol desimal
-                            // ✅ UX MAGIC: Memaksa membuang huruf asing secara instan
+                            .keyboardType(.decimalPad)
                             .onChange(of: amountString) { oldValue, newValue in
                                 let filtered = newValue.filter { "0123456789.,".contains($0) }
                                 if filtered != newValue {
@@ -56,11 +61,9 @@ struct AddTransactionView: View {
                         }
                     }
 
-                    // Petunjuk placeholder menjadi opsional
                     TextField("Catatan (Opsional)", text: $notes)
                 }
 
-                // Error dari Firebase (jika ada)
                 if let errorMessage = viewModel.errorMessage {
                     Section {
                         Text(errorMessage)
@@ -77,8 +80,10 @@ struct AddTransactionView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Simpan") {
+                        guard !isSaving else { return }
+                        isSaving = true // Matikan tombol
+                        
                         Task {
-                            // Sanitasi input string dari koma/titik agar konversi Double aman
                             let cleanString = amountString.replacingOccurrences(of: ",", with: ".")
                             if let amount = Double(cleanString) {
                                 await viewModel.addTransaction(
@@ -86,15 +91,17 @@ struct AddTransactionView: View {
                                     amount: amount,
                                     type: type,
                                     category: .none,
-                                    // Jika catatan kosong, beri penamaan default otomatis
                                     notes: notes.isEmpty ? (type == .income ? "Pemasukan Manual" : "Pengeluaran Manual") : notes
                                 )
+                                isSaving = false
                                 dismiss()
+                            } else {
+                                isSaving = false
                             }
                         }
                     }
-                    // ✅ UX: Tombol simpan DITOLAK (mati) selama peringatan merah masih ada
-                    .disabled(!isAmountValid || viewModel.isLoading)
+                    // ✅ UX: Tombol simpan DITOLAK selama merah, loading, atau sedang proses simpan
+                    .disabled(!isAmountValid || viewModel.isLoading || isSaving)
                 }
             }
         }

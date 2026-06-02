@@ -1,18 +1,24 @@
 import SwiftUI
 
-// ✅ WRAPPER SOLID: Memastikan SwiftUI tidak bingung saat melempar data ke layar Pop-up
-struct ProductEditWrapper: Identifiable {
-    let id = UUID()
-    let product: Product
+// ✅ ENUM UNTUK SHEET NAVIGATION YANG SOLID (Mengatasi Bug SwiftUI)
+enum MasterDataSheet: Identifiable {
+    case add
+    case edit(Product)
+    
+    var id: String {
+        switch self {
+        case .add: return "add"
+        case .edit(let product): return product.id ?? UUID().uuidString
+        }
+    }
 }
 
 struct MasterDataView: View {
     @Bindable var viewModel: MasterDataViewModel
     let branchId: String
     
-    // ✅ DIPISAH: Pintu masuk untuk Tambah dan Edit tidak lagi menggunakan variabel yang sama
-    @State private var showAddForm = false
-    @State private var productToEdit: ProductEditWrapper? = nil
+    // ✅ Menggabungkan Add dan Edit ke dalam 1 variabel State agar SwiftUI tidak bingung
+    @State private var activeSheet: MasterDataSheet? = nil
 
     var body: some View {
         ZStack {
@@ -51,8 +57,8 @@ struct MasterDataView: View {
                         .contentShape(Rectangle())
                         .contextMenu {
                             Button {
-                                // ✅ Menggunakan Wrapper agar data dijamin masuk ke Pop-up
-                                productToEdit = ProductEditWrapper(product: product)
+                                // ✅ Panggil mode Edit
+                                activeSheet = .edit(product)
                             } label: {
                                 Label("Edit Menu", systemImage: "pencil")
                             }
@@ -77,7 +83,7 @@ struct MasterDataView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button(action: {
-                    showAddForm = true // ✅ Membuka pintu khusus Tambah
+                    activeSheet = .add // ✅ Panggil mode Add
                 }) {
                     Image(systemName: "plus")
                         .fontWeight(.bold)
@@ -94,31 +100,22 @@ struct MasterDataView: View {
         .refreshable {
             await viewModel.loadProducts(branchId: branchId)
         }
-        // ✅ SHEET 1: KHUSUS UNTUK TAMBAH BARU
-        .sheet(isPresented: $showAddForm) {
-            AddEditProductView(
-                viewModel: viewModel,
-                branchId: branchId,
-                productToEdit: nil
-            )
+        // ✅ SATU SHEET UNTUK SEMUA: Mencegah bug salah memanggil pop-up edit/tambah
+        .sheet(item: $activeSheet) { sheetType in
+            switch sheetType {
+            case .add:
+                AddEditProductView(
+                    viewModel: viewModel,
+                    branchId: branchId,
+                    productToEdit: nil
+                )
+            case .edit(let product):
+                AddEditProductView(
+                    viewModel: viewModel,
+                    branchId: branchId,
+                    productToEdit: product
+                )
+            }
         }
-        // ✅ SHEET 2: KHUSUS UNTUK EDIT (Sistem akan membuat ulang UI dengan data yang benar)
-        .sheet(item: $productToEdit) { wrapper in
-            AddEditProductView(
-                viewModel: viewModel,
-                branchId: branchId,
-                productToEdit: wrapper.product
-            )
-        }
-    }
-}
-
-#Preview {
-    let previewViewModel: MasterDataViewModel = {
-        let repo = MockOperationalRepository()
-        return MasterDataViewModel(operationalProtocol: repo)
-    }()
-    NavigationStack {
-        MasterDataView(viewModel: previewViewModel, branchId: "B-1")
     }
 }
