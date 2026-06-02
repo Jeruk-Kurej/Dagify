@@ -14,7 +14,11 @@ struct MasterDataView: View {
             if viewModel.isLoading && viewModel.products.isEmpty {
                 ProgressView("Memuat daftar menu...")
             } else if viewModel.products.isEmpty {
-                ContentUnavailableView("Menu Kosong", systemImage: "takeoutbag.and.cup.and.straw", description: Text("Silakan daftarkan menu F&B baru untuk Kasir."))
+                ContentUnavailableView(
+                    "Menu Kosong",
+                    systemImage: "takeoutbag.and.cup.and.straw",
+                    description: Text("Silakan daftarkan menu F&B baru untuk Kasir.")
+                )
             } else {
                 List {
                     ForEach(viewModel.products) { product in
@@ -37,18 +41,25 @@ struct MasterDataView: View {
                                 .foregroundColor(Color(hex: "#6B7280"))
                                 .clipShape(Capsule())
                         }
-                        .contentShape(Rectangle())
-                        // ✅ Fitur Edit Saat Menu Diklik
-                        .onTapGesture {
-                            productToEdit = product
-                            showForm = true
-                        }
-                    }
-                    // ✅ Fitur Swipe untuk Hapus
-                    .onDelete { indexSet in
-                        for index in indexSet {
-                            if let id = viewModel.products[index].id {
-                                Task { await viewModel.deleteProduct(productId: id, branchId: branchId) }
+                        .contentShape(Rectangle()) // Memastikan seluruh area baris bisa dideteksi gesturnya
+                        // ✅ UX HIG MODERN: Hold (Long Press) untuk memunculkan Context Menu
+                        .contextMenu {
+                            Button {
+                                productToEdit = product
+                                showForm = true
+                            } label: {
+                                Label("Edit Menu", systemImage: "pencil")
+                            }
+                            
+                            // Tombol dengan role .destructive akan otomatis berwarna merah di iOS
+                            Button(role: .destructive) {
+                                if let id = product.id {
+                                    Task {
+                                        await viewModel.deleteProduct(productId: id, branchId: branchId)
+                                    }
+                                }
+                            } label: {
+                                Label("Hapus Menu", systemImage: "trash")
                             }
                         }
                     }
@@ -61,7 +72,7 @@ struct MasterDataView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button(action: {
-                    productToEdit = nil
+                    productToEdit = nil // Pastikan form kosong untuk mode Tambah Baru
                     showForm = true
                 }) {
                     Image(systemName: "plus")
@@ -80,7 +91,11 @@ struct MasterDataView: View {
             await viewModel.loadProducts(branchId: branchId)
         }
         .sheet(isPresented: $showForm) {
-            AddEditProductView(viewModel: viewModel, branchId: branchId, productToEdit: productToEdit)
+            AddEditProductView(
+                viewModel: viewModel,
+                branchId: branchId,
+                productToEdit: productToEdit
+            )
         }
     }
 }
