@@ -84,11 +84,10 @@ struct CashflowView: View {
             }
             .background(Color(hex: "#F9FAFB"))
             .navigationTitle("Arus Kas")
-            // ... kode CashflowView di atas ...
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        // ✅ Menggunakan fungsi generateCashflowReport yang baru
+                        // ✅ MENGGUNAKAN FUNGSI MULTI-HALAMAN TERBARU
                         if let url = PDFGeneratorService.generateCashflowReport(
                             monthYear: "Bulan Ini",
                             records: viewModel.records,
@@ -102,17 +101,16 @@ struct CashflowView: View {
                     } label: {
                         Label("Ekspor PDF", systemImage: "square.and.arrow.up")
                     }
-                    .disabled(viewModel.records.isEmpty)
+                    // Mengizinkan cetak PDF meskipun transaksi kosong agar pengguna tahu fiturnya jalan
+                    // .disabled(viewModel.records.isEmpty)
                 }
             }
-            // ... kode CashflowView di bawah ...
             .onAppear {
                 Task {
                     await viewModel.loadRecords(branchId: branchId)
                 }
             }
             .sheet(isPresented: $isShowingAdd) {
-                // ✅ DIPERBAIKI: Kirim viewModel dan branchId
                 AddTransactionView(viewModel: viewModel, branchId: branchId)
             }
             .sheet(isPresented: $isShowingShareSheet) {
@@ -139,6 +137,21 @@ struct ShareSheet: UIViewControllerRepresentable {
         _ uiViewController: UIActivityViewController,
         context: Context
     ) {}
+}
+
+#Preview {
+    let previewViewModel: CashflowViewModel = {
+        let mockRepo = MockCashflowRepository()
+        
+        mockRepo.records = [
+            FinancialRecord(id: "1", branchId: "B-1", amount: 150000, type: .income, category: .none, timestamp: Date(), notes: "Penjualan Kasir"),
+            FinancialRecord(id: "2", branchId: "B-1", amount: 50000, type: .expense, category: .operational, timestamp: Date().addingTimeInterval(-3600), notes: "Beli Sabun Cuci")
+        ]
+        
+        return CashflowViewModel(cashProtocol: mockRepo)
+    }()
+
+    CashflowView(viewModel: previewViewModel, branchId: "B-1")
 }
 
 #Preview {
