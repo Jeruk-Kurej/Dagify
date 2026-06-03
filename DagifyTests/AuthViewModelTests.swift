@@ -27,9 +27,7 @@ struct AuthViewModelTests {
         await vm.login(email: "salah@dagify.com", password: "123")
 
         #expect(vm.isAuthenticated == false)
-        #expect(
-            vm.errorMessage == "Gagal login: Periksa kembali kredensial Anda."
-        )
+        #expect(vm.errorMessage == "Gagal login: Periksa kembali kredensial Anda.")
     }
 
     @Test("Fungsi: register() - Skenario Berhasil")
