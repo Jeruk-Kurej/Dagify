@@ -8,52 +8,270 @@
 import SwiftUI
 import Charts
 
+enum CashflowSheetType: Identifiable {
+    case add
+    case edit(FinancialRecord)
+    var id: String {
+        switch self {
+        case .add: return "add"
+        case .edit(let r): return "edit_\(r.id ?? UUID().uuidString)"
+        }
+    }
+}
+
 struct CashflowView: View {
-    @Environment(\.modelContext) private var context
-    @Bindable var viewModel: CashflowViewModel
+    var viewModel: CashflowViewModel
     let branchId: String
     
-    @State private var showAddSheet = false; @State private var showPDFShare = false
+    @State private var activeSheet: CashflowSheetType? = nil
+    @State private var generatedPDFURL: URL? = nil
+    @State private var isShowingShareSheet = false
+    @State private var selectedRecord: FinancialRecord? = nil
+    
+    private func formatCompact(_ value: Double) -> String {
+        let absValue = abs(value)
+        if absValue >= 1_000_000_000 { return String(format: "%.1f M", value / 1_000_000_000) }
+        if absValue >= 1_000_000 { return String(format: "%.1f Jt", value / 1_000_000) }
+        if absValue >= 1_000 { return String(format: "%.0f K", value / 1_000) }
+        return String(format: "%.0f", value)
+    }
     
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 24) {
-                    HStack(spacing: 16) { FinancialBox(title: "Pemasukan", amount: viewModel.totalIncome, color: .dagifySuccess); FinancialBox(title: "Pengeluaran", amount: viewModel.totalExpense, color: .dagifyDestructive) }.padding(.horizontal, 16)
+                VStack(spacing: 20) {
                     
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack { Text("Arus Kas").font(.title3).bold().foregroundColor(.dagifyTextPrimary); Spacer(); Picker("Periode", selection: $viewModel.selectedPeriod) { ForEach(ChartPeriod.allCases) { Text($0.rawValue).tag($0) } }.pickerStyle(.menu).tint(.dagifyPrimary) }
-                        if viewModel.chartData.isEmpty { ContentUnavailableView("Belum Ada Transaksi", systemImage: "chart.bar.xaxis").frame(height: 220) }
-                        else {
-                            Chart { ForEach(viewModel.chartData, id: \.date) { item in BarMark(x: .value("Tanggal", item.date), y: .value("Nominal", item.income)).foregroundStyle(Color.dagifySuccess).position(by: .value("Tipe", "Pemasukan")); BarMark(x: .value("Tanggal", item.date), y: .value("Nominal", item.expense)).foregroundStyle(Color.dagifyDestructive).position(by: .value("Tipe", "Pengeluaran")) } }
-                            .chartForegroundStyleScale(["Pemasukan": Color.dagifySuccess, "Pengeluaran": Color.dagifyDestructive]).frame(height: 250)
-                        }
-                    }.padding(16).background(Color.dagifySecBG).clipShape(RoundedRectangle(cornerRadius: 16)).padding(.horizontal, 16)
-                    
+                    // --- GRAFIK CASHFLOW ---
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Riwayat Transaksi").font(.title3).bold().foregroundColor(.dagifyTextPrimary).padding(.horizontal, 16)
-                        LazyVStack(spacing: 12) {
-                            ForEach(viewModel.groupedRecords, id: \.month) { group in
-                                Section(header: Text(group.month).font(.subheadline).bold().foregroundColor(.dagifyTextSec).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16)) {
-                                    ForEach(group.records) { record in
-                                        HStack(spacing: 16) {
-                                            Circle().fill(record.type == .income ? Color.dagifySuccess.opacity(0.15) : Color.dagifyDestructive.opacity(0.15)).frame(width: 48, height: 48).overlay(Image(systemName: record.type == .income ? "arrow.down.left" : "arrow.up.right").foregroundColor(record.type == .income ? .dagifySuccess : .dagifyDestructive).font(.system(size: 20, weight: .bold)))
-                                            VStack(alignment: .leading, spacing: 4) { Text(record.notes).font(.body).bold().foregroundColor(.dagifyTextPrimary); Text(record.category.rawValue).font(.caption).foregroundColor(.dagifyTextSec) }
-                                            Spacer()
-                                            VStack(alignment: .trailing, spacing: 4) { Text("\(record.type == .income ? "+" : "-") Rp \(record.amount, specifier: "%.0f")").font(.body).bold().foregroundColor(record.type == .income ? .dagifySuccess : .dagifyTextPrimary); if !record.isSynced { Image(systemName: "icloud.slash").font(.caption2).foregroundColor(.dagifyWarning) } }
-                                        }.padding(16).background(Color.dagifySecBG).clipShape(RoundedRectangle(cornerRadius: 12)).padding(.horizontal, 16)
-                                        .swipeActions(edge: .trailing) { Button(role: .destructive) { Task { await viewModel.deleteTransaction(record, branchId: branchId, context: context) } } label: { Label("Hapus", systemImage: "trash") } }
+                        HStack {
+                            Text("Grafik Cashflow")
+                                .font(.headline)
+                                .foregroundColor(Color(hex: "#111827"))
+                            Spacer()
+                            Menu {
+                                ForEach(ChartFilter.allCases) { filter in
+                                    Button(filter.rawValue) {
+                                        withAnimation { viewModel.chartFilter = filter }
+                                    }
+                                }
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Text(viewModel.chartFilter.rawValue)
+                                    Image(systemName: "line.3.horizontal.decrease.circle")
+                                }
+                                .font(.caption)
+                                .padding(.horizontal, 10).padding(.vertical, 6)
+                                .background(Color(hex: "#00A3A3").opacity(0.1))
+                                .foregroundColor(Color(hex: "#00A3A3"))
+                                .clipShape(Capsule())
+                            }
+                        }
+                        
+                        if viewModel.chartData.isEmpty {
+                            Text("Belum ada data untuk periode ini.")
+                                .foregroundColor(.gray)
+                                .frame(maxWidth: .infinity, minHeight: 240, alignment: .center)
+                        } else {
+                            Chart(viewModel.chartData) { data in
+                                BarMark(
+                                    x: .value("Waktu", data.date, unit: viewModel.chartUnit),
+                                    y: .value("Pemasukan", data.income)
+                                )
+                                .foregroundStyle(Color(hex: "#10B981"))
+                                .position(by: .value("Tipe", "Pemasukan"))
+                                
+                                BarMark(
+                                    x: .value("Waktu", data.date, unit: viewModel.chartUnit),
+                                    y: .value("Pengeluaran", data.expense)
+                                )
+                                .foregroundStyle(Color(hex: "#EF4444"))
+                                .position(by: .value("Tipe", "Pengeluaran"))
+                            }
+                            .frame(height: 240)
+                            .chartYScale(domain: .automatic(includesZero: true))
+                            .chartYAxis {
+                                AxisMarks(position: .leading) { mark in
+                                    AxisGridLine()
+                                    AxisValueLabel {
+                                        if let val = mark.as(Double.self) {
+                                            Text(formatCompact(val))
+                                                .font(.caption2)
+                                                .foregroundColor(.gray)
+                                        }
                                     }
                                 }
                             }
+                            
+                            HStack(spacing: 16) {
+                                HStack(spacing: 4) { Circle().fill(Color(hex: "#10B981")).frame(width: 8, height: 8); Text("Pemasukan").font(.caption2).foregroundColor(.gray) }
+                                HStack(spacing: 4) { Circle().fill(Color(hex: "#EF4444")).frame(width: 8, height: 8); Text("Pengeluaran").font(.caption2).foregroundColor(.gray) }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.top, 4)
                         }
                     }
-                }.padding(.vertical, 16)
-            }.background(Color.dagifyMainBG.ignoresSafeArea()).navigationTitle("Arus Kas")
-            .toolbar { ToolbarItem(placement: .topBarTrailing) { HStack(spacing: 16) { Button { viewModel.requestPDFGeneration(branchId: branchId); if viewModel.generatedPDFURL != nil { showPDFShare = true } } label: { Image(systemName: "printer.fill").foregroundColor(.dagifyPrimary) }; Button { showAddSheet = true } label: { Image(systemName: "plus.circle.fill").font(.title3).foregroundColor(.dagifyPrimary) } } } }
-            .sheet(isPresented: $showAddSheet) { AddTransactionView(viewModel: viewModel, branchId: branchId) }
-            .sheet(isPresented: $showPDFShare) { if let url = viewModel.generatedPDFURL { ShareSheet(activityItems: [url]) } }
-            .onAppear { viewModel.loadData(branchId: branchId, context: context) }
+                    .padding()
+                    .background(Color.white)
+                    .cornerRadius(12)
+                    .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
+                    .padding(.horizontal)
+                    .padding(.top)
+                    
+                    // --- NAVIGATOR BULAN ---
+                    HStack {
+                        Button(action: { withAnimation(.easeInOut) { viewModel.previousMonth() } }) {
+                            Image(systemName: "chevron.left").font(.system(size: 14, weight: .bold)).frame(width: 36, height: 36).background(Color(hex: "#00A3A3").opacity(0.1)).foregroundColor(Color(hex: "#00A3A3")).clipShape(Circle())
+                        }
+                        
+                        Spacer()
+                        
+                        Text(viewModel.currentMonthString)
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color(hex: "#111827"))
+                        
+                        Spacer()
+                        
+                        /// Hide or dim the next button if currently viewing the latest month.
+                        Button(action: { withAnimation(.easeInOut) { viewModel.nextMonth() } }) {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .bold))
+                                .frame(width: 36, height: 36)
+                                .background(Color(hex: "#00A3A3").opacity(viewModel.isCurrentMonthTheLatest ? 0.0 : 0.1))
+                                .foregroundColor(viewModel.isCurrentMonthTheLatest ? .clear : Color(hex: "#00A3A3"))
+                                .clipShape(Circle())
+                        }
+                        .disabled(viewModel.isCurrentMonthTheLatest) // Menonaktifkan fungsionalitas klik
+                    }
+                    .padding(.horizontal)
+                    
+                    // --- RINGKASAN SALDO ---
+                    VStack(spacing: 12) {
+                        FinancialBox(title: "Laba Bersih Bulan Ini", amount: viewModel.netProfit, color: Color(hex: "#00A3A3"), icon: "building.columns.fill")
+                        HStack(spacing: 12) {
+                            FinancialBox(title: "Pemasukan", amount: viewModel.totalIncome, color: Color(hex: "#10B981"), icon: "arrow.down.left.circle.fill")
+                            FinancialBox(title: "Pengeluaran", amount: viewModel.totalExpense, color: Color(hex: "#EF4444"), icon: "arrow.up.right.circle.fill")
+                        }
+                    }
+                    .padding(.horizontal)
+                    
+                    // --- RIWAYAT TRANSAKSI ---
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack {
+                            Text("Riwayat Transaksi").font(.headline).foregroundColor(Color(hex: "#111827"))
+                            Spacer()
+                            Button("Tambah Manual") { activeSheet = .add }
+                                .font(.footnote)
+                                .fontWeight(.bold)
+                                .foregroundColor(Color(hex: "#00A3A3"))
+                                .keyboardShortcut("n", modifiers: .command)
+                        }
+                        .padding()
+                        
+                        if viewModel.isLoading && viewModel.filteredRecords.isEmpty {
+                            ProgressView().frame(maxWidth: .infinity).padding()
+                        } else if viewModel.filteredRecords.isEmpty {
+                            ContentUnavailableView("Belum Ada Transaksi", systemImage: "doc.text.magnifyingglass", description: Text("Tidak ada catatan kas untuk bulan ini."))
+                        } else {
+                            LazyVStack(spacing: 0) {
+                                ForEach(viewModel.filteredRecords, id: \.id) { record in
+                                    Button(action: {
+                                        selectedRecord = record
+                                    }) {
+                                        TransactionRowView(record: record)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                    .padding(.horizontal)
+                                    .contextMenu {
+                                        Button { activeSheet = .edit(record) } label: { Label("Edit Transaksi", systemImage: "pencil") }
+                                        Button(role: .destructive) {
+                                            if let id = record.id { Task { await viewModel.deleteTransaction(recordId: id, branchId: branchId) } }
+                                        } label: { Label("Hapus Transaksi", systemImage: "trash") }
+                                    }
+                                    
+                                    Divider().background(Color(hex: "#E5E7EB")).padding(.leading, 70)
+                                }
+                            }
+                            .background(Color(hex: "#FFFFFF"))
+                            .cornerRadius(12)
+                            .padding(.horizontal)
+                        }
+                    }
+                }
+                .frame(maxWidth: 800)
+                .frame(maxWidth: .infinity, alignment: .top)
+            }
+            .background(Color(hex: "#F9FAFB"))
+            .navigationTitle("Arus Kas")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        if let url = PDFGeneratorService.generateCashflowReport(
+                            monthYear: viewModel.currentMonthString,
+                            records: viewModel.filteredRecords,
+                            totalIncome: viewModel.totalIncome,
+                            totalExpense: viewModel.totalExpense,
+                            filename: "Laporan_Kas_\(viewModel.currentMonthString.replacingOccurrences(of: " ", with: "_"))"
+                        ) {
+                            self.generatedPDFURL = url
+                            self.isShowingShareSheet = true
+                        }
+                    } label: { Label("Ekspor PDF", systemImage: "square.and.arrow.up") }
+                }
+            }
+            .onAppear { Task { await viewModel.loadRecords(branchId: branchId) } }
+            .popover(item: $activeSheet) { sheetType in
+                switch sheetType {
+                case .add: AddTransactionView(viewModel: viewModel, branchId: branchId)
+                case .edit(let record): AddTransactionView(viewModel: viewModel, branchId: branchId, recordToEdit: record)
+                }
+            }
+            .sheet(isPresented: $isShowingShareSheet) {
+                if let url = generatedPDFURL { ShareSheet(activityItems: [url]) }
+            }
+            .alert("Detail Transaksi", isPresented: Binding<Bool>(
+                get: { selectedRecord != nil },
+                set: { if !$0 { selectedRecord = nil } }
+            )) {
+                Button("Tutup", role: .cancel) { selectedRecord = nil }
+            } message: {
+                if let record = selectedRecord {
+                    let status = record.type == .income ? "Pemasukan" : "Pengeluaran"
+                    let noteStr = record.notes.isEmpty ? status : record.notes
+                    let dateStr = record.timestamp.formatted(date: .abbreviated, time: .shortened)
+                    
+                    Text("\(status) sejumlah \(record.amount.toRupiah())\nTanggal: \(dateStr)\n\nCatatan:\n\(noteStr)")
+                }
+            }
         }
     }
+}
+
+#Preview {
+    let previewViewModel: CashflowViewModel = {
+        let mockRepo = MockCashflowRepository()
+        mockRepo.records = [
+            FinancialRecord(
+                id: "1",
+                branchId: "B-1",
+                amount: 150000,
+                type: .income,
+                category: .none,
+                timestamp: Date(),
+                notes:
+                    "Penjualan Kasir yang catatannya sangat panjang sekali sehingga harus dipotong"
+            ),
+            FinancialRecord(
+                id: "2",
+                branchId: "B-1",
+                amount: 50000,
+                type: .expense,
+                category: .operational,
+                timestamp: Date().addingTimeInterval(-3600),
+                notes: "Beli Sabun Cuci"
+            ),
+        ]
+        return CashflowViewModel(cashProtocol: mockRepo)
+    }()
+    CashflowView(viewModel: previewViewModel, branchId: "B-1")
 }

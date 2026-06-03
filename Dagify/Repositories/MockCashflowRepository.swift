@@ -6,13 +6,39 @@
 //
 
 import Foundation
-import SwiftData
 
-@MainActor
 class MockCashflowRepository: CashflowProtocol {
+
+    // MARK: - Mock State
     var shouldThrowError = false
-    func addRecord(_ record: FinancialRecord, context: ModelContext) async throws { if shouldThrowError { throw NSError() }; context.insert(record) }
-    func fetchLocalRecords(branchId: String, context: ModelContext) throws -> [FinancialRecord] { return try context.fetch(FetchDescriptor<FinancialRecord>()) }
-    func deleteRecord(_ record: FinancialRecord, context: ModelContext) async throws { context.delete(record) }
-    func syncUnsyncedRecords(context: ModelContext) async throws {}
+    var records: [FinancialRecord] = []
+
+    // MARK: - CashflowProtocol Implementation
+
+    func addRecord(_ record: FinancialRecord) async throws -> Bool {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        records.append(record)
+        return true
+    }
+
+    func fetchRecords(for branchId: String) async throws -> [FinancialRecord] {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        return records.filter { $0.branchId == branchId }
+    }
+
+    func deleteRecord(id: String) async throws -> Bool {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        records.removeAll { $0.id == id }
+        return true
+    }
+
+    func updateRecord(_ record: FinancialRecord) async throws -> Bool {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        if let index = records.firstIndex(where: { $0.id == record.id }) {
+            records[index] = record
+            return true
+        }
+        return false
+    }
 }
+

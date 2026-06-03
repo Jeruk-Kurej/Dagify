@@ -5,116 +5,111 @@
 //  Created by Bryan Carlie Lukito Setiawan on 31/05/26.
 //
 
-import Charts
 import SwiftUI
+import Charts
 
 struct DashboardView: View {
     var viewModel: DashboardViewModel
     let storeId: String
     let branchId: String
-    let columns = [GridItem(.adaptive(minimum: 160))]
-
+    let columns = [GridItem(.adaptive(minimum: 160, maximum: 300), spacing: 16)]
+    
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: 24) {
                     if viewModel.isLoading {
-                        ProgressView("Menyiapkan Metrik...").frame(
-                            maxHeight: .infinity
-                        )
+                        ProgressView("Mengolah rekam data...").frame(maxWidth: .infinity, minHeight: 200)
                     } else {
-                        LazyVGrid(columns: columns, spacing: 16) {
-                            DashItemCard(
-                                title: "Pendapatan Hari Ini",
-                                value:
-                                    "Rp \(viewModel.todayRevenue, default: "%.0f")",
-                                icon: "arrow.up.circle.fill",
-                                color: .themeSuccess
-                            )
-                            DashItemCard(
-                                title: "Laba Bersih",
-                                value:
-                                    "Rp \(viewModel.todayNetProfit, default: "%.0f")",
-                                icon: "banknote.fill",
-                                color: .themePrimary
-                            )
-                            DashItemCard(
-                                title: "Pelanggan Loyal",
-                                value: "\(viewModel.totalLoyalCustomers)",
-                                icon: "person.2.fill",
-                                color: .themeWarning
-                            )
-                            DashItemCard(
-                                title: "Stok Menipis",
-                                value: "\(viewModel.lowStockAlertsCount)",
-                                icon: "exclamationmark.triangle.fill",
-                                color: .themeDestructive
-                            )
-                        }
-
-                        VStack(alignment: .leading) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Ringkasan Hari Ini").font(.title2).fontWeight(.bold).foregroundColor(Color(hex: "#111827"))
                             HStack {
-                                Text("Tren Penjualan").font(.headline)
-                                Spacer()
-                                Picker(
-                                    "Periode",
-                                    selection: $viewModel.selectedPeriod
-                                ) {
-                                    ForEach(ChartPeriod.allCases, id: \.self) {
-                                        Text($0.rawValue).tag($0)
-                                    }
-                                }.pickerStyle(.menu)
-                            }
-
-                            if viewModel.revenueTrend.isEmpty {
-                                ContentUnavailableView(
-                                    "Tidak Ada Data",
-                                    systemImage: "chart.xyaxis.line"
-                                ).frame(height: 200)
-                            } else {
-                                Chart {
-                                    ForEach(viewModel.revenueTrend, id: \.date)
-                                    { item in
-                                        LineMark(
-                                            x: .value("Tanggal", item.date),
-                                            y: .value("Total", item.amount)
-                                        )
-                                        .foregroundStyle(Color.themePrimary)
-                                        .symbol(
-                                            Circle().strokeBorder(lineWidth: 2)
-                                        )
-                                        AreaMark(
-                                            x: .value("Tanggal", item.date),
-                                            y: .value("Total", item.amount)
-                                        )
-                                        .foregroundStyle(
-                                            LinearGradient(
-                                                gradient: Gradient(colors: [
-                                                    Color.themePrimary.opacity(
-                                                        0.4
-                                                    ), .clear,
-                                                ]),
-                                                startPoint: .top,
-                                                endPoint: .bottom
-                                            )
-                                        )
-                                    }
-                                }.frame(height: 250)
-                            }
-                        }.padding().background(Color.themeBgSecondary)
-                            .cornerRadius(12)
+                                Image(systemName: "mappin.and.ellipse")
+                                Text("\(viewModel.storeName) - \(viewModel.branchName)")
+                            }.font(.subheadline).foregroundColor(Color(hex: "#00A3A3")).fontWeight(.semibold)
+                        }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal)
+                        
+                        LazyVGrid(columns: columns, spacing: 16) {
+                            DashItemCard(title: "Total Omzet", value: viewModel.todayRevenue.toRupiah(), icon: "banknote.fill", color: Color(hex: "#10B981"))
+                            DashItemCard(title: "Total Pengeluaran", value: viewModel.todayExpense.toRupiah(), icon: "arrow.down.backward.circle.fill", color: Color(hex: "#EF4444"))
+                            DashItemCard(title: "Untung Bersih", value: viewModel.todayNetProfit.toRupiah(), icon: "chart.bar.doc.horizontal", color: Color(hex: "#00A3A3"))
+                            DashItemCard(title: "Peringatan Stok", value: "\(viewModel.lowStockAlertsCount) Item", icon: "exclamationmark.triangle.fill", color: Color(hex: "#F59E0B"))
+                        }.padding(.horizontal)
                     }
-                }.padding()
+                    
+                    /// Interactive chart for dashboard
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text("Grafik Penjualan")
+                                .font(.headline)
+                                .foregroundColor(Color(hex: "#111827"))
+                            Spacer()
+                            /// Category filter button
+                            Menu {
+                                Button("Semua Kategori") { viewModel.selectedCategoryId = nil }
+                                ForEach(viewModel.categories) { cat in
+                                    Button(cat.name) { viewModel.selectedCategoryId = cat.id }
+                                }
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Text(viewModel.selectedCategoryId == nil ? "Semua" : viewModel.categories.first(where: { $0.id == viewModel.selectedCategoryId })?.name ?? "Filter")
+                                    Image(systemName: "line.3.horizontal.decrease.circle")
+                                }
+                                .font(.caption).padding(.horizontal, 10).padding(.vertical, 6)
+                                .background(Color(hex: "#00A3A3").opacity(0.1))
+                                .foregroundColor(Color(hex: "#00A3A3")).clipShape(Capsule())
+                            }
+                        }.padding(.horizontal)
+                        
+                        VStack {
+                            if viewModel.chartData.isEmpty {
+                                // 🛠️ UBAH DI SINI: Bungkus dengan VStack + Spacer agar memenuhi ruang 250pt
+                                VStack(spacing: 12) {
+                                    Image(systemName: "chart.bar.xaxis") // Ikon grafik bawaan SF Symbols
+                                        .font(.system(size: 40))
+                                        .foregroundColor(Color.gray.opacity(0.4))
+                                    
+                                    Text("Belum ada data penjualan.")
+                                        .font(.subheadline)
+                                        .foregroundColor(.gray)
+                                }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity) // Memaksa mengisi seluruh area card
+                            } else {
+                                Chart(viewModel.chartData) { data in
+                                    BarMark(
+                                        x: .value("Menu", data.productName),
+                                        y: .value("Terjual", data.quantity)
+                                    )
+                                    .foregroundStyle(Color(hex: "#00A3A3").gradient)
+                                    .cornerRadius(4)
+                                }
+                            }
+                        }
+                        .padding()
+                        .frame(height: 250) // Tetap 250pt, tapi diisi penuh oleh layout di atas
+                        .background(Color.white)
+                        .cornerRadius(16)
+                        .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
+                        .padding(.horizontal)
+                    }
+                }.padding(.vertical)
             }
-            .navigationTitle("Dashboard").background(Color.themeBgMain)
-            .onAppear {
-                Task {
-                    await viewModel.loadDashboardSummary(
-                        storeId: storeId,
-                        branchId: branchId
-                    )
-                }
-            }
+            .navigationTitle("Dasbor")
+            .background(Color(hex: "#F9FAFB"))
+            .onAppear { Task { await viewModel.loadDashboardSummary(storeId: storeId, branchId: branchId) } }
         }
     }
+}
+
+#Preview {
+    DashboardView(
+        viewModel: DashboardViewModel(
+            cashflowProtocol: MockCashflowRepository(),
+            crmProtocol: MockCRMRepository(),
+            operationalProtocol: MockOperationalRepository(),
+            storeProtocol: MockOperationalRepository()
+        ),
+        storeId: "S-1",
+        branchId: "B-1"
+    )
 }

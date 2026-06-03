@@ -2,7 +2,7 @@
 //  DashItemCard.swift
 //  Dagify
 //
-//  Created by Mario Ruby Ariesusandi  on 31-05-2026.
+//  Created by Hanzelius on 03-06-2026.
 //
 
 import SwiftUI
@@ -12,29 +12,60 @@ struct DashItemCard: View {
     let value: String
     let icon: String
     let color: Color
+
     var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: icon).font(.system(size: 36)).foregroundColor(
-                color
-            )
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.caption).foregroundColor(.themeTextSecondary)
-                Text(value).font(.title3).bold().foregroundColor(
-                    .themeTextPrimary
-                )
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                ZStack {
+                    Circle()
+                        .fill(color.opacity(0.15))
+                        .frame(width: 40, height: 40)
+
+                    Image(systemName: icon)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(color)
+                }
+                Spacer()
             }
-            Spacer()
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.themeTextSecondary)
+
+                Text(value)
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(.themeTextPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
         }
-        .padding().background(Color.themeBgSecondary).cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12).stroke(
-                Color.themeBorder,
-                lineWidth: 1
-            )
-        )
+        .padding(16)
+        .background(Color.themeBgSecondary)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 4)
     }
 }
 
 #Preview {
-    //DashItemCard()
+    ZStack {
+        Color.themeBgMain.ignoresSafeArea()
+        HStack {
+            DashItemCard(
+                title: "Pendapatan",
+                value: "Rp 1.500.000",
+                icon: "arrow.up.forward.circle.fill",
+                color: .themeSuccess
+            )
+            DashItemCard(
+                title: "Stok Kritis",
+                value: "3 Item",
+                icon: "exclamationmark.triangle.fill",
+                color: .themeWarning
+            )
+        }
+        .padding()
+    }
 }

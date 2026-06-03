@@ -7,20 +7,72 @@
 
 import Foundation
 import SwiftUI
-import PDFKit
+import UIKit
 
 @MainActor
 class PDFGeneratorService {
-    func generatePDF(for branchId: String, income: Double, expense: Double, profit: Double) -> URL? {
-        let template = CashflowPDFTemplate(branchId: branchId, totalIncome: income, totalExpense: expense, netProfit: profit)
-        let renderer = ImageRenderer(content: template)
-        renderer.scale = UIScreen.main.scale
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("Cashflow_\(branchId)_\(Date().timeIntervalSince1970).pdf")
-        renderer.render { size, context in
-            var box = CGRect(x: 0, y: 0, width: size.width, height: size.height)
-            guard let pdf = CGContext(url as CFURL, mediaBox: &box, nil) else { return }
-            pdf.beginPDFPage(nil); context(pdf); pdf.endPDFPage(); pdf.closePDF()
+
+    // MARK: - Generation Methods
+
+    static func generateCashflowReport(
+        monthYear: String,
+        records: [FinancialRecord],
+        totalIncome: Double,
+        totalExpense: Double,
+        filename: String
+    ) -> URL? {
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(filename).pdf")
+        let pdfBounds = CGRect(x: 0, y: 0, width: 595, height: 842)  // A4 Format
+
+        let format = UIGraphicsPDFRendererFormat()
+        let pdfRenderer = UIGraphicsPDFRenderer(
+            bounds: pdfBounds,
+            format: format
+        )
+
+        let itemsPerPage = 12
+        let totalPages = max(
+            1,
+            Int(ceil(Double(records.count) / Double(itemsPerPage)))
+        )
+
+        do {
+            try pdfRenderer.writePDF(to: tempURL) { context in
+                for pageIndex in 0..<totalPages {
+                    context.beginPage()
+
+                    let start = pageIndex * itemsPerPage
+                    let end = min(start + itemsPerPage, records.count)
+                    let pageRecords =
+                        records.isEmpty ? [] : Array(records[start..<end])
+
+                    let pageView = CashflowPDFTemplate(
+                        monthYear: monthYear,
+                        records: pageRecords,
+                        totalIncome: totalIncome,
+                        totalExpense: totalExpense,
+                        page: pageIndex + 1,
+                        totalPages: totalPages
+                    )
+                    .environment(\.colorScheme, .light)
+                    .frame(width: 595, height: 842)
+                    .background(Color.white)
+
+                    // Render to Memory
+                    let renderer = ImageRenderer(content: pageView)
+                    renderer.proposedSize = .init(width: 595, height: 842)
+
+                    // Fix iOS Orientation by rendering to UIImage first
+                    if let uiImage = renderer.uiImage {
+                        uiImage.draw(in: pdfBounds)
+                    }
+                }
+            }
+            return tempURL
+        } catch {
+            print("Gagal membuat PDF: \(error.localizedDescription)")
+            return nil
         }
-        return url
     }
 }
