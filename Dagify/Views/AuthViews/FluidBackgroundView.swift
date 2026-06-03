@@ -5,34 +5,26 @@ struct FluidBackgroundView: View {
     
     var body: some View {
         ZStack {
-            // ✅ Background Utama: Dark Slate (#111827)
-            Color(hex: "#111827").ignoresSafeArea()
+            // ✅ Background Utama: Terang (F9FAFB)
+            Color(hex: "#F9FAFB").ignoresSafeArea()
             
-            // ✅ Efek Aura Primary (#00A3A3)
+            // ✅ Aura Primary (#00A3A3) dengan opasitas rendah agar lembut
             Circle()
-                .fill(Color(hex: "#00A3A3").opacity(0.5))
-                .frame(width: 350, height: 350)
-                .blur(radius: 100)
-                .offset(
-                    x: isAnimating ? 150 : -100,
-                    y: isAnimating ? -200 : -150
-                )
+                .fill(Color(hex: "#00A3A3").opacity(0.15))
+                .frame(width: 400, height: 400)
+                .blur(radius: 80)
+                .offset(x: isAnimating ? 100 : -50, y: isAnimating ? -200 : -100)
             
-            // ✅ Efek Aura Primary Highlight (#4DBDBD)
+            // ✅ Aura Highlight (#2DD4BF)
             Circle()
-                .fill(Color(hex: "#4DBDBD").opacity(0.4))
+                .fill(Color(hex: "#2DD4BF").opacity(0.2))
                 .frame(width: 350, height: 350)
-                .blur(radius: 120)
-                .offset(
-                    x: isAnimating ? -100 : 150,
-                    y: isAnimating ? 250 : 150
-                )
+                .blur(radius: 90)
+                .offset(x: isAnimating ? -100 : 50, y: isAnimating ? 200 : 100)
         }
         .ignoresSafeArea()
         .onAppear {
-            withAnimation(
-                .easeInOut(duration: 8).repeatForever(autoreverses: true)
-            ) {
+            withAnimation(.easeInOut(duration: 10).repeatForever(autoreverses: true)) {
                 isAnimating.toggle()
             }
         }
