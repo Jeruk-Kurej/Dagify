@@ -108,7 +108,7 @@ struct POSView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
-        .sheet(isPresented: $showCheckoutSheet) {
+        .popover(isPresented: $showCheckoutSheet) {
             POSCheckoutSheetView(
                 viewModel: viewModel,
                 storeId: storeId,

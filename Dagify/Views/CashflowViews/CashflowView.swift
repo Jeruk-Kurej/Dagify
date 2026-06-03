@@ -209,7 +209,7 @@ struct CashflowView: View {
                 }
             }
             .onAppear { Task { await viewModel.loadRecords(branchId: branchId) } }
-            .sheet(item: $activeSheet) { sheetType in
+            .popover(item: $activeSheet) { sheetType in
                 switch sheetType {
                 case .add: AddTransactionView(viewModel: viewModel, branchId: branchId)
                 case .edit(let record): AddTransactionView(viewModel: viewModel, branchId: branchId, recordToEdit: record)

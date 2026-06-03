@@ -85,7 +85,7 @@ struct CRMView: View {
             .navigationTitle("CRM")
             .onAppear { Task { await viewModel.loadCustomers(storeId: storeId) } }
             .refreshable { await viewModel.loadCustomers(storeId: storeId) }
-            .sheet(item: $activeSheet) { sheetType in
+            .popover(item: $activeSheet) { sheetType in
                 CRMDashboardSheetView(viewModel: viewModel, sheetType: sheetType)
                     .presentationDetents([.medium, .large])
             }
