@@ -49,11 +49,15 @@ struct WelcomeScreen: View {
     var body: some View {
         VStack(spacing: 16) {
             Spacer()
-            Image(systemName: "sparkles")
-                .font(.system(size: 64))
-                .foregroundColor(Color(hex: "#F9FAFB"))
-                .symbolEffect(.pulse, options: .repeating)
+            
+            // ✅ UPDATE: Menggunakan Logo Resmi Dagify
+            Image("Dagify_logo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 100, height: 100)
                 .padding(.bottom, 20)
+                // Memberikan sedikit bayangan agar menonjol di atas background gelap
+                .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 10)
             
             Text("Dagify")
                 .font(.system(size: 56, weight: .heavy, design: .rounded))
@@ -75,10 +79,10 @@ struct WelcomeScreen: View {
                     Image(systemName: "arrow.right")
                         .font(.headline)
                 }
-                .foregroundColor(Color(hex: "#111827")) // ✅ Teks Tombol Gelap
+                .foregroundColor(Color(hex: "#111827"))
                 .padding(.horizontal, 32)
                 .padding(.vertical, 18)
-                .background(Color(hex: "#FFFFFF"))     // ✅ Background Tombol Terang
+                .background(Color(hex: "#FFFFFF"))
                 .clipShape(Capsule())
                 .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
             }
@@ -135,7 +139,7 @@ struct GlassAuthForm: View {
                 if let err = viewModel.errorMessage {
                     Text(err)
                         .font(.caption)
-                        .foregroundColor(Color(hex: "#EF4444")) // ✅ Teks Error Merah
+                        .foregroundColor(Color(hex: "#EF4444"))
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -149,10 +153,10 @@ struct GlassAuthForm: View {
                                 .font(.headline)
                         }
                     }
-                    .foregroundColor(Color(hex: "#111827")) // ✅ Teks Tombol Gelap
+                    .foregroundColor(Color(hex: "#111827"))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(Color(hex: "#FFFFFF"))      // ✅ Background Tombol Terang
+                    .background(Color(hex: "#FFFFFF"))
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
                 .padding(.top, 8)

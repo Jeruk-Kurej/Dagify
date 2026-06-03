@@ -6,7 +6,6 @@ struct CashflowPDFTemplate: View {
     var totalIncome: Double
     var totalExpense: Double
     
-    // Parameter Pagination
     var page: Int
     var totalPages: Int
     
@@ -23,15 +22,16 @@ struct CashflowPDFTemplate: View {
                         .foregroundColor(.gray)
                 }
                 Spacer()
-                Image(systemName: "building.columns.fill")
-                    .font(.system(size: 40))
-                    .foregroundColor(Color(hex: "#00A3A3"))
+                // ✅ UPDATE: Menggunakan Logo Resmi di Kop Surat PDF
+                Image("Dagify_logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 60, height: 60)
             }
             .padding(.bottom, 10)
             
             Divider()
             
-            // Ringkasan Keuangan (Hanya tampil di halaman pertama)
             if page == 1 {
                 HStack {
                     VStack(alignment: .leading) {
@@ -67,25 +67,12 @@ struct CashflowPDFTemplate: View {
             .padding(.top, 10)
             .foregroundColor(.black)
             
-            // HEADER TABEL MUTASI BANK
             VStack(spacing: 8) {
                 HStack(alignment: .center) {
-                    Text("Tanggal").font(.caption).bold().frame(
-                        width: 80,
-                        alignment: .leading
-                    )
-                    Text("Keterangan").font(.caption).bold().frame(
-                        maxWidth: .infinity,
-                        alignment: .leading
-                    )
-                    Text("Masuk (Rp)").font(.caption).bold().frame(
-                        width: 100,
-                        alignment: .trailing
-                    )
-                    Text("Keluar (Rp)").font(.caption).bold().frame(
-                        width: 100,
-                        alignment: .trailing
-                    )
+                    Text("Tanggal").font(.caption).bold().frame(width: 80, alignment: .leading)
+                    Text("Keterangan").font(.caption).bold().frame(maxWidth: .infinity, alignment: .leading)
+                    Text("Masuk (Rp)").font(.caption).bold().frame(width: 100, alignment: .trailing)
+                    Text("Keluar (Rp)").font(.caption).bold().frame(width: 100, alignment: .trailing)
                 }
                 .padding(.vertical, 8)
                 .padding(.horizontal, 4)
@@ -100,46 +87,29 @@ struct CashflowPDFTemplate: View {
                         .italic()
                         .padding(.top, 20)
                 } else {
-                    // ISI TABEL MUTASI BANK
                     ForEach(records, id: \.id) { record in
-                        HStack(alignment: .top) { // ✅ FIX: Rata atas untuk mengakomodasi multiline
-                            Text(
-                                record.timestamp.formatted(
-                                    date: .numeric,
-                                    time: .omitted
-                                )
-                            )
-                            .font(.caption2)
-                            .foregroundColor(.gray)
-                            .frame(width: 80, alignment: .leading)
+                        HStack(alignment: .top) {
+                            Text(record.timestamp.formatted(date: .numeric, time: .omitted))
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                                .frame(width: 80, alignment: .leading)
                             
-                            Text(
-                                record.notes.isEmpty
-                                    ? "Sistem Otomatis" : record.notes
-                            )
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.black)
-                            .fixedSize(horizontal: false, vertical: true) // ✅ FIX: Bebaskan turun kebawah (multiline)
-                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                            Text(record.notes.isEmpty ? "Sistem Otomatis" : record.notes)
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(.black)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .topLeading)
                             
-                            Text(
-                                record.type == .income
-                                    ? record.amount.toRupiah() : "-"
-                            ).font(.caption)
-                                .foregroundColor(
-                                    record.type == .income
-                                        ? Color(hex: "#10B981") : .black
-                                )
+                            Text(record.type == .income ? record.amount.toRupiah() : "-")
+                                .font(.caption)
+                                .foregroundColor(record.type == .income ? Color(hex: "#10B981") : .black)
                                 .frame(width: 100, alignment: .trailing)
                             
                             Text(record.type == .expense ? record.amount.toRupiah() : "-")
-                            .font(.caption)
-                            .foregroundColor(
-                                record.type == .expense
-                                    ? Color(hex: "#EF4444") : .black
-                            )
-                            .frame(width: 100, alignment: .trailing)
+                                .font(.caption)
+                                .foregroundColor(record.type == .expense ? Color(hex: "#EF4444") : .black)
+                                .frame(width: 100, alignment: .trailing)
                         }
                         .padding(.horizontal, 4)
                         .padding(.vertical, 4)
@@ -149,10 +119,8 @@ struct CashflowPDFTemplate: View {
                 }
             }
             
-            // Mengisi ruang kosong sisa di bawah
             Spacer(minLength: 0)
             
-            // Footer Halaman
             HStack {
                 Text("Halaman \(page) dari \(totalPages)")
                     .font(.caption)

@@ -40,6 +40,12 @@ struct MainAppView: View {
         ZStack {
             if isInitializingApp {
                 VStack(spacing: 16) {
+                    Image("Dagify_logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 90, height: 90)
+                        .padding(.bottom, 8)
+                        
                     ProgressView().scaleEffect(1.5).tint(Color(hex: "#00A3A3"))
                     Text("Menyiapkan Ruang Kerja...").font(.headline).foregroundColor(Color(hex: "#6B7280"))
                 }
@@ -55,7 +61,6 @@ struct MainAppView: View {
                     CashflowView(viewModel: CashflowViewModel(cashProtocol: cashflowService), branchId: activeBranchId)
                     .id(activeBranchId).tabItem { Label(AppMenu.cashflow.rawValue, systemImage: AppMenu.cashflow.icon) }.tag(AppMenu.cashflow)
                     
-                    // ✅ UPDATE: Inject `operationalService` (StoreProtocol) ke dalam CRMViewModel
                     CRMView(viewModel: CRMViewModel(crmProtocol: crmService, storeProtocol: operationalService), storeId: storeId)
                     .tabItem { Label(AppMenu.crm.rawValue, systemImage: AppMenu.crm.icon) }.tag(AppMenu.crm)
                     
