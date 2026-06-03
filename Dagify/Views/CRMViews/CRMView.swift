@@ -78,6 +78,8 @@ struct CRMView: View {
                         }
                     }.padding(.horizontal)
                 }.padding(.vertical)
+                .frame(maxWidth: 800)
+                .frame(maxWidth: .infinity, alignment: .top)
             }
             .background(Color(hex: "#F9FAFB"))
             .navigationTitle("CRM")

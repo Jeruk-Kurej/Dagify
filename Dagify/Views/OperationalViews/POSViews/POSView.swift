@@ -75,6 +75,7 @@ struct POSView: View {
                     }
                     .padding(.horizontal)
                     .padding(.bottom, 16)
+                    .frame(maxWidth: 600)
                 }
                 .background(
                     LinearGradient(

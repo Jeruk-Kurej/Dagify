@@ -187,6 +187,8 @@ struct CashflowView: View {
                         }
                     }
                 }
+                .frame(maxWidth: 800)
+                .frame(maxWidth: .infinity, alignment: .top)
             }
             .background(Color(hex: "#F9FAFB"))
             .navigationTitle("Arus Kas")

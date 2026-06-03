@@ -5,8 +5,7 @@ struct DashboardView: View {
     var viewModel: DashboardViewModel
     let storeId: String
     let branchId: String
-    
-    let columns = [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)]
+    let columns = [GridItem(.adaptive(minimum: 160, maximum: 300), spacing: 16)]
     
     var body: some View {
         NavigationStack {

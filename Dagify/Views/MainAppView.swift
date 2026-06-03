@@ -26,6 +26,7 @@ struct MainAppView: View {
     @State private var activeBranchId: String = ""
     @State private var selectedTab: AppMenu = .dashboard
     @State private var isInitializingApp: Bool = true
+    @Environment(\.horizontalSizeClass) private var sizeClass
     
     private let operationalService = FirebaseOperationalService()
     private let cashflowService = FirebaseCashflowService()
@@ -54,26 +55,55 @@ struct MainAppView: View {
                 .transition(.opacity)
                 
             } else {
-                TabView(selection: $selectedTab) {
-                    DashboardView(viewModel: DashboardViewModel(cashflowProtocol: cashflowService, crmProtocol: crmService, operationalProtocol: operationalService, storeProtocol: operationalService), storeId: storeId, branchId: activeBranchId)
-                    .id(activeBranchId).tabItem { Label(AppMenu.dashboard.rawValue, systemImage: AppMenu.dashboard.icon) }.tag(AppMenu.dashboard)
-                    
-                    CashflowView(viewModel: CashflowViewModel(cashProtocol: cashflowService), branchId: activeBranchId)
-                    .id(activeBranchId).tabItem { Label(AppMenu.cashflow.rawValue, systemImage: AppMenu.cashflow.icon) }.tag(AppMenu.cashflow)
-                    
-                    CRMView(viewModel: CRMViewModel(crmProtocol: crmService, storeProtocol: operationalService), storeId: storeId)
-                    .tabItem { Label(AppMenu.crm.rawValue, systemImage: AppMenu.crm.icon) }.tag(AppMenu.crm)
-                    
-                    OperationalView(operationalService: operationalService, cashflowService: cashflowService, crmService: crmService, storeId: storeId, branchId: activeBranchId)
-                    .id(activeBranchId).tabItem { Label(AppMenu.operational.rawValue, systemImage: AppMenu.operational.icon) }.tag(AppMenu.operational)
-                    
-                    SettingsView(authViewModel: authViewModel, storeProtocol: operationalService, storeId: storeId, activeBranchId: $activeBranchId)
-                    .tabItem { Label(AppMenu.settings.rawValue, systemImage: AppMenu.settings.icon) }.tag(AppMenu.settings)
+                if sizeClass == .regular {
+                    NavigationSplitView {
+                        List(selection: Binding(get: { selectedTab }, set: { if let new = $0 { selectedTab = new } })) {
+                            ForEach(AppMenu.allCases) { menu in
+                                NavigationLink(value: menu) {
+                                    Label(menu.rawValue, systemImage: menu.icon)
+                                }
+                            }
+                        }
+                        .navigationTitle("Dagify")
+                        .listStyle(.sidebar)
+                    } detail: {
+                        destinationView(for: selectedTab)
+                    }
+                    .tint(Color(hex: "#00A3A3"))
+                    .transition(.opacity)
+                } else {
+                    TabView(selection: $selectedTab) {
+                        ForEach(AppMenu.allCases) { menu in
+                            destinationView(for: menu)
+                                .tabItem { Label(menu.rawValue, systemImage: menu.icon) }
+                                .tag(menu)
+                        }
+                    }
+                    .tint(Color(hex: "#00A3A3"))
+                    .transition(.opacity)
                 }
-                .tint(Color(hex: "#00A3A3")).transition(.opacity)
             }
         }
         .task { await setupInitialBranch() }
+    }
+    
+    @ViewBuilder
+    private func destinationView(for menu: AppMenu) -> some View {
+        switch menu {
+        case .dashboard:
+            DashboardView(viewModel: DashboardViewModel(cashflowProtocol: cashflowService, crmProtocol: crmService, operationalProtocol: operationalService, storeProtocol: operationalService), storeId: storeId, branchId: activeBranchId)
+                .id(activeBranchId)
+        case .cashflow:
+            CashflowView(viewModel: CashflowViewModel(cashProtocol: cashflowService), branchId: activeBranchId)
+                .id(activeBranchId)
+        case .crm:
+            CRMView(viewModel: CRMViewModel(crmProtocol: crmService, storeProtocol: operationalService), storeId: storeId)
+        case .operational:
+            OperationalView(operationalService: operationalService, cashflowService: cashflowService, crmService: crmService, storeId: storeId, branchId: activeBranchId)
+                .id(activeBranchId)
+        case .settings:
+            SettingsView(authViewModel: authViewModel, storeProtocol: operationalService, storeId: storeId, activeBranchId: $activeBranchId)
+        }
     }
     
     private func setupInitialBranch() async {
