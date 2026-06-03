@@ -1,15 +1,13 @@
 import SwiftUI
 
-// ... (Enum AppMenu tetap sama) ...
 enum AppMenu: String, CaseIterable, Identifiable, Hashable {
     case dashboard = "Dasbor"
     case cashflow = "Arus Kas"
     case crm = "CRM"
     case operational = "Operasional"
     case settings = "Pengaturan"
-
+    
     var id: String { self.rawValue }
-
     var icon: String {
         switch self {
         case .dashboard: return "square.grid.2x2.fill"
@@ -24,11 +22,11 @@ enum AppMenu: String, CaseIterable, Identifiable, Hashable {
 struct MainAppView: View {
     let storeId: String
     var authViewModel: AuthViewModel
-
+    
     @State private var activeBranchId: String = ""
     @State private var selectedTab: AppMenu = .dashboard
     @State private var isInitializingApp: Bool = true
-
+    
     private let operationalService = FirebaseOperationalService()
     private let cashflowService = FirebaseCashflowService()
     private let crmService = FirebaseCRMService()
@@ -53,17 +51,17 @@ struct MainAppView: View {
                 TabView(selection: $selectedTab) {
                     DashboardView(viewModel: DashboardViewModel(cashflowProtocol: cashflowService, crmProtocol: crmService, operationalProtocol: operationalService, storeProtocol: operationalService), storeId: storeId, branchId: activeBranchId)
                     .id(activeBranchId).tabItem { Label(AppMenu.dashboard.rawValue, systemImage: AppMenu.dashboard.icon) }.tag(AppMenu.dashboard)
-
+                    
                     CashflowView(viewModel: CashflowViewModel(cashProtocol: cashflowService), branchId: activeBranchId)
                     .id(activeBranchId).tabItem { Label(AppMenu.cashflow.rawValue, systemImage: AppMenu.cashflow.icon) }.tag(AppMenu.cashflow)
-
-                    CRMView(viewModel: CRMViewModel(crmProtocol: crmService), storeId: storeId)
+                    
+                    // ✅ UPDATE: Inject `operationalService` (StoreProtocol) ke dalam CRMViewModel
+                    CRMView(viewModel: CRMViewModel(crmProtocol: crmService, storeProtocol: operationalService), storeId: storeId)
                     .tabItem { Label(AppMenu.crm.rawValue, systemImage: AppMenu.crm.icon) }.tag(AppMenu.crm)
-
-                    // ✅ MENGIRIMKAN CRM SERVICE & STORE ID KE OPERASIONAL
+                    
                     OperationalView(operationalService: operationalService, cashflowService: cashflowService, crmService: crmService, storeId: storeId, branchId: activeBranchId)
                     .id(activeBranchId).tabItem { Label(AppMenu.operational.rawValue, systemImage: AppMenu.operational.icon) }.tag(AppMenu.operational)
-
+                    
                     SettingsView(authViewModel: authViewModel, storeProtocol: operationalService, storeId: storeId, activeBranchId: $activeBranchId)
                     .tabItem { Label(AppMenu.settings.rawValue, systemImage: AppMenu.settings.icon) }.tag(AppMenu.settings)
                 }

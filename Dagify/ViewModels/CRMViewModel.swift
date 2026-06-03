@@ -1,30 +1,34 @@
-//
-//  CRMViewModel.swift
-//  Dagify
-//
-//  Created by Bryan Carlie Lukito Setiawan on 28/05/26.
-//
-
 import Foundation
 import Observation
 
-// Struktur Data untuk Grafik
 struct TrafficData: Identifiable {
     let id = UUID()
     let label: String
     let count: Int
 }
 
+// ✅ ENUM UNTUK IDENTIFIKASI SHEET
+enum CRMSheetType: Identifiable {
+    case total
+    case loyal
+    var id: String {
+        switch self {
+        case .total: return "total"
+        case .loyal: return "loyal"
+        }
+    }
+}
+
 @MainActor
 @Observable
 class CRMViewModel {
     var customers: [Customer] = []
+    var storeBranches: [Branch] = [] // ✅ List cabang dari Toko ini
     var isLoading: Bool = false
     var errorMessage: String? = nil
-
+    
     var loyalCustomers: [Customer] { customers.filter { $0.isLoyal } }
     
-    // ✅ FITUR C: SEGMENTASI WAKTU KUNJUNGAN (Jam Sibuk)
     var peakHoursData: [TrafficData] {
         var counts = [Int: Int]()
         let calendar = Calendar.current
@@ -34,17 +38,40 @@ class CRMViewModel {
                 counts[hour, default: 0] += 1
             }
         }
-        // Urutkan dari jam 00 sampai 23
         return counts.keys.sorted().map { TrafficData(label: String(format: "%02d:00", $0), count: counts[$0]!) }
     }
-
+    
     private let crmProtocol: CRMProtocol
-
-    init(crmProtocol: CRMProtocol) { self.crmProtocol = crmProtocol }
-
+    private let storeProtocol: StoreProtocol // ✅ Menyuntikkan akses data Toko
+    
+    init(crmProtocol: CRMProtocol, storeProtocol: StoreProtocol) {
+        self.crmProtocol = crmProtocol
+        self.storeProtocol = storeProtocol
+    }
+    
     func loadCustomers(storeId: String) async {
         isLoading = true
-        do { customers = try await crmProtocol.fetchCustomers(for: storeId) } catch { errorMessage = "Gagal memuat CRM." }
+        do {
+            // Ambil data pelanggan dan cabang secara pararel
+            async let fetchCusts = crmProtocol.fetchCustomers(for: storeId)
+            async let fetchStore = storeProtocol.fetchStore(storeId: storeId)
+            
+            self.customers = try await fetchCusts
+            if let store = try? await fetchStore {
+                self.storeBranches = store.branches
+            }
+        } catch {
+            errorMessage = "Gagal memuat CRM."
+        }
         isLoading = false
+    }
+    
+    // ✅ Fungsi Hitung Pelanggan per Cabang Khusus untuk Pop Up Sheet
+    func getCustomerCount(for branchId: String, isLoyalOnly: Bool) -> Int {
+        let branchCustomers = customers.filter { $0.branchId == branchId }
+        if isLoyalOnly {
+            return branchCustomers.filter { $0.isLoyal }.count
+        }
+        return branchCustomers.count
     }
 }

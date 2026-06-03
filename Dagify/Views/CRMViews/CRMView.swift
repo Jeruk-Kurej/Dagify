@@ -1,9 +1,12 @@
 import SwiftUI
-import Charts // ✅ WAJIB UNTUK GRAFIK
+import Charts
 
 struct CRMView: View {
     var viewModel: CRMViewModel
     let storeId: String
+    
+    // ✅ STATE UNTUK MENGONTROL KAPAN POP-UP MUNCUL
+    @State private var activeSheet: CRMSheetType? = nil
     
     var body: some View {
         NavigationStack {
@@ -11,11 +14,19 @@ struct CRMView: View {
                 VStack(spacing: 20) {
                     // Metrik Retensi
                     HStack(spacing: 16) {
-                        FinancialBox(title: "Total Pelanggan", amount: Double(viewModel.customers.count), color: Color(hex: "#00A3A3"), icon: "person.3.fill", isCurrency: false)
-                        FinancialBox(title: "Pelanggan Setia (Loyal)", amount: Double(viewModel.loyalCustomers.count), color: Color(hex: "#F59E0B"), icon: "star.circle.fill", isCurrency: false)
+                        // ✅ KOTAK DIJADIKAN TOMBOL YANG BISA DIKLIK
+                        Button(action: { activeSheet = .total }) {
+                            FinancialBox(title: "Total Pelanggan", amount: Double(viewModel.customers.count), color: Color(hex: "#00A3A3"), icon: "person.3.fill", isCurrency: false)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        Button(action: { activeSheet = .loyal }) {
+                            FinancialBox(title: "Pelanggan Setia (Loyal)", amount: Double(viewModel.loyalCustomers.count), color: Color(hex: "#F59E0B"), icon: "star.circle.fill", isCurrency: false)
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }.padding(.horizontal)
-
-                    // ✅ GRAFIK SEGMENTASI WAKTU (REQUIREMENT C)
+                    
+                    // GRAFIK SEGMENTASI WAKTU
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Grafik Jam Sibuk Kunjungan")
                             .font(.headline)
@@ -41,7 +52,7 @@ struct CRMView: View {
                         .cornerRadius(16)
                         .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
                     }.padding(.horizontal)
-
+                    
                     // Daftar Profil Pelanggan
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Direktori Pelanggan")
@@ -66,6 +77,73 @@ struct CRMView: View {
             .navigationTitle("CRM")
             .onAppear { Task { await viewModel.loadCustomers(storeId: storeId) } }
             .refreshable { await viewModel.loadCustomers(storeId: storeId) }
+            // ✅ MENGAKTIFKAN SHEET POP UP
+            .sheet(item: $activeSheet) { sheetType in
+                CRMDashboardSheetView(viewModel: viewModel, sheetType: sheetType)
+                    .presentationDetents([.medium, .large])
+            }
         }
     }
+}
+
+// ✅ KOMPONEN LAYAR POP UP PERINCIAN CABANG
+struct CRMDashboardSheetView: View {
+    var viewModel: CRMViewModel
+    var sheetType: CRMSheetType
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                // Kalkulasi pelanggan lama yang dibuat sebelum fitur multi-cabang rilis
+                let unknownCount = viewModel.customers.filter { $0.branchId == nil || $0.branchId == "" }.count
+                let unknownLoyalCount = viewModel.customers.filter { ($0.branchId == nil || $0.branchId == "") && $0.isLoyal }.count
+                
+                Section(header: Text("Rincian per Cabang")) {
+                    ForEach(viewModel.storeBranches, id: \.id) { branch in
+                        HStack {
+                            Text(branch.name)
+                                .font(.body)
+                                .foregroundColor(Color(hex: "#111827"))
+                            Spacer()
+                            Text("\(viewModel.getCustomerCount(for: branch.id, isLoyalOnly: sheetType == .loyal)) Orang")
+                                .font(.headline)
+                                .foregroundColor(sheetType == .total ? Color(hex: "#00A3A3") : Color(hex: "#F59E0B"))
+                        }
+                    }
+                    
+                    // Tampilkan peninggalan data lama jika ada
+                    if sheetType == .total ? (unknownCount > 0) : (unknownLoyalCount > 0) {
+                        HStack {
+                            Text("Tidak Diketahui (Data Lama)")
+                                .font(.body)
+                                .foregroundColor(.gray)
+                            Spacer()
+                            Text("\(sheetType == .total ? unknownCount : unknownLoyalCount) Orang")
+                                .font(.headline)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
+            }
+            .navigationTitle(sheetType == .total ? "Total Pelanggan" : "Pelanggan Setia")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Tutup") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+#Preview {
+    let mockCRM = MockCRMRepository()
+    let mockOp = MockOperationalRepository()
+    mockOp.dummyStore = Store(id: "S-1", name: "Dagify Test Store", branches: [Branch(id: "B-1", name: "Pusat", address: "")])
+    mockCRM.customers = [
+        Customer(id: "1", storeId: "S-1", branchId: "B-1", name: "Budi", phoneNumber: "081", totalSpent: 100000, visitHistory: [Date()]),
+        Customer(id: "2", storeId: "S-1", branchId: "B-1", name: "Susi", phoneNumber: "082", totalSpent: 200000, visitHistory: [Date(), Date(), Date(), Date(), Date()])
+    ]
+    return CRMView(viewModel: CRMViewModel(crmProtocol: mockCRM, storeProtocol: mockOp), storeId: "S-1")
 }

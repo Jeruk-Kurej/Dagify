@@ -9,7 +9,6 @@ extension NetworkMonitor: NetworkMonitorProtocol {}
 @Observable
 class POSViewModel {
     var availableProducts: [Product] = []
-    // ✅ STATE BARU: Menyimpan data stok bahan baku gudang untuk validasi kasir
     var availableIngredients: [Ingredient] = []
     
     var cart: [OrderItem] = []
@@ -19,7 +18,6 @@ class POSViewModel {
     
     var customerPhone: String = ""
     var customerName: String = ""
-    
     var allCustomers: [Customer] = []
     
     var suggestedCustomers: [Customer] {
@@ -51,7 +49,6 @@ class POSViewModel {
     func loadProducts(branchId: String) async {
         isLoading = true
         do {
-            // ✅ MENGAMBIL DATA MENU DAN GUDANG SEKALIGUS
             async let fetchProducts = operationalProtocol.fetchProducts(for: branchId)
             async let fetchIngredients = operationalProtocol.fetchIngredients(for: branchId)
             availableProducts = try await fetchProducts
@@ -69,12 +66,9 @@ class POSViewModel {
         customerName = customer.name
     }
 
-    // ✅ FITUR BARU: Auto-Block jika bahan baku habis!
     func addToCart(product: Product) {
         for recipeItem in product.recipe {
             let totalNeededForThisItem = recipeItem.quantityRequired
-            
-            // Hitung bahan baku yang sudah ter-booking di keranjang saat ini
             let alreadyInCart = cart.reduce(0.0) { sum, orderItem in
                 let matchingRecipe = orderItem.product.recipe.first(where: { $0.ingredientId == recipeItem.ingredientId })
                 return sum + (matchingRecipe?.quantityRequired ?? 0) * Double(orderItem.quantity)
@@ -85,7 +79,6 @@ class POSViewModel {
             let currentStock = ingredient?.currentStock ?? 0
             let ingredientName = ingredient?.name ?? "Bahan Baku"
             
-            // BLOKIR JIKA STOK KURANG
             if totalNeeded > currentStock {
                 errorMessage = "Stok '\(ingredientName)' tidak cukup! (Sisa: \(String(format: "%.1f", currentStock)))"
                 return
@@ -121,7 +114,8 @@ class POSViewModel {
                     }
                 } else {
                     let newName = customerName.isEmpty ? "Pelanggan" : customerName
-                    let newCustomer = Customer(id: UUID().uuidString, storeId: storeId, name: newName, phoneNumber: customerPhone, totalSpent: subtotal, visitHistory: [Date()])
+                    // ✅ UPDATE: Pelanggan yang baru dibuat otomatis akan terikat ke Branch Kasir yang mendaftarkannya!
+                    let newCustomer = Customer(id: UUID().uuidString, storeId: storeId, branchId: branchId, name: newName, phoneNumber: customerPhone, totalSpent: subtotal, visitHistory: [Date()])
                     _ = try await crmProtocol.addCustomer(newCustomer)
                     finalCustomerId = newCustomer.id
                 }
@@ -139,7 +133,6 @@ class POSViewModel {
                 cart.removeAll()
                 customerName = ""
                 customerPhone = ""
-                // ✅ UPDATE STOK LOKAL SETELAH CHECKOUT SUKSES
                 await loadProducts(branchId: branchId)
             } catch { errorMessage = "Gagal menyetor Kas." }
         } else {
