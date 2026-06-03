@@ -4,7 +4,7 @@ import UIKit
 
 @MainActor
 class PDFGeneratorService {
-    
+
     static func generateCashflowReport(
         monthYear: String,
         records: [FinancialRecord],
@@ -12,24 +12,32 @@ class PDFGeneratorService {
         totalExpense: Double,
         filename: String
     ) -> URL? {
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(filename).pdf")
-        let pdfBounds = CGRect(x: 0, y: 0, width: 595, height: 842) // A4 Presisi
-        
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(filename).pdf")
+        let pdfBounds = CGRect(x: 0, y: 0, width: 595, height: 842)  // A4 Presisi
+
         let format = UIGraphicsPDFRendererFormat()
-        let renderer = UIGraphicsPDFRenderer(bounds: pdfBounds, format: format)
-        
+        let pdfRenderer = UIGraphicsPDFRenderer(
+            bounds: pdfBounds,
+            format: format
+        )
+
         let itemsPerPage = 12
-        let totalPages = max(1, Int(ceil(Double(records.count) / Double(itemsPerPage))))
-        
+        let totalPages = max(
+            1,
+            Int(ceil(Double(records.count) / Double(itemsPerPage)))
+        )
+
         do {
-            try renderer.writePDF(to: tempURL) { context in
+            try pdfRenderer.writePDF(to: tempURL) { context in
                 for pageIndex in 0..<totalPages {
                     context.beginPage()
-                    
+
                     let start = pageIndex * itemsPerPage
                     let end = min(start + itemsPerPage, records.count)
-                    let pageRecords = records.isEmpty ? [] : Array(records[start..<end])
-                    
+                    let pageRecords =
+                        records.isEmpty ? [] : Array(records[start..<end])
+
                     let pageView = CashflowPDFTemplate(
                         monthYear: monthYear,
                         records: pageRecords,
@@ -41,17 +49,15 @@ class PDFGeneratorService {
                     .environment(\.colorScheme, .light)
                     .frame(width: 595, height: 842)
                     .background(Color.white)
-                    
-                    let hostingController = UIHostingController(rootView: pageView)
-                    hostingController.view.frame = pdfBounds
-                    hostingController.view.backgroundColor = .white
-                    
-                    // ✅ FIX BUG FIRST TRY: Tidak perlu UIWindow.
-                    // Langsung paksa siklus layout seketika di memori.
-                    hostingController.view.setNeedsLayout()
-                    hostingController.view.layoutIfNeeded()
-                    
-                    hostingController.view.layer.render(in: context.cgContext)
+
+                    // ✅ MENGGUNAKAN NATIVE SWIFTUI RENDERER
+                    // Ini menggambar UI seketika di memori, menghilangkan bug "layar putih" di percobaan pertama!
+                    let renderer = ImageRenderer(content: pageView)
+                    renderer.proposedSize = .init(width: 595, height: 842)
+
+                    renderer.render { size, renderFunc in
+                        renderFunc(context.cgContext)
+                    }
                 }
             }
             return tempURL
