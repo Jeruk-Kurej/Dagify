@@ -22,15 +22,15 @@ struct DashboardViewModelTests {
         )
 
         // Setup mock data
-        let r1 = FinancialRecord(id: "1", amount: 10000, type: .income, category: .sales, notes: "", date: Date())
-        let r2 = FinancialRecord(id: "2", amount: 2000, type: .expense, category: .marketing, notes: "", date: Date())
-        mockCashflowRepo.dummyRecords = [r1, r2]
+        let r1 = FinancialRecord(id: "1", branchId: "B-1", amount: 10000, type: .income, category: .none, timestamp: Date(), notes: "")
+        let r2 = FinancialRecord(id: "2", branchId: "B-1", amount: 2000, type: .expense, category: .marketing, timestamp: Date(), notes: "")
+        mockCashflowRepo.records = [r1, r2]
         
-        let c1 = Customer(id: "1", name: "Budi", phone: "081", isLoyal: true, visitCount: 5)
-        mockCrmRepo.dummyCustomers = [c1]
+        let c1 = Customer(id: "1", storeId: "S-1", branchId: "B-1", name: "Budi", phoneNumber: "081", totalSpent: 10000, visitHistory: [Date(), Date(), Date(), Date(), Date()])
+        mockCrmRepo.customers = [c1]
         
-        let p1 = Product(id: "1", name: "Kopi", price: 10000, recipe: [])
-        mockOpRepo.dummyProducts = [p1]
+        let p1 = Product(id: "1", branchId: "B-1", name: "Kopi", price: 10000, recipe: [])
+        mockOpRepo.products = [p1]
 
         await vm.loadDashboardSummary(storeId: "S-1", branchId: "B-1")
 
@@ -38,10 +38,9 @@ struct DashboardViewModelTests {
         #expect(vm.errorMessage == nil)
         
         // Income - Expense = 10000 - 2000 = 8000
-        #expect(vm.summary.netProfit == 8000)
-        #expect(vm.summary.totalCustomers == 1)
-        #expect(vm.summary.totalTransactions == 1) // Assuming 1 income record
-        #expect(vm.summary.topProducts.count == 1)
+        #expect(vm.todayNetProfit == 8000)
+        #expect(vm.totalLoyalCustomers == 1) // because no loyal customers were added
+        #expect(vm.chartData.isEmpty == true) // No orders added
     }
 
     @Test("Fungsi: loadDashboardSummary() - Skenario Error")
@@ -64,6 +63,6 @@ struct DashboardViewModelTests {
 
         #expect(vm.isLoading == false)
         #expect(vm.errorMessage != nil)
-        #expect(vm.summary.netProfit == 0)
+        #expect(vm.todayNetProfit == 0)
     }
 }

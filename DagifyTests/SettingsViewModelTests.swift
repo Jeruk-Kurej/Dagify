@@ -12,14 +12,14 @@ struct SettingsViewModelTests {
         let mockRepo = MockStoreRepository()
         let vm = SettingsViewModel(storeProtocol: mockRepo)
 
-        let b1 = Branch(id: "B-1", name: "Pusat", address: "Jakarta", phone: "081")
+        let b1 = Branch(id: "B-1", name: "Pusat", address: "Jakarta")
         mockRepo.dummyStore.branches = [b1]
 
         await vm.loadStore(storeId: "S-1")
 
         #expect(vm.errorMessage == nil)
-        #expect(vm.store?.name == "Dagify Test Store")
-        #expect(vm.store?.branches.count == 1)
+        #expect(vm.currentStore?.name == "Dagify Test Store")
+        #expect(vm.currentStore?.branches.count == 1)
         #expect(vm.isLoading == false)
     }
 
@@ -31,7 +31,7 @@ struct SettingsViewModelTests {
 
         await vm.loadStore(storeId: "S-1")
 
-        #expect(vm.store == nil)
+        #expect(vm.currentStore == nil)
         #expect(vm.errorMessage != nil)
         #expect(vm.isLoading == false)
     }
@@ -43,7 +43,7 @@ struct SettingsViewModelTests {
         
         let initialBranchCount = mockRepo.dummyStore.branches.count
 
-        await vm.createNewBranch(storeId: "S-1", name: "Cabang Bandung", address: "Bandung", phone: "082")
+        await vm.createNewBranch(storeId: "S-1", branchName: "Cabang Bandung", branchAddress: "Bandung")
 
         #expect(vm.errorMessage == nil)
         #expect(mockRepo.dummyStore.branches.count == initialBranchCount + 1)
@@ -57,9 +57,9 @@ struct SettingsViewModelTests {
         
         let initialBranchCount = mockRepo.dummyStore.branches.count
 
-        await vm.createNewBranch(storeId: "S-1", name: "", address: "Bandung", phone: "082")
+        await vm.createNewBranch(storeId: "S-1", branchName: "", branchAddress: "Bandung")
 
-        #expect(vm.errorMessage == "Nama dan alamat cabang wajib diisi.")
+        #expect(vm.errorMessage == "Nama cabang tidak boleh kosong.")
         #expect(mockRepo.dummyStore.branches.count == initialBranchCount)
     }
 }

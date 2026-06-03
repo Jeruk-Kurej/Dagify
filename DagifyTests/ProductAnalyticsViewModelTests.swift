@@ -14,7 +14,7 @@ struct ProductAnalyticsViewModelTests {
 
         let p1 = Product(id: "1", name: "Kopi", price: 10000, recipe: [])
         let p2 = Product(id: "2", name: "Teh", price: 5000, recipe: [])
-        mockOpRepo.dummyProducts = [p1, p2]
+        mockOpRepo.products = [p1, p2]
 
         await vm.loadAnalyticsData(branchId: "B-1")
 
@@ -36,6 +36,6 @@ struct ProductAnalyticsViewModelTests {
 
         #expect(vm.isLoading == false)
         #expect(vm.errorMessage != nil)
-        #expect(vm.analytics.isEmpty == true)
+        #expect(vm.chartData.isEmpty == true)
     }
 }

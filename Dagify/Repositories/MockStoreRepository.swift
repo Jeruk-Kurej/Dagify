@@ -3,7 +3,7 @@ import Foundation
 
 class MockStoreRepository: StoreProtocol {
     var shouldThrowError = false
-    var dummyStore: Store = Store(id: "S-1", name: "Dagify Test Store", ownerId: "O-1", branches: [])
+    var dummyStore: Store = Store(id: "S-1", name: "Dagify Test Store", branches: [])
     
     func fetchStore(storeId: String) async throws -> Store {
         if shouldThrowError {
