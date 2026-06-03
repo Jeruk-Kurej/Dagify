@@ -1,35 +1,23 @@
-//
-//  AuthView.swift
-//  Dagify
-//
-//  Created by Bryan Carlie Lukito Setiawan on 31/05/26.
-//
-
-
 import SwiftUI
 
 struct AuthView: View {
     var viewModel: AuthViewModel
-
     @State private var showAuthForm = false
     @State private var isLoginMode = true
-
     @State private var email = ""
     @State private var password = ""
     @State private var storeName = ""
     @State private var branchName = ""
-
+    
     var body: some View {
         ZStack {
             FluidBackgroundView()
-
+            
             if !showAuthForm {
                 WelcomeScreen(showAuthForm: $showAuthForm)
                     .transition(
                         .asymmetric(
-                            insertion: .opacity.combined(
-                                with: .scale(scale: 0.9)
-                            ),
+                            insertion: .opacity.combined(with: .scale(scale: 0.9)),
                             removal: .opacity.combined(with: .scale(scale: 1.1))
                         )
                     )
@@ -45,46 +33,39 @@ struct AuthView: View {
                 )
                 .transition(
                     .asymmetric(
-                        insertion: .move(edge: .bottom).combined(
-                            with: .opacity
-                        ),
+                        insertion: .move(edge: .bottom).combined(with: .opacity),
                         removal: .opacity
                     )
                 )
             }
         }
         .environment(\.colorScheme, .dark)
-        .animation(
-            .spring(response: 0.7, dampingFraction: 0.8),
-            value: showAuthForm
-        )
+        .animation(.spring(response: 0.7, dampingFraction: 0.8), value: showAuthForm)
     }
 }
 
 struct WelcomeScreen: View {
     @Binding var showAuthForm: Bool
-
     var body: some View {
         VStack(spacing: 16) {
             Spacer()
-
             Image(systemName: "sparkles")
                 .font(.system(size: 64))
-                .foregroundColor(.white)
+                .foregroundColor(Color(hex: "#F9FAFB"))
                 .symbolEffect(.pulse, options: .repeating)
                 .padding(.bottom, 20)
-
+            
             Text("Dagify")
                 .font(.system(size: 56, weight: .heavy, design: .rounded))
-                .foregroundColor(.white)
-
+                .foregroundColor(Color(hex: "#F9FAFB"))
+            
             Text("Business Management")
                 .font(.title3)
                 .fontWeight(.medium)
-                .foregroundColor(.white.opacity(0.8))
-
+                .foregroundColor(Color(hex: "#F9FAFB").opacity(0.8))
+            
             Spacer()
-
+            
             Button(action: {
                 withAnimation { showAuthForm = true }
             }) {
@@ -94,12 +75,12 @@ struct WelcomeScreen: View {
                     Image(systemName: "arrow.right")
                         .font(.headline)
                 }
-                .foregroundColor(.themeTextPrimary)
+                .foregroundColor(Color(hex: "#111827")) // ✅ Teks Tombol Gelap
                 .padding(.horizontal, 32)
                 .padding(.vertical, 18)
-                .background(Color.white)
+                .background(Color(hex: "#FFFFFF"))     // ✅ Background Tombol Terang
                 .clipShape(Capsule())
-                .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
+                .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
             }
             .padding(.bottom, 60)
         }
@@ -114,14 +95,14 @@ struct GlassAuthForm: View {
     @Binding var storeName: String
     @Binding var branchName: String
     @Binding var showAuthForm: Bool
-
+    
     var body: some View {
         VStack {
             HStack {
                 Button(action: { withAnimation { showAuthForm = false } }) {
                     Image(systemName: "chevron.left")
                         .font(.title3.bold())
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundColor(Color(hex: "#F9FAFB").opacity(0.8))
                         .padding()
                         .background(.ultraThinMaterial)
                         .clipShape(Circle())
@@ -130,101 +111,75 @@ struct GlassAuthForm: View {
             }
             .padding(.horizontal, 24)
             .padding(.top, 40)
-
+            
             Spacer()
-
+            
             VStack(spacing: 24) {
                 Text(isLoginMode ? "Masuk Sistem" : "Buat Akun")
                     .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(hex: "#F9FAFB"))
                     .frame(maxWidth: .infinity, alignment: .leading)
-
+                
                 VStack(spacing: 16) {
-                    MinimalField(
-                        icon: "envelope.fill",
-                        placeholder: "Alamat Email",
-                        text: $email
-                    )
-                    .keyboardType(.emailAddress)
-
-                    MinimalSecureField(
-                        icon: "lock.fill",
-                        placeholder: "Kata Sandi",
-                        text: $password
-                    )
-
+                    MinimalField(icon: "envelope.fill", placeholder: "Alamat Email", text: $email)
+                        .keyboardType(.emailAddress)
+                    MinimalSecureField(icon: "lock.fill", placeholder: "Kata Sandi", text: $password)
+                    
                     if !isLoginMode {
-                        MinimalField(
-                            icon: "building.2.fill",
-                            placeholder: "Nama Toko (Cth: Kenangan)",
-                            text: $storeName
-                        )
-                        MinimalField(
-                            icon: "storefront.fill",
-                            placeholder: "Cabang (Cth: Pusat)",
-                            text: $branchName
-                        )
+                        MinimalField(icon: "building.2.fill", placeholder: "Nama Toko (Cth: Kenangan)", text: $storeName)
+                        MinimalField(icon: "storefront.fill", placeholder: "Cabang (Cth: Pusat)", text: $branchName)
                     }
                 }
                 .animation(.easeInOut, value: isLoginMode)
-
+                
                 if let err = viewModel.errorMessage {
                     Text(err)
                         .font(.caption)
-                        .foregroundColor(.themeDestructive) 
+                        .foregroundColor(Color(hex: "#EF4444")) // ✅ Teks Error Merah
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
-
+                
                 Button(action: handleAuthAction) {
                     ZStack {
                         if viewModel.isLoading {
-                            ProgressView().tint(.themeTextPrimary)
+                            ProgressView().tint(Color(hex: "#111827"))
                         } else {
                             Text(isLoginMode ? "Lanjutkan" : "Daftar Sekarang")
                                 .font(.headline)
                         }
                     }
-                    .foregroundColor(.themeTextPrimary)  
+                    .foregroundColor(Color(hex: "#111827")) // ✅ Teks Tombol Gelap
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(Color.white)
+                    .background(Color(hex: "#FFFFFF"))      // ✅ Background Tombol Terang
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
                 .padding(.top, 8)
-
+                
                 Button(action: { withAnimation { isLoginMode.toggle() } }) {
-                    Text(
-                        isLoginMode
-                            ? "Belum punya akun? **Daftar**"
-                            : "Sudah punya akun? **Masuk**"
-                    )
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.8))
+                    Text(isLoginMode ? "Belum punya akun? **Daftar**" : "Sudah punya akun? **Masuk**")
+                        .font(.subheadline)
+                        .foregroundColor(Color(hex: "#F9FAFB").opacity(0.8))
                 }
             }
             .padding(32)
             .background(.ultraThinMaterial)
             .clipShape(RoundedRectangle(cornerRadius: 32))
-            .shadow(color: .black.opacity(0.3), radius: 30, x: 0, y: 15)
+            .shadow(color: Color.black.opacity(0.3), radius: 30, x: 0, y: 15)
             .padding(.horizontal, 24)
-
+            
             Spacer()
             Spacer()
         }
     }
-
+    
     private func handleAuthAction() {
         Task {
             if isLoginMode {
                 await viewModel.login(email: email, password: password)
             } else {
-                await viewModel.register(
-                    email: email,
-                    password: password,
-                    storeName: storeName,
-                    branchName: branchName
-                )
+                await viewModel.register(email: email, password: password, storeName: storeName, branchName: branchName)
             }
         }
     }
