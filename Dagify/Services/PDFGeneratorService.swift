@@ -1,10 +1,19 @@
+//
+//  AuthViewModel.swift
+//  Dagify
+//
+//  Created by Bryan Carlie Lukito Setiawan on 28/05/26.
+//
+
 import Foundation
 import SwiftUI
 import UIKit
 
 @MainActor
 class PDFGeneratorService {
-    
+
+    // MARK: - Generation Methods
+
     static func generateCashflowReport(
         monthYear: String,
         records: [FinancialRecord],
@@ -12,24 +21,32 @@ class PDFGeneratorService {
         totalExpense: Double,
         filename: String
     ) -> URL? {
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(filename).pdf")
-        let pdfBounds = CGRect(x: 0, y: 0, width: 595, height: 842) // A4 Presisi
-        
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(filename).pdf")
+        let pdfBounds = CGRect(x: 0, y: 0, width: 595, height: 842)  // A4 Format
+
         let format = UIGraphicsPDFRendererFormat()
-        let pdfRenderer = UIGraphicsPDFRenderer(bounds: pdfBounds, format: format)
-        
+        let pdfRenderer = UIGraphicsPDFRenderer(
+            bounds: pdfBounds,
+            format: format
+        )
+
         let itemsPerPage = 12
-        let totalPages = max(1, Int(ceil(Double(records.count) / Double(itemsPerPage))))
-        
+        let totalPages = max(
+            1,
+            Int(ceil(Double(records.count) / Double(itemsPerPage)))
+        )
+
         do {
             try pdfRenderer.writePDF(to: tempURL) { context in
                 for pageIndex in 0..<totalPages {
                     context.beginPage()
-                    
+
                     let start = pageIndex * itemsPerPage
                     let end = min(start + itemsPerPage, records.count)
-                    let pageRecords = records.isEmpty ? [] : Array(records[start..<end])
-                    
+                    let pageRecords =
+                        records.isEmpty ? [] : Array(records[start..<end])
+
                     let pageView = CashflowPDFTemplate(
                         monthYear: monthYear,
                         records: pageRecords,
@@ -41,10 +58,12 @@ class PDFGeneratorService {
                     .environment(\.colorScheme, .light)
                     .frame(width: 595, height: 842)
                     .background(Color.white)
-                    
+
+                    // Render to Memory
                     let renderer = ImageRenderer(content: pageView)
                     renderer.proposedSize = .init(width: 595, height: 842)
-                    
+
+                    // Fix iOS Orientation by rendering to UIImage first
                     if let uiImage = renderer.uiImage {
                         uiImage.draw(in: pdfBounds)
                     }

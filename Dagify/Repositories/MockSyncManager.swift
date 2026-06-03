@@ -9,15 +9,14 @@ import Foundation
 import SwiftData
 
 class MockSyncManager: SyncManagerProtocol {
-    var isCheckoutCalled = false
-    var shouldThrowError = false
-    
-    func handleCheckout(order: Order, isConnected: Bool, firebaseRepo: OperationalProtocol, context: ModelContext) async throws {
-        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
-        isCheckoutCalled = true
-    }
-}
 
-class MockNetworkMonitor {
-    var isConnected: Bool = true
+    // MARK: - Mock State
+    var didSync = false
+
+    // MARK: - SyncManagerProtocol Implementation
+
+    func syncOfflineOrders(context: ModelContext, branchId: String) async {
+        // Hanya simulasi bahwa method ini terpanggil tanpa error
+        didSync = true
+    }
 }

@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 
+/// Defines operations for syncing offline data (SwiftData) with the cloud (Firebase).
 protocol SyncManagerProtocol {
-    func handleCheckout(order: Order, isConnected: Bool, firebaseRepo: OperationalProtocol, context: ModelContext) async throws
+    func syncOfflineOrders(context: ModelContext, branchId: String) async
 }

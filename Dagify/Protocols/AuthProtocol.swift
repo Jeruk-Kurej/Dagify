@@ -7,8 +7,10 @@
 
 import Foundation
 
+/// Defines operations for Authentication and User Session Management.
 protocol AuthProtocol {
     func login(email: String, password: String) async throws -> User
     func register(email: String, password: String, storeName: String, branchName: String) async throws -> User
     func logout() throws
+    func getCurrentUser() async throws -> User?
 }

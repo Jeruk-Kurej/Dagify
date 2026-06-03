@@ -1,138 +1,137 @@
+//
+//  MockCRMRepository.swift
+//  Dagify
+//
+//  Created by Bryan Carlie Lukito Setiawan on 28/05/26.
+//
+
 import Foundation
 
 class MockOperationalRepository: OperationalProtocol, StoreProtocol {
-    public var shouldThrowError = false
-    public var dummyProducts: [Product] = []
-    public var dummyIngredients: [Ingredient] = []
-    public var dummyOrders: [Order] = []
-    public var submitCallCount = 0
-    public var dummyCategories: [ProductCategory] = []
 
-    // ✅ Menggunakan properti variabel untuk simulasi store
-    public var dummyStore = Store(
+    // MARK: - Mock State
+    var shouldThrowError = false
+
+    var dummyStore: Store = Store(
         id: "S-1",
-        name: "Dagify Test Store",
-        branches: [Branch(id: "B-1", name: "Pusat", address: "Surabaya")]
+        name: "Mock Store",
+        branches: [Branch(id: "B-1", name: "Pusat", address: "Jl. Mock")]
     )
+    var products: [Product] = []
+    var ingredients: [Ingredient] = []
+    var categories: [ProductCategory] = []
+    var orders: [Order] = []
 
-    public init() {}
+    // MARK: - StoreProtocol Implementation
 
-    public func fetchStore(storeId: String) async throws -> Store {
-        if shouldThrowError { throw NSError(domain: "MockError", code: 404) }
+    func fetchStore(storeId: String) async throws -> Store {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
         return dummyStore
     }
 
-    // ✅ FUNGSI BARU: Tambah cabang untuk simulasi Preview
-    public func addBranch(storeId: String, branch: Branch) async throws -> Bool
-    {
+    func addBranch(storeId: String, branch: Branch) async throws -> Bool {
         if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
-        var updatedBranches = dummyStore.branches
-        updatedBranches.append(branch)
-        dummyStore = Store(
-            id: dummyStore.id,
-            name: dummyStore.name,
-            branches: updatedBranches
-        )
+        dummyStore.branches.append(branch)
         return true
     }
 
-    public func fetchOrders(for branchId: String) async throws -> [Order] {
+    // MARK: - OperationalProtocol: Products
+
+    func fetchProducts(for branchId: String) async throws -> [Product] {
         if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
-        return dummyOrders.filter { $0.branchId == branchId }
+        return products.filter { $0.branchId == branchId }
     }
 
-    public func fetchProducts(for branchId: String) async throws -> [Product] {
+    func addProduct(_ product: Product) async throws -> Bool {
         if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
-        return dummyProducts
-    }
-
-    public func fetchIngredients(for branchId: String) async throws
-        -> [Ingredient]
-    {
-        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
-        return dummyIngredients
-    }
-
-    public func submitOrderAndUpdateInventory(order: Order) async throws -> Bool
-    {
-        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
-        submitCallCount += 1
+        products.append(product)
         return true
     }
 
-    public func addProduct(_ product: Product) async throws -> Bool {
+    func updateProduct(_ product: Product) async throws -> Bool {
         if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
-        var newProduct = product
-        if newProduct.id == nil { newProduct.id = UUID().uuidString }
-        dummyProducts.append(newProduct)
-        return true
-    }
-
-    // ✅ FUNGSI BARU UNTUK PREVIEW
-    public func updateProduct(_ product: Product) async throws -> Bool {
-        if let index = dummyProducts.firstIndex(where: { $0.id == product.id })
-        {
-            dummyProducts[index] = product
+        if let idx = products.firstIndex(where: { $0.id == product.id }) {
+            products[idx] = product
             return true
         }
         return false
     }
 
-    public func deleteProduct(productId: String) async throws -> Bool {
-        dummyProducts.removeAll(where: { $0.id == productId })
-        return true
-    }
-
-    public func addIngredient(_ ingredient: Ingredient) async throws -> Bool {
+    func deleteProduct(productId: String) async throws -> Bool {
         if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
-        var newIngredient = ingredient
-        if newIngredient.id == nil { newIngredient.id = UUID().uuidString }
-        dummyIngredients.append(newIngredient)
+        products.removeAll { $0.id == productId }
         return true
     }
 
-    public func updateIngredient(_ ingredient: Ingredient) async throws -> Bool
-    {
-        if let index = dummyIngredients.firstIndex(where: {
-            $0.id == ingredient.id
-        }) {
-            dummyIngredients[index] = ingredient
+    // MARK: - OperationalProtocol: Ingredients
+
+    func fetchIngredients(for branchId: String) async throws -> [Ingredient] {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        return ingredients.filter { $0.branchId == branchId }
+    }
+
+    func addIngredient(_ ingredient: Ingredient) async throws -> Bool {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        ingredients.append(ingredient)
+        return true
+    }
+
+    func updateIngredient(_ ingredient: Ingredient) async throws -> Bool {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        if let idx = ingredients.firstIndex(where: { $0.id == ingredient.id }) {
+            ingredients[idx] = ingredient
             return true
         }
         return false
     }
 
-    public func deleteIngredient(ingredientId: String) async throws -> Bool {
-        dummyIngredients.removeAll(where: { $0.id == ingredientId })
+    func deleteIngredient(ingredientId: String) async throws -> Bool {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        ingredients.removeAll { $0.id == ingredientId }
         return true
     }
-    // ... (Lanjut ke bawah)
 
-    public func recordWaste(ingredientId: String, amountToDeduct: Double)
-        async throws -> Bool
+    func recordWaste(ingredientId: String, amountToDeduct: Double) async throws
+        -> Bool
     {
         if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
-        if let index = dummyIngredients.firstIndex(where: {
-            $0.id == ingredientId
-        }) {
-            dummyIngredients[index].currentStock -= amountToDeduct
+        if let idx = ingredients.firstIndex(where: { $0.id == ingredientId }) {
+            ingredients[idx].currentStock -= amountToDeduct
             return true
         }
         return false
     }
-    public func fetchCategories(for branchId: String) async throws
-        -> [ProductCategory]
+
+    // MARK: - OperationalProtocol: Categories
+
+    func fetchCategories(for branchId: String) async throws -> [ProductCategory]
     {
-        return dummyCategories.filter { $0.branchId == branchId }
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        return categories.filter { $0.branchId == branchId }
     }
-    public func addCategory(_ category: ProductCategory) async throws -> Bool {
-        var newCat = category
-        if newCat.id == nil { newCat.id = UUID().uuidString }
-        dummyCategories.append(newCat)
+
+    func addCategory(_ category: ProductCategory) async throws -> Bool {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        categories.append(category)
         return true
     }
-    public func deleteCategory(categoryId: String) async throws -> Bool {
-        dummyCategories.removeAll(where: { $0.id == categoryId })
+
+    func deleteCategory(categoryId: String) async throws -> Bool {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        categories.removeAll { $0.id == categoryId }
+        return true
+    }
+
+    // MARK: - OperationalProtocol: Orders
+
+    func fetchOrders(for branchId: String) async throws -> [Order] {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        return orders.filter { $0.branchId == branchId }
+    }
+
+    func submitOrderAndUpdateInventory(order: Order) async throws -> Bool {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        orders.append(order)
         return true
     }
 }

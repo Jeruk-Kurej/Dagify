@@ -8,29 +8,47 @@
 import Foundation
 
 class MockAuthRepository: AuthProtocol {
-    public var shouldThrowError = false
-    public var currentUser: User? = nil
-    public var registeredStore: Store? = nil
-    
-    public init() {}
-    
-    public func login(email: String, password: String) async throws -> User {
-        if shouldThrowError { throw NSError(domain: "MockAuth", code: 401) }
-        currentUser = User(id: "U-1", email: email, storeId: "S-1")
-        return currentUser!
+
+    // MARK: - Mock State
+    var shouldThrowError = false
+    var currentUser: User? = User(
+        id: "U-1",
+        email: "test@dagify.com",
+        storeId: "S-1"
+    )
+
+    // MARK: - AuthProtocol Implementation
+
+    func login(email: String, password: String) async throws -> User {
+        if shouldThrowError {
+            throw NSError(domain: "MockError", code: 401, userInfo: nil)
+        }
+        return currentUser ?? User(id: "U-1", email: email, storeId: "S-1")
     }
-    
-    public func register(email: String, password: String, storeName: String, branchName: String) async throws -> User {
-        if shouldThrowError { throw NSError(domain: "MockAuth", code: 500) }
-        
-        let storeId = "S-\(UUID().uuidString)"
-        registeredStore = Store(id: storeId, name: storeName, branches: [Branch(id: "B-1", name: branchName, address: "")])
-        
-        currentUser = User(id: "U-\(UUID().uuidString)", email: email, storeId: storeId)
-        return currentUser!
+
+    func register(
+        email: String,
+        password: String,
+        storeName: String,
+        branchName: String
+    ) async throws -> User {
+        if shouldThrowError {
+            throw NSError(domain: "MockError", code: 400, userInfo: nil)
+        }
+        return User(id: "U-2", email: email, storeId: "S-2")
     }
-    
-    public func logout() throws {
+
+    func logout() throws {
+        if shouldThrowError {
+            throw NSError(domain: "MockError", code: 500, userInfo: nil)
+        }
         currentUser = nil
+    }
+
+    func getCurrentUser() async throws -> User? {
+        if shouldThrowError {
+            throw NSError(domain: "MockError", code: 500, userInfo: nil)
+        }
+        return currentUser
     }
 }

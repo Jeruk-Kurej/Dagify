@@ -135,7 +135,6 @@ struct InventoryView: View {
             }
         }
         
-        // ✅ FIX 1: Alert Konfirmasi Hapus Permanen
         .alert("Hapus Bahan Baku?", isPresented: Binding<Bool>(
             get: { ingredientToDelete != nil },
             set: { if !$0 { ingredientToDelete = nil } }
@@ -149,44 +148,6 @@ struct InventoryView: View {
         } message: {
             if let item = ingredientToDelete {
                 Text("Apakah Anda yakin ingin menghapus '\(item.name)' secara permanen dari daftar gudang? Aksi ini tidak dapat dibatalkan.")
-            }
-        }
-    }
-}
-
-// TAMPILAN DETAIL BAHAN BAKU TETAP SAMA
-struct IngredientDetailView: View {
-    var ingredient: Ingredient
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            List {
-                Section(header: Text("Informasi Utama")) {
-                    LabeledContent("Nama Bahan", value: ingredient.name)
-                    LabeledContent("Stok Gudang", value: "\(String(format: "%.1f", ingredient.currentStock)) \(ingredient.unit)")
-                    LabeledContent("Harga Satuan", value: ingredient.costPerUnit.toRupiah())
-                    LabeledContent("Estimasi Aset", value: (ingredient.currentStock * ingredient.costPerUnit).toRupiah())
-                        .fontWeight(.bold)
-                }
-                Section(header: Text("Peringatan & Batas Waktu")) {
-                    LabeledContent("Batas Stok Minim", value: "\(String(format: "%.1f", ingredient.minimumStockWarning)) \(ingredient.unit)")
-                        .foregroundColor(.orange)
-                    
-                    if let expiry = ingredient.expiryDate {
-                        LabeledContent("Tgl Kedaluwarsa", value: expiry.formatted(date: .abbreviated, time: .omitted))
-                            .foregroundColor(expiry < Date() ? .red : .primary)
-                    } else {
-                        LabeledContent("Tgl Kedaluwarsa", value: "Tidak Ada Batas")
-                    }
-                }
-            }
-            .navigationTitle("Detail Bahan")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Tutup") { dismiss() }
-                }
             }
         }
     }

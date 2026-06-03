@@ -2,8 +2,6 @@ import Foundation
 import Observation
 import SwiftData
 
-protocol NetworkMonitorProtocol { var isConnected: Bool { get } }
-extension NetworkMonitor: NetworkMonitorProtocol {}
 
 @MainActor
 @Observable
