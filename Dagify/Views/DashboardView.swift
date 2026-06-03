@@ -57,9 +57,17 @@ struct DashboardView: View {
                         
                         VStack {
                             if viewModel.chartData.isEmpty {
-                                Text("Belum ada data penjualan.")
-                                    .foregroundColor(.gray)
-                                    .padding(.vertical, 20) // Beri sedikit padding atas-bawah agar pas
+                                // 🛠️ UBAH DI SINI: Bungkus dengan VStack + Spacer agar memenuhi ruang 250pt
+                                VStack(spacing: 12) {
+                                    Image(systemName: "chart.bar.xaxis") // Ikon grafik bawaan SF Symbols
+                                        .font(.system(size: 40))
+                                        .foregroundColor(Color.gray.opacity(0.4))
+                                    
+                                    Text("Belum ada data penjualan.")
+                                        .font(.subheadline)
+                                        .foregroundColor(.gray)
+                                }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity) // Memaksa mengisi seluruh area card
                             } else {
                                 Chart(viewModel.chartData) { data in
                                     BarMark(
@@ -72,8 +80,7 @@ struct DashboardView: View {
                             }
                         }
                         .padding()
-                        // 🛠️ UBAH DI SINI: Jika kosong tingginya otomatis (nil), jika ada data tingginya 250
-                        .frame(height: viewModel.chartData.isEmpty ? nil : 250)
+                        .frame(height: 250) // Tetap 250pt, tapi diisi penuh oleh layout di atas
                         .background(Color.white)
                         .cornerRadius(16)
                         .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
