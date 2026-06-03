@@ -5,11 +5,11 @@ struct CashflowPDFTemplate: View {
     var records: [FinancialRecord]
     var totalIncome: Double
     var totalExpense: Double
-
+    
     // Parameter Pagination
     var page: Int
     var totalPages: Int
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             // Kop Surat
@@ -28,9 +28,9 @@ struct CashflowPDFTemplate: View {
                     .foregroundColor(Color(hex: "#00A3A3"))
             }
             .padding(.bottom, 10)
-
+            
             Divider()
-
+            
             // Ringkasan Keuangan (Hanya tampil di halaman pertama)
             if page == 1 {
                 HStack {
@@ -56,7 +56,7 @@ struct CashflowPDFTemplate: View {
                 }
                 .padding(.vertical, 8)
             }
-
+            
             Text(
                 page == 1
                     ? "Rincian Transaksi Bulanan"
@@ -66,8 +66,8 @@ struct CashflowPDFTemplate: View {
             .fontWeight(.bold)
             .padding(.top, 10)
             .foregroundColor(.black)
-
-            // ✅ HEADER TABEL MUTASI BANK
+            
+            // HEADER TABEL MUTASI BANK
             VStack(spacing: 8) {
                 HStack(alignment: .center) {
                     Text("Tanggal").font(.caption).bold().frame(
@@ -91,18 +91,18 @@ struct CashflowPDFTemplate: View {
                 .padding(.horizontal, 4)
                 .background(Color(hex: "#F3F4F6"))
                 .foregroundColor(.black)
-
+                
                 Divider()
-
+                
                 if records.isEmpty {
                     Text("Tidak ada mutasi di bulan ini.")
                         .foregroundColor(.gray)
                         .italic()
                         .padding(.top, 20)
                 } else {
-                    // ✅ ISI TABEL MUTASI BANK
+                    // ISI TABEL MUTASI BANK
                     ForEach(records, id: \.id) { record in
-                        HStack(alignment: .center) {
+                        HStack(alignment: .top) { // ✅ FIX: Rata atas untuk mengakomodasi multiline
                             Text(
                                 record.timestamp.formatted(
                                     date: .numeric,
@@ -112,7 +112,7 @@ struct CashflowPDFTemplate: View {
                             .font(.caption2)
                             .foregroundColor(.gray)
                             .frame(width: 80, alignment: .leading)
-
+                            
                             Text(
                                 record.notes.isEmpty
                                     ? "Sistem Otomatis" : record.notes
@@ -120,8 +120,9 @@ struct CashflowPDFTemplate: View {
                             .font(.caption)
                             .fontWeight(.medium)
                             .foregroundColor(.black)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
+                            .fixedSize(horizontal: false, vertical: true) // ✅ FIX: Bebaskan turun kebawah (multiline)
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                            
                             Text(
                                 record.type == .income
                                     ? record.amount.toRupiah() : "-"
@@ -131,7 +132,7 @@ struct CashflowPDFTemplate: View {
                                         ? Color(hex: "#10B981") : .black
                                 )
                                 .frame(width: 100, alignment: .trailing)
-
+                            
                             Text(record.type == .expense ? record.amount.toRupiah() : "-")
                             .font(.caption)
                             .foregroundColor(
@@ -142,15 +143,15 @@ struct CashflowPDFTemplate: View {
                         }
                         .padding(.horizontal, 4)
                         .padding(.vertical, 4)
-
+                        
                         Divider()
                     }
                 }
             }
-
+            
             // Mengisi ruang kosong sisa di bawah
             Spacer(minLength: 0)
-
+            
             // Footer Halaman
             HStack {
                 Text("Halaman \(page) dari \(totalPages)")

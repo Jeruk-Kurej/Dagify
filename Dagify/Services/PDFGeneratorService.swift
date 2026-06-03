@@ -1,6 +1,6 @@
 import Foundation
 import SwiftUI
-import UIKit // Wajib untuk mengakses UIWindow & Render Engine
+import UIKit
 
 @MainActor
 class PDFGeneratorService {
@@ -44,14 +44,10 @@ class PDFGeneratorService {
                     
                     let hostingController = UIHostingController(rootView: pageView)
                     hostingController.view.frame = pdfBounds
+                    hostingController.view.backgroundColor = .white
                     
-                    // ✅ HIG & SOLID FIX: Memaksa mesin grafis iOS merender UI secara sinkron
-                    // dengan menempelkannya ke Window transparan rahasia.
-                    let tempWindow = UIWindow(frame: pdfBounds)
-                    tempWindow.isHidden = false
-                    tempWindow.layer.opacity = 0 // Tembus pandang agar tidak berkedip di layar user
-                    tempWindow.rootViewController = hostingController
-                    
+                    // ✅ FIX BUG FIRST TRY: Tidak perlu UIWindow.
+                    // Langsung paksa siklus layout seketika di memori.
                     hostingController.view.setNeedsLayout()
                     hostingController.view.layoutIfNeeded()
                     

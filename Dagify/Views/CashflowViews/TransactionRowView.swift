@@ -21,19 +21,23 @@ struct TransactionRowView: View {
                     .font(.body)
                     .fontWeight(.semibold)
                     .foregroundColor(Color(hex: "#111827"))
+                    .lineLimit(1) // ✅ Paksa 1 baris
+                    .minimumScaleFactor(0.5) // ✅ Menyusut alih-alih kepotong jadi "..."
                 
-                // ✅ UPDATE: Menampilkan Jam & Tanggal Spesifik secara detail
                 Text(record.timestamp.formatted(date: .abbreviated, time: .shortened))
                     .font(.caption)
                     .foregroundColor(Color(hex: "#6B7280"))
             }
             
-            Spacer()
+            Spacer(minLength: 8) // ✅ Pastikan ada jarak pelindung
             
             Text("\(record.type == .income ? "+" : "-") \(record.amount.toRupiah())")
                 .font(.headline)
                 .fontWeight(.bold)
                 .foregroundColor(record.type == .income ? Color(hex: "#10B981") : Color(hex: "#EF4444"))
+                .lineLimit(1) // ✅ Paksa 1 baris
+                .minimumScaleFactor(0.5) // ✅ Menyusut walau triliunan
+                .layoutPriority(1) // ✅ Mengamankan area nominal agar tidak didorong oleh teks catatan
         }
         .padding(.vertical, 12)
     }
