@@ -7,31 +7,39 @@ class InventoryViewModel {
     var ingredients: [Ingredient] = []
     var isLoading: Bool = false
     var errorMessage: String? = nil
-
+    
+    // ✅ FIX 2: Bahan hanya dianggap basi di list jika masih ada sisa stok yang perlu dibuang
     var expiredIngredients: [Ingredient] {
         let today = Date()
         return ingredients.filter { ingredient in
             guard let expiry = ingredient.expiryDate else { return false }
-            return expiry < today
+            return expiry < today && ingredient.currentStock > 0
         }
     }
-
-    // ✅ FIX: Memfilter agar yang sudah "Basi" tidak terduplikasi di "Stok Minim"
+    
     var lowStockIngredients: [Ingredient] {
-        let expiredIds = expiredIngredients.compactMap { $0.id }
         return ingredients.filter {
-            $0.currentStock <= $0.minimumStockWarning && !expiredIds.contains($0.id ?? "")
+            $0.currentStock <= $0.minimumStockWarning
         }
     }
-
+    
+    // ✅ FIX 3: Menggabungkan barang yang butuh perhatian khusus (Basi ATAU Stok Minim)
+    var attentionIngredients: [Ingredient] {
+        let expiredIds = expiredIngredients.compactMap { $0.id }
+        let lowStockIds = lowStockIngredients.compactMap { $0.id }
+        let combinedIds = Set(expiredIds + lowStockIds)
+        
+        return ingredients.filter { combinedIds.contains($0.id ?? "") }
+    }
+    
     private let operationalProtocol: OperationalProtocol
     private let cashflowProtocol: CashflowProtocol
-
+    
     init(operationalProtocol: OperationalProtocol, cashflowProtocol: CashflowProtocol) {
         self.operationalProtocol = operationalProtocol
         self.cashflowProtocol = cashflowProtocol
     }
-
+    
     func loadIngredients(branchId: String) async {
         isLoading = true
         do {
@@ -41,7 +49,7 @@ class InventoryViewModel {
         }
         isLoading = false
     }
-
+    
     func createIngredient(branchId: String, name: String, currentStock: Double, unit: String, expiryDate: Date?, minimumStockWarning: Double, costPerUnit: Double) async {
         guard !name.isEmpty, currentStock >= 0 else {
             errorMessage = "Nama bahan baku tidak boleh kosong dan stok harus valid."
@@ -73,38 +81,47 @@ class InventoryViewModel {
         }
         isLoading = false
     }
-
-        func discardExpiredItem(ingredient: Ingredient, branchId: String) async {
-            guard let id = ingredient.id else { return }
-            isLoading = true
-            do {
-                _ = try await operationalProtocol.recordWaste(ingredientId: id, amountToDeduct: ingredient.currentStock)
-                await loadIngredients(branchId: branchId)
-            } catch {
-                errorMessage = "Gagal membuang stok basi."
-            }
-            isLoading = false
+    
+    func discardExpiredItem(ingredient: Ingredient, branchId: String) async {
+        guard let id = ingredient.id else { return }
+        isLoading = true
+        do {
+            // Catat kerugian secara sistem
+            _ = try await operationalProtocol.recordWaste(ingredientId: id, amountToDeduct: ingredient.currentStock)
+            
+            // ✅ FIX 2: Set stok menjadi 0 dan HAPUS status kedaluwarsanya (reset)
+            // Sehingga setelah dibuang, bahan baku hilang dari list "Basi"
+            var updated = ingredient
+            updated.currentStock = 0
+            updated.expiryDate = nil
+            _ = try await operationalProtocol.updateIngredient(updated)
+            
+            await loadIngredients(branchId: branchId)
+        } catch {
+            errorMessage = "Gagal membuang stok basi."
         }
-        
-        func updateIngredient(ingredient: Ingredient) async {
-            isLoading = true
-            do {
-                _ = try await operationalProtocol.updateIngredient(ingredient)
-                await loadIngredients(branchId: ingredient.branchId)
-            } catch {
-                errorMessage = "Gagal memperbarui bahan baku."
-            }
-            isLoading = false
-        }
-        
-        func deleteIngredient(ingredientId: String, branchId: String) async {
-            isLoading = true
-            do {
-                _ = try await operationalProtocol.deleteIngredient(ingredientId: ingredientId)
-                await loadIngredients(branchId: branchId)
-            } catch {
-                errorMessage = "Gagal menghapus bahan baku."
-            }
-            isLoading = false
-        }
+        isLoading = false
     }
+    
+    func updateIngredient(ingredient: Ingredient) async {
+        isLoading = true
+        do {
+            _ = try await operationalProtocol.updateIngredient(ingredient)
+            await loadIngredients(branchId: ingredient.branchId)
+        } catch {
+            errorMessage = "Gagal memperbarui bahan baku."
+        }
+        isLoading = false
+    }
+    
+    func deleteIngredient(ingredientId: String, branchId: String) async {
+        isLoading = true
+        do {
+            _ = try await operationalProtocol.deleteIngredient(ingredientId: ingredientId)
+            await loadIngredients(branchId: branchId)
+        } catch {
+            errorMessage = "Gagal menghapus bahan baku."
+        }
+        isLoading = false
+    }
+}

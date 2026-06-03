@@ -1,6 +1,5 @@
 import SwiftUI
 
-// ✅ ENUM UNTUK POP-UP SHEET GUDANG
 enum InventorySheetType: Identifiable {
     case add
     case edit(Ingredient)
@@ -20,6 +19,10 @@ struct InventoryView: View {
     
     @State private var activeSheet: InventorySheetType? = nil
     
+    // ✅ FIX 1: State untuk menampung item mana yang akan dikonfirmasi
+    @State private var ingredientToDiscard: Ingredient? = nil
+    @State private var ingredientToDelete: Ingredient? = nil
+    
     var body: some View {
         ZStack {
             Color(hex: "#F9FAFB").ignoresSafeArea()
@@ -30,37 +33,36 @@ struct InventoryView: View {
                 ContentUnavailableView("Gudang Kosong", systemImage: "shippingbox", description: Text("Bahan baku belum ditambahkan."))
             } else {
                 List {
-                    if !viewModel.lowStockIngredients.isEmpty || !viewModel.expiredIngredients.isEmpty {
+                    // ✅ FIX 3: Menggunakan daftar gabungan (Basi & Minim)
+                    if !viewModel.attentionIngredients.isEmpty {
                         Section {
-                            ForEach(viewModel.expiredIngredients, id: \.id) { item in
-                                IngredientRowView(ingredient: item, isExpired: true) {
-                                    Task { await viewModel.discardExpiredItem(ingredient: item, branchId: branchId) }
+                            ForEach(viewModel.attentionIngredients, id: \.id) { item in
+                                let isExp = viewModel.expiredIngredients.contains(where: { $0.id == item.id })
+                                let isLow = viewModel.lowStockIngredients.contains(where: { $0.id == item.id })
+                                
+                                IngredientRowView(
+                                    ingredient: item,
+                                    isExpired: isExp,
+                                    isLowStock: isLow
+                                ) {
+                                    // Panggil alert Buang Stok
+                                    ingredientToDiscard = item
                                 }
                                 .contentShape(Rectangle())
-                                .onTapGesture { activeSheet = .detail(item) } // KLIK: MUNCUL DETAIL
-                                .contextMenu {                                // TAHAN (HOLD): MUNCUL EDIT & HAPUS
+                                .onTapGesture { activeSheet = .detail(item) }
+                                .contextMenu {
                                     Button { activeSheet = .edit(item) } label: { Label("Edit Bahan", systemImage: "pencil") }
                                     Button(role: .destructive) {
-                                        if let id = item.id { Task { await viewModel.deleteIngredient(ingredientId: id, branchId: branchId) } }
+                                        // Panggil alert Hapus Permanen
+                                        ingredientToDelete = item
                                     } label: { Label("Hapus Bahan", systemImage: "trash") }
                                 }
-                            }
-                            ForEach(viewModel.lowStockIngredients, id: \.id) { item in
-                                IngredientRowView(ingredient: item, isLowStock: true)
-                                    .contentShape(Rectangle())
-                                    .onTapGesture { activeSheet = .detail(item) }
-                                    .contextMenu {
-                                        Button { activeSheet = .edit(item) } label: { Label("Edit Bahan", systemImage: "pencil") }
-                                        Button(role: .destructive) {
-                                            if let id = item.id { Task { await viewModel.deleteIngredient(ingredientId: id, branchId: branchId) } }
-                                        } label: { Label("Hapus Bahan", systemImage: "trash") }
-                                    }
                             }
                         } header: {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("PERHATIAN SEGERA").foregroundColor(Color(hex: "#EF4444")).fontWeight(.bold)
                                 HStack(spacing: 12) {
-                                    HStack(spacing: 4) { Image(systemName: "trash.fill").foregroundColor(Color(hex: "#EF4444")); Text("Basi (Dapat Dibuang)") }
+                                    HStack(spacing: 4) { Image(systemName: "trash.fill").foregroundColor(Color(hex: "#EF4444")); Text("Basi") }
                                     HStack(spacing: 4) { Image(systemName: "exclamationmark.triangle.fill").foregroundColor(Color(hex: "#F59E0B")); Text("Stok Minim") }
                                 }
                                 .font(.caption2)
@@ -72,15 +74,16 @@ struct InventoryView: View {
                     
                     Section {
                         ForEach(viewModel.ingredients, id: \.id) { item in
-                            if !viewModel.lowStockIngredients.contains(where: { $0.id == item.id }) &&
-                               !viewModel.expiredIngredients.contains(where: { $0.id == item.id }) {
-                                IngredientRowView(ingredient: item)
+                            // Tampilkan jika tidak ada di grup perhatian
+                            if !viewModel.attentionIngredients.contains(where: { $0.id == item.id }) {
+                                IngredientRowView(ingredient: item, isExpired: false, isLowStock: false)
                                     .contentShape(Rectangle())
                                     .onTapGesture { activeSheet = .detail(item) }
                                     .contextMenu {
                                         Button { activeSheet = .edit(item) } label: { Label("Edit Bahan", systemImage: "pencil") }
                                         Button(role: .destructive) {
-                                            if let id = item.id { Task { await viewModel.deleteIngredient(ingredientId: id, branchId: branchId) } }
+                                            // Panggil alert Hapus Permanen
+                                            ingredientToDelete = item
                                         } label: { Label("Hapus Bahan", systemImage: "trash") }
                                     }
                             }
@@ -109,15 +112,49 @@ struct InventoryView: View {
                 AddIngredientView(viewModel: viewModel, branchId: branchId, ingredientToEdit: ingredient)
             case .detail(let ingredient):
                 IngredientDetailView(ingredient: ingredient)
-                    .presentationDetents([.medium, .large]) // Memungkinkan pop-up setengah layar
+                    .presentationDetents([.medium, .large])
             }
         }
         .onAppear { Task { await viewModel.loadIngredients(branchId: branchId) } }
         .refreshable { await viewModel.loadIngredients(branchId: branchId) }
+        
+        // ✅ FIX 1: Alert Konfirmasi Buang Stok Basi
+        .alert("Buang Stok Basi?", isPresented: Binding<Bool>(
+            get: { ingredientToDiscard != nil },
+            set: { if !$0 { ingredientToDiscard = nil } }
+        )) {
+            Button("Batal", role: .cancel) { ingredientToDiscard = nil }
+            Button("Ya, Buang", role: .destructive) {
+                if let item = ingredientToDiscard {
+                    Task { await viewModel.discardExpiredItem(ingredient: item, branchId: branchId) }
+                }
+            }
+        } message: {
+            if let item = ingredientToDiscard {
+                Text("Apakah Anda yakin ingin membuang sisa '\(item.name)'? Stok akan diubah menjadi 0. Aksi ini tidak dapat dibatalkan.")
+            }
+        }
+        
+        // ✅ FIX 1: Alert Konfirmasi Hapus Permanen
+        .alert("Hapus Bahan Baku?", isPresented: Binding<Bool>(
+            get: { ingredientToDelete != nil },
+            set: { if !$0 { ingredientToDelete = nil } }
+        )) {
+            Button("Batal", role: .cancel) { ingredientToDelete = nil }
+            Button("Hapus", role: .destructive) {
+                if let id = ingredientToDelete?.id {
+                    Task { await viewModel.deleteIngredient(ingredientId: id, branchId: branchId) }
+                }
+            }
+        } message: {
+            if let item = ingredientToDelete {
+                Text("Apakah Anda yakin ingin menghapus '\(item.name)' secara permanen dari daftar gudang? Aksi ini tidak dapat dibatalkan.")
+            }
+        }
     }
 }
 
-// ✅ TAMPILAN DETAIL BAHAN BAKU (BARU)
+// TAMPILAN DETAIL BAHAN BAKU TETAP SAMA
 struct IngredientDetailView: View {
     var ingredient: Ingredient
     @Environment(\.dismiss) private var dismiss
