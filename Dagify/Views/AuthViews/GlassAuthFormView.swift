@@ -101,6 +101,7 @@ struct GlassAuthFormView: View {
                     .shadow(color: Color(hex: "#00A3A3").opacity(0.6), radius: 8, x: 0, y: 0)
                 }
                 .padding(.top, 8)
+                .keyboardShortcut(.defaultAction)
                 
                 Button(action: { withAnimation { isLoginMode.toggle() } }) {
                     Text(isLoginMode ? "Belum punya akun? **Daftar**" : "Sudah punya akun? **Masuk**")

@@ -153,7 +153,11 @@ struct CashflowView: View {
                         HStack {
                             Text("Riwayat Transaksi").font(.headline).foregroundColor(Color(hex: "#111827"))
                             Spacer()
-                            Button("Tambah Manual") { activeSheet = .add }.font(.footnote).fontWeight(.bold).foregroundColor(Color(hex: "#00A3A3"))
+                            Button("Tambah Manual") { activeSheet = .add }
+                                .font(.footnote)
+                                .fontWeight(.bold)
+                                .foregroundColor(Color(hex: "#00A3A3"))
+                                .keyboardShortcut("n", modifiers: .command)
                         }
                         .padding()
                         

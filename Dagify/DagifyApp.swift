@@ -20,7 +20,13 @@ struct DagifyApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+            #if targetEnvironment(macCatalyst)
+                .frame(minWidth: 900, minHeight: 600)
+            #endif
         }
         .modelContainer(for: OfflineOrderModel.self)
+        #if targetEnvironment(macCatalyst)
+        .windowResizability(.contentMinSize)
+        #endif
     }
 }

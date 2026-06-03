@@ -76,6 +76,7 @@ struct POSView: View {
                     .padding(.horizontal)
                     .padding(.bottom, 16)
                     .frame(maxWidth: 600)
+                    .keyboardShortcut(.return, modifiers: .command)
                 }
                 .background(
                     LinearGradient(
