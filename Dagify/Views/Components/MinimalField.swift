@@ -11,8 +11,8 @@ struct MinimalField: View {
             // Label atas berwarna gray opacity 0.6 sesuai permintaan sebelumnya
             Text(placeholder)
                 .font(.subheadline)
-                .foregroundColor(Color.gray.opacity(0.6))
-            
+                .foregroundColor(Color.gray)
+
             HStack(spacing: 16) {
                 Image(systemName: icon)
                     .foregroundColor(Color(hex: "#00A3A3"))
@@ -20,9 +20,8 @@ struct MinimalField: View {
                     .frame(width: 24)
                 
                 TextField(hint, text: $text)
-                    .foregroundColor(Color.gray.opacity(0.6))
+                    .foregroundColor(Color.gray)
                     .textInputAutocapitalization(.never)
-                    .preferredColorScheme(.dark)
             }
             .padding(.vertical, 16)
             .padding(.horizontal, 20)

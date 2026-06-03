@@ -21,13 +21,11 @@ struct MinimalSecureField: View {
                 
                 if isVisible {
                     TextField(hint, text: $text)
-                        .foregroundColor(Color.gray.opacity(0.6))
+                        .foregroundColor(Color.gray)
                         .textInputAutocapitalization(.never)
-                        .preferredColorScheme(.dark)
                 } else {
                     SecureField(hint, text: $text)
-                        .foregroundColor(Color.gray.opacity(0.6))
-                        .preferredColorScheme(.dark)
+                        .foregroundColor(Color.gray)
                 }
                 
                 Button(action: {
