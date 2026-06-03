@@ -91,6 +91,23 @@ class MockOperationalRepository: OperationalProtocol, StoreProtocol {
         return true
     }
 
+    public func updateIngredient(_ ingredient: Ingredient) async throws -> Bool
+    {
+        if let index = dummyIngredients.firstIndex(where: {
+            $0.id == ingredient.id
+        }) {
+            dummyIngredients[index] = ingredient
+            return true
+        }
+        return false
+    }
+
+    public func deleteIngredient(ingredientId: String) async throws -> Bool {
+        dummyIngredients.removeAll(where: { $0.id == ingredientId })
+        return true
+    }
+    // ... (Lanjut ke bawah)
+
     public func recordWaste(ingredientId: String, amountToDeduct: Double)
         async throws -> Bool
     {
@@ -103,17 +120,19 @@ class MockOperationalRepository: OperationalProtocol, StoreProtocol {
         }
         return false
     }
-    public func fetchCategories(for branchId: String) async throws -> [ProductCategory] {
-            return dummyCategories.filter { $0.branchId == branchId }
-        }
-        public func addCategory(_ category: ProductCategory) async throws -> Bool {
-            var newCat = category
-            if newCat.id == nil { newCat.id = UUID().uuidString }
-            dummyCategories.append(newCat)
-            return true
-        }
-        public func deleteCategory(categoryId: String) async throws -> Bool {
-            dummyCategories.removeAll(where: { $0.id == categoryId })
-            return true
-        }
+    public func fetchCategories(for branchId: String) async throws
+        -> [ProductCategory]
+    {
+        return dummyCategories.filter { $0.branchId == branchId }
+    }
+    public func addCategory(_ category: ProductCategory) async throws -> Bool {
+        var newCat = category
+        if newCat.id == nil { newCat.id = UUID().uuidString }
+        dummyCategories.append(newCat)
+        return true
+    }
+    public func deleteCategory(categoryId: String) async throws -> Bool {
+        dummyCategories.removeAll(where: { $0.id == categoryId })
+        return true
+    }
 }

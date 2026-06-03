@@ -74,15 +74,37 @@ class InventoryViewModel {
         isLoading = false
     }
 
-    func discardExpiredItem(ingredient: Ingredient, branchId: String) async {
-        guard let id = ingredient.id else { return }
-        isLoading = true
-        do {
-            _ = try await operationalProtocol.recordWaste(ingredientId: id, amountToDeduct: ingredient.currentStock)
-            await loadIngredients(branchId: branchId)
-        } catch {
-            errorMessage = "Gagal membuang stok basi."
+        func discardExpiredItem(ingredient: Ingredient, branchId: String) async {
+            guard let id = ingredient.id else { return }
+            isLoading = true
+            do {
+                _ = try await operationalProtocol.recordWaste(ingredientId: id, amountToDeduct: ingredient.currentStock)
+                await loadIngredients(branchId: branchId)
+            } catch {
+                errorMessage = "Gagal membuang stok basi."
+            }
+            isLoading = false
         }
-        isLoading = false
+        
+        func updateIngredient(ingredient: Ingredient) async {
+            isLoading = true
+            do {
+                _ = try await operationalProtocol.updateIngredient(ingredient)
+                await loadIngredients(branchId: ingredient.branchId)
+            } catch {
+                errorMessage = "Gagal memperbarui bahan baku."
+            }
+            isLoading = false
+        }
+        
+        func deleteIngredient(ingredientId: String, branchId: String) async {
+            isLoading = true
+            do {
+                _ = try await operationalProtocol.deleteIngredient(ingredientId: ingredientId)
+                await loadIngredients(branchId: branchId)
+            } catch {
+                errorMessage = "Gagal menghapus bahan baku."
+            }
+            isLoading = false
+        }
     }
-}

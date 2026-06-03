@@ -128,4 +128,24 @@ class CashflowViewModel {
         } catch { errorMessage = "Gagal menambah transaksi: \(error.localizedDescription)" }
         isLoading = false
     }
+    
+    func updateTransaction(_ record: FinancialRecord) async {
+            isLoading = true
+            do {
+                _ = try await cashProtocol.updateRecord(record)
+                currentMonthDate = record.timestamp // Pindah ke bulan transaksi
+                await loadRecords(branchId: record.branchId)
+            } catch { errorMessage = "Gagal memperbarui transaksi." }
+            isLoading = false
+        }
+        
+        // ✅ FUNGSI BARU: Hapus Transaksi
+        func deleteTransaction(recordId: String, branchId: String) async {
+            isLoading = true
+            do {
+                _ = try await cashProtocol.deleteRecord(id: recordId)
+                await loadRecords(branchId: branchId)
+            } catch { errorMessage = "Gagal menghapus transaksi." }
+            isLoading = false
+        }
 }

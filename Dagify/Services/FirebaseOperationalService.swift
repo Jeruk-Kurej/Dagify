@@ -58,7 +58,6 @@ class FirebaseOperationalService: OperationalProtocol, StoreProtocol {
             try? $0.data(as: Ingredient.self)
         }
     }
-    
 
     func submitOrderAndUpdateInventory(order: Order) async throws -> Bool {
         let batch = db.batch()
@@ -107,6 +106,19 @@ class FirebaseOperationalService: OperationalProtocol, StoreProtocol {
         return true
     }
 
+    // ✅ FUNGSI BARU: Edit Bahan Baku
+    func updateIngredient(_ ingredient: Ingredient) async throws -> Bool {
+        guard let id = ingredient.id else { return false }
+        try db.collection("ingredients").document(id).setData(from: ingredient)
+        return true
+    }
+
+    // ✅ FUNGSI BARU: Hapus Bahan Baku
+    func deleteIngredient(ingredientId: String) async throws -> Bool {
+        try await db.collection("ingredients").document(ingredientId).delete()
+        return true
+    }
+
     func recordWaste(ingredientId: String, amountToDeduct: Double) async throws
         -> Bool
     {
@@ -116,20 +128,26 @@ class FirebaseOperationalService: OperationalProtocol, StoreProtocol {
         ])
         return true
     }
-    
-    func fetchCategories(for branchId: String) async throws -> [ProductCategory] {
-            let snapshot = try await db.collection("categories").whereField("branchId", isEqualTo: branchId).getDocuments()
-            return snapshot.documents.compactMap { try? $0.data(as: ProductCategory.self) }
+
+    func fetchCategories(for branchId: String) async throws -> [ProductCategory]
+    {
+        let snapshot = try await db.collection("categories").whereField(
+            "branchId",
+            isEqualTo: branchId
+        ).getDocuments()
+        return snapshot.documents.compactMap {
+            try? $0.data(as: ProductCategory.self)
         }
-        
-        func addCategory(_ category: ProductCategory) async throws -> Bool {
-            let ref = db.collection("categories").document()
-            try ref.setData(from: category)
-            return true
-        }
-        
-        func deleteCategory(categoryId: String) async throws -> Bool {
-            try await db.collection("categories").document(categoryId).delete()
-            return true
-        }
+    }
+
+    func addCategory(_ category: ProductCategory) async throws -> Bool {
+        let ref = db.collection("categories").document()
+        try ref.setData(from: category)
+        return true
+    }
+
+    func deleteCategory(categoryId: String) async throws -> Bool {
+        try await db.collection("categories").document(categoryId).delete()
+        return true
+    }
 }

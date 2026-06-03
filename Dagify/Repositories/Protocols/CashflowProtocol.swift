@@ -11,4 +11,5 @@ protocol CashflowProtocol {
     func addRecord(_ record: FinancialRecord) async throws -> Bool
     func fetchRecords(for branchId: String) async throws -> [FinancialRecord]
     func deleteRecord(id: String) async throws -> Bool
+    func updateRecord(_ record: FinancialRecord) async throws -> Bool // ✅ BARU
 }

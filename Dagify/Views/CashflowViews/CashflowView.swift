@@ -1,21 +1,32 @@
 import SwiftUI
 import Charts
 
+// ✅ ENUM UNTUK MENGELOLA POP-UP SHEET ARUS KAS
+enum CashflowSheetType: Identifiable {
+    case add
+    case edit(FinancialRecord)
+    var id: String {
+        switch self {
+        case .add: return "add"
+        case .edit(let r): return "edit_\(r.id ?? UUID().uuidString)"
+        }
+    }
+}
+
 struct CashflowView: View {
     var viewModel: CashflowViewModel
     let branchId: String
     
-    @State private var isShowingAdd = false
+    @State private var activeSheet: CashflowSheetType? = nil
     @State private var generatedPDFURL: URL? = nil
     @State private var isShowingShareSheet = false
-    @State private var selectedRecord: FinancialRecord? = nil
+    @State private var selectedRecord: FinancialRecord? = nil // Untuk pop-up rincian alert biasa
     
-    // ✅ HELPER BARU: Mengubah angka miliaran/jutaan menjadi format singkatan enak dibaca
     private func formatCompact(_ value: Double) -> String {
         let absValue = abs(value)
-        if absValue >= 1_000_000_000 { return String(format: "%.1f M", value / 1_000_000_000) } // Miliar
-        if absValue >= 1_000_000 { return String(format: "%.1f Jt", value / 1_000_000) } // Juta
-        if absValue >= 1_000 { return String(format: "%.0f K", value / 1_000) } // Ribu
+        if absValue >= 1_000_000_000 { return String(format: "%.1f M", value / 1_000_000_000) }
+        if absValue >= 1_000_000 { return String(format: "%.1f Jt", value / 1_000_000) }
+        if absValue >= 1_000 { return String(format: "%.0f K", value / 1_000) }
         return String(format: "%.0f", value)
     }
     
@@ -72,7 +83,6 @@ struct CashflowView: View {
                             }
                             .frame(height: 240)
                             .chartYScale(domain: .automatic(includesZero: true))
-                            // ✅ FIX: Memaksa label Y-Axis menggunakan fungsi singkatan (Jt, K, dll)
                             .chartYAxis {
                                 AxisMarks(position: .leading) { mark in
                                     AxisGridLine()
@@ -130,7 +140,7 @@ struct CashflowView: View {
                         HStack {
                             Text("Riwayat Transaksi").font(.headline).foregroundColor(Color(hex: "#111827"))
                             Spacer()
-                            Button("Tambah Manual") { isShowingAdd = true }.font(.footnote).fontWeight(.bold).foregroundColor(Color(hex: "#00A3A3"))
+                            Button("Tambah Manual") { activeSheet = .add }.font(.footnote).fontWeight(.bold).foregroundColor(Color(hex: "#00A3A3"))
                         }
                         .padding()
                         
@@ -142,12 +152,18 @@ struct CashflowView: View {
                             LazyVStack(spacing: 0) {
                                 ForEach(viewModel.filteredRecords, id: \.id) { record in
                                     Button(action: {
-                                        selectedRecord = record
+                                        selectedRecord = record // KLIK: MUNCUL ALERT DETAIL
                                     }) {
                                         TransactionRowView(record: record)
                                     }
                                     .buttonStyle(PlainButtonStyle())
                                     .padding(.horizontal)
+                                    .contextMenu {            // TAHAN (HOLD): MUNCUL EDIT & HAPUS
+                                        Button { activeSheet = .edit(record) } label: { Label("Edit Transaksi", systemImage: "pencil") }
+                                        Button(role: .destructive) {
+                                            if let id = record.id { Task { await viewModel.deleteTransaction(recordId: id, branchId: branchId) } }
+                                        } label: { Label("Hapus Transaksi", systemImage: "trash") }
+                                    }
                                     
                                     Divider().background(Color(hex: "#E5E7EB")).padding(.leading, 70)
                                 }
@@ -178,7 +194,13 @@ struct CashflowView: View {
                 }
             }
             .onAppear { Task { await viewModel.loadRecords(branchId: branchId) } }
-            .sheet(isPresented: $isShowingAdd) { AddTransactionView(viewModel: viewModel, branchId: branchId) }
+            // ✅ SHEET YANG MERESPON BAIK TAMBAH MAUPUN EDIT
+            .sheet(item: $activeSheet) { sheetType in
+                switch sheetType {
+                case .add: AddTransactionView(viewModel: viewModel, branchId: branchId)
+                case .edit(let record): AddTransactionView(viewModel: viewModel, branchId: branchId, recordToEdit: record)
+                }
+            }
             .sheet(isPresented: $isShowingShareSheet) {
                 if let url = generatedPDFURL { ShareSheet(activityItems: [url]) }
             }
@@ -200,6 +222,7 @@ struct CashflowView: View {
     }
 }
 
+// ... (ShareSheet Struct & Preview tetap sama)
 struct ShareSheet: UIViewControllerRepresentable {
     var activityItems: [Any]
     func makeUIViewController(context: Context) -> UIActivityViewController {

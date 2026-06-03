@@ -32,9 +32,17 @@ class MockCashflowRepository: CashflowProtocol {
             .sorted(by: { $0.timestamp > $1.timestamp })
     }
     
-    func deleteRecord(id: String) async throws -> Bool {
-        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
-        records.removeAll { $0.id == id }
-        return true
+        func deleteRecord(id: String) async throws -> Bool {
+            if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+            records.removeAll { $0.id == id }
+            return true
+        }
+
+        func updateRecord(_ record: FinancialRecord) async throws -> Bool {
+            if let index = records.firstIndex(where: { $0.id == record.id }) {
+                records[index] = record
+                return true
+            }
+            return false
+        }
     }
-}

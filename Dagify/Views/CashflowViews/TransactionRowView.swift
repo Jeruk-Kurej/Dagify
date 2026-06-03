@@ -16,6 +16,8 @@ struct TransactionRowView: View {
                     .foregroundColor(record.type == .income ? Color(hex: "#10B981") : Color(hex: "#EF4444"))
             }
             
+            // ✅ FIX: maxWidth .infinity akan memaksa VSTACK untuk memakan ruang yang sisa,
+            // sehingga jika kepanjangan, akan terpotong "..." di area sisa tersebut tanpa menendang angka!
             VStack(alignment: .leading, spacing: 4) {
                 Text(record.notes.isEmpty ? (record.type == .income ? "Pemasukan" : "Pengeluaran") : record.notes)
                     .font(.body)
@@ -27,9 +29,10 @@ struct TransactionRowView: View {
                 Text(record.timestamp.formatted(date: .abbreviated, time: .shortened))
                     .font(.caption)
                     .foregroundColor(Color(hex: "#6B7280"))
-                    .lineLimit(1) // ✅ FIX: Memaksa tanggal dan waktu agar hanya 1 baris
-                    .truncationMode(.tail) // ✅ FIX: Menjadi "..." jika terlalu panjang (misal layarnya kecil)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             
             Spacer(minLength: 8)
             
@@ -38,8 +41,7 @@ struct TransactionRowView: View {
                 .fontWeight(.bold)
                 .foregroundColor(record.type == .income ? Color(hex: "#10B981") : Color(hex: "#EF4444"))
                 .lineLimit(1)
-                .minimumScaleFactor(0.5)
-                .layoutPriority(1)
+                .layoutPriority(1) // Memaksa agar harga punya prioritas tertinggi agar tidak ikut terpotong
         }
         .padding(.vertical, 12)
         .contentShape(Rectangle())
