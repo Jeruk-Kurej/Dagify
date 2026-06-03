@@ -39,3 +39,7 @@ struct FluidBackgroundView: View {
         }
     }
 }
+
+#Preview {
+    FluidBackgroundView()
+}

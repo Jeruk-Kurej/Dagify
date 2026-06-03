@@ -6,13 +6,13 @@ import Observation
 class ProductAnalyticsViewModel {
     var orders: [Order] = []
     var ingredients: [Ingredient] = []
-    var categories: [ProductCategory] = [] // ✅ DITAMBAHKAN
-    var selectedCategoryId: String? = nil  // ✅ DITAMBAHKAN
+    var categories: [ProductCategory] = []
+    var selectedCategoryId: String? = nil
     
     var isLoading: Bool = false
     var errorMessage: String? = nil
     
-    // ✅ GRAFIK DINAMIS BERDASARKAN FILTER
+    /// Dynamic chart data based on category filter.
     var chartData: [ChartData] {
         var salesDict: [String: Int] = [:]
         for order in orders {

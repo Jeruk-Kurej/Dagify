@@ -8,7 +8,7 @@ class InventoryViewModel {
     var isLoading: Bool = false
     var errorMessage: String? = nil
     
-    // ✅ FIX 2: Bahan hanya dianggap basi di list jika masih ada sisa stok yang perlu dibuang
+    /// Returns a list of expired ingredients that still have stock remaining.
     var expiredIngredients: [Ingredient] {
         let today = Date()
         return ingredients.filter { ingredient in
@@ -23,7 +23,7 @@ class InventoryViewModel {
         }
     }
     
-    // ✅ FIX 3: Menggabungkan barang yang butuh perhatian khusus (Basi ATAU Stok Minim)
+    /// Returns a list of ingredients that need attention (either expired or low stock).
     var attentionIngredients: [Ingredient] {
         let expiredIds = expiredIngredients.compactMap { $0.id }
         let lowStockIds = lowStockIngredients.compactMap { $0.id }
@@ -89,8 +89,7 @@ class InventoryViewModel {
             // Catat kerugian secara sistem
             _ = try await operationalProtocol.recordWaste(ingredientId: id, amountToDeduct: ingredient.currentStock)
             
-            // ✅ FIX 2: Set stok menjadi 0 dan HAPUS status kedaluwarsanya (reset)
-            // Sehingga setelah dibuang, bahan baku hilang dari list "Basi"
+            /// Resets current stock to 0 and removes the expiry date after discarding.
             var updated = ingredient
             updated.currentStock = 0
             updated.expiryDate = nil

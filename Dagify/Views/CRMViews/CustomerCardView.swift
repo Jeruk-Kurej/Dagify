@@ -24,7 +24,7 @@ struct CustomerCardView: View {
                         Text("Loyal").font(.caption2).fontWeight(.bold).foregroundColor(Color(hex: "#F59E0B"))
                     }.padding(.horizontal, 6).padding(.vertical, 2).background(Color(hex: "#F59E0B").opacity(0.15)).clipShape(Capsule())
                 }
-                // ✅ RUPIAH FORMAT DI CRM
+                /// Applying currency format
                 Text(customer.totalSpent.toRupiah()).font(.caption).fontWeight(.bold).foregroundColor(Color(hex: "#10B981"))
             }
         }
@@ -33,4 +33,8 @@ struct CustomerCardView: View {
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
     }
+}
+
+#Preview {
+    CustomerCardView(customer: Customer(id: "1", storeId: "S-1", branchId: "B-1", name: "Budi", phoneNumber: "08123456789", totalSpent: 150000, visitHistory: []))
 }

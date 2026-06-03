@@ -5,7 +5,7 @@ struct AddTransactionView: View {
     var viewModel: CashflowViewModel
     var branchId: String
     
-    // ✅ PARAMETER OPSIONAL UNTUK EDIT
+    /// Optional parameter for edit mode.
     var recordToEdit: FinancialRecord? = nil
     
     @State private var type: TransactionType = .expense
@@ -70,7 +70,7 @@ struct AddTransactionView: View {
                                 let cleanString = amountString.replacingOccurrences(of: ",", with: ".")
                                 if let amount = Double(cleanString) {
                                     if let edit = recordToEdit {
-                                        // ✅ JALANKAN LOGIKA EDIT
+                                        /// Execute edit logic
                                         var updated = edit
                                         updated.amount = amount
                                         updated.type = type
@@ -89,7 +89,7 @@ struct AddTransactionView: View {
                 }
             }
             .onAppear {
-                // ✅ ISI NILAI DEFAULT JIKA DALAM MODE EDIT
+                /// Populate default values if in edit mode.
                 if let edit = recordToEdit {
                     type = edit.type
                     transactionDate = edit.timestamp
@@ -99,4 +99,8 @@ struct AddTransactionView: View {
             }
         }
     }
+}
+
+#Preview {
+    AddTransactionView(viewModel: CashflowViewModel(cashProtocol: MockCashflowRepository()), branchId: "B-1")
 }

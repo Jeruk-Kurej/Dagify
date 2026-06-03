@@ -102,7 +102,7 @@ struct POSCheckoutSheetView: View {
             .onAppear {
                 Task { await viewModel.loadCustomersForSuggestions(storeId: storeId) }
             }
-            // ✅ ALERT ERROR KETIKA STOK BAHAN BAKU HABIS SAAT NAMBAH DARI POP-UP
+            /// Alert when ingredient stock is empty during addition from pop-up.
             .alert("Peringatan!", isPresented: Binding<Bool>(
                 get: { viewModel.errorMessage != nil },
                 set: { if !$0 { viewModel.errorMessage = nil } }

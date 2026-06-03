@@ -3,7 +3,7 @@ import SwiftUI
 struct MinimalField: View {
     var icon: String
     var placeholder: String
-    var hint: String = "" // 🔥 Tambahan: Menyimpan teks contoh bawaan di dalam input box
+    /// Stores the placeholder text inside the input box
     @Binding var text: String
     
     var body: some View {
@@ -33,5 +33,10 @@ struct MinimalField: View {
                     .shadow(color: Color(hex: "#00A3A3").opacity(0.6), radius: 5, x: 0, y: 0)
             )
         }
-    }
+}
+
+}
+
+#Preview {
+    MinimalField(icon: "envelope.fill", placeholder: "Email", text: .constant(""))
 }

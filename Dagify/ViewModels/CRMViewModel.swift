@@ -7,7 +7,7 @@ struct TrafficData: Identifiable {
     let count: Int
 }
 
-// ✅ ENUM UNTUK IDENTIFIKASI SHEET
+/// Enum to identify which CRM sheet is currently presented.
 enum CRMSheetType: Identifiable {
     case total
     case loyal
@@ -23,7 +23,8 @@ enum CRMSheetType: Identifiable {
 @Observable
 class CRMViewModel {
     var customers: [Customer] = []
-    var storeBranches: [Branch] = [] // ✅ List cabang dari Toko ini
+    /// The list of branches associated with the current store.
+    var storeBranches: [Branch] = []
     var isLoading: Bool = false
     var errorMessage: String? = nil
     
@@ -42,7 +43,8 @@ class CRMViewModel {
     }
     
     private let crmProtocol: CRMProtocol
-    private let storeProtocol: StoreProtocol // ✅ Menyuntikkan akses data Toko
+    /// Protocol dependency for accessing store data.
+    private let storeProtocol: StoreProtocol
     
     init(crmProtocol: CRMProtocol, storeProtocol: StoreProtocol) {
         self.crmProtocol = crmProtocol
@@ -66,7 +68,7 @@ class CRMViewModel {
         isLoading = false
     }
     
-    // ✅ Fungsi Hitung Pelanggan per Cabang Khusus untuk Pop Up Sheet
+    /// Calculates the number of customers for a specific branch.
     func getCustomerCount(for branchId: String, isLoyalOnly: Bool) -> Int {
         let branchCustomers = customers.filter { $0.branchId == branchId }
         if isLoyalOnly {

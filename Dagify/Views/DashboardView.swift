@@ -1,5 +1,5 @@
 import SwiftUI
-import Charts // ✅ WAJIB UNTUK GRAFIK
+import Charts
 
 struct DashboardView: View {
     var viewModel: DashboardViewModel
@@ -31,14 +31,14 @@ struct DashboardView: View {
                         }.padding(.horizontal)
                     }
                     
-                    // ✅ CHART BARU DI DASHBOARD
+                    /// Interactive chart for dashboard
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
                             Text("Grafik Penjualan")
                                 .font(.headline)
                                 .foregroundColor(Color(hex: "#111827"))
                             Spacer()
-                            // ✅ TOMBOL FILTER KATEGORI DI KANAN ATAS
+                            /// Category filter button
                             Menu {
                                 Button("Semua Kategori") { viewModel.selectedCategoryId = nil }
                                 ForEach(viewModel.categories) { cat in
@@ -93,4 +93,17 @@ struct DashboardView: View {
             .onAppear { Task { await viewModel.loadDashboardSummary(storeId: storeId, branchId: branchId) } }
         }
     }
+}
+
+#Preview {
+    DashboardView(
+        viewModel: DashboardViewModel(
+            cashflowProtocol: MockCashflowRepository(),
+            crmProtocol: MockCRMRepository(),
+            operationalProtocol: MockOperationalRepository(),
+            storeProtocol: MockOperationalRepository()
+        ),
+        storeId: "S-1",
+        branchId: "B-1"
+    )
 }

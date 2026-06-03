@@ -13,7 +13,7 @@ class MasterDataViewModel {
     var categories: [ProductCategory] = []
     
     private let operationalProtocol: OperationalProtocol
-    private let cloudinaryService: CloudStorageProtocol = CloudinaryService() // ✅ MESIN CLOUDINARY
+    private let cloudinaryService: CloudStorageProtocol = CloudinaryService()
     
     init(operationalProtocol: OperationalProtocol) {
         self.operationalProtocol = operationalProtocol
@@ -66,7 +66,7 @@ class MasterDataViewModel {
         isLoading = false
     }
 
-    // ✅ PROSES UPLOAD GAMBAR SEBELUM MEMBUAT MENU
+    /// Upload image before creating a new menu item.
     func createProduct(branchId: String, categoryId: String, name: String, price: Double, recipe: [RecipeItem], newImageData: Data?) async {
         isLoading = true
         var finalUrl: String? = nil
@@ -83,7 +83,7 @@ class MasterDataViewModel {
         isLoading = false
     }
     
-    // ✅ PROSES UPDATE GAMBAR (Jika ada gambar baru)
+    /// Update image if a new image data is provided.
     func updateProduct(product: Product, newImageData: Data?) async {
         isLoading = true
         var updatedProduct = product

@@ -20,7 +20,7 @@ class DashboardViewModel {
     var isLoading: Bool = false
     var errorMessage: String? = nil
     
-    // ✅ STATE GRAFIK BARU
+    /// Chart state variables.
     var orders: [Order] = []
     var categories: [ProductCategory] = []
     var selectedCategoryId: String? = nil

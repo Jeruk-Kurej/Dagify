@@ -10,7 +10,7 @@ struct ContentView: View {
             if authViewModel.isAuthenticated,
                 let user = authViewModel.currentUser
             {
-                // ✅ HANYA MENGIRIMKAN STORE ID
+                /// Passing the Store ID for initialization
                 MainAppView(storeId: user.storeId, authViewModel: authViewModel)
                     .transition(.opacity)
             } else {

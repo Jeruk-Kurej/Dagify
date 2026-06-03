@@ -125,7 +125,7 @@ struct CashflowView: View {
                         
                         Spacer()
                         
-                        // ✅ FIX: Sembunyikan atau redupkan tombol kanan (Next) jika berada di bulan ini
+                        /// Hide or dim the next button if currently viewing the latest month.
                         Button(action: { withAnimation(.easeInOut) { viewModel.nextMonth() } }) {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 14, weight: .bold))

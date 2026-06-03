@@ -84,3 +84,10 @@ struct MainAppView: View {
         withAnimation(.easeOut(duration: 0.5)) { isInitializingApp = false }
     }
 }
+
+#Preview {
+    MainAppView(
+        storeId: "S-1",
+        authViewModel: AuthViewModel(authProtocol: MockAuthRepository())
+    )
+}

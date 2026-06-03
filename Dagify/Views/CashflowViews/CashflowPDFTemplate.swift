@@ -22,7 +22,7 @@ struct CashflowPDFTemplate: View {
                         .foregroundColor(.gray)
                 }
                 Spacer()
-                // ✅ UPDATE: Menggunakan Logo Resmi di Kop Surat PDF
+                /// Apply official logo in PDF header
                 Image("Dagify_logo")
                     .resizable()
                     .scaledToFit()
@@ -135,4 +135,8 @@ struct CashflowPDFTemplate: View {
         .frame(width: 595, height: 842, alignment: .top)
         .background(Color.white)
     }
+}
+
+#Preview {
+    CashflowPDFTemplate(records: [], totalIncome: 0, totalExpense: 0, monthYear: "Januari 2026", page: 1, totalPages: 1)
 }

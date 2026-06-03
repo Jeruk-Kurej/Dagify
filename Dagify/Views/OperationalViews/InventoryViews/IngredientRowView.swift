@@ -64,7 +64,7 @@ struct IngredientRowView: View {
             
             Spacer()
             
-            // ✅ UPDATE HIG: Tombol Buang menggunakan icon Trash standar iOS
+            /// Use standard iOS Trash icon for discard button.
             if isExpired, ingredient.currentStock > 0, let onDiscard = onDiscard {
                 Button(action: onDiscard) {
                     Image(systemName: "trash")
@@ -78,5 +78,10 @@ struct IngredientRowView: View {
             }
         }
         .padding(.vertical, 4)
-    }
+}
+
+}
+
+#Preview {
+    IngredientRowView(ingredient: Ingredient(id: "1", branchId: "B-1", name: "Biji Kopi", currentStock: 10, unit: "Kg", expiryDate: Date(), minimumStockWarning: 5, costPerUnit: 50000))
 }

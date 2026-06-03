@@ -8,7 +8,7 @@ struct ProductCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // ✅ MENAMPILKAN GAMBAR HASIL UPLOAD DI KASIR
+            /// Displays uploaded image in POS.
             ZStack {
                 Color.themeBgMain
                 if let urlStr = product.imageUrl, let url = URL(string: urlStr) {
@@ -49,4 +49,8 @@ struct ProductCardView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
     }
+}
+
+#Preview {
+    ProductCardView(product: Product(id: "1", branchId: "B-1", categoryId: "C-1", name: "Kopi Hitam", price: 15000, recipe: []), quantity: 0, onAdd: {}, onDecrease: {})
 }

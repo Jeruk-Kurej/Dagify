@@ -54,3 +54,7 @@ struct WelcomeScreenView: View {
         }
     }
 }
+
+#Preview {
+    WelcomeScreenView(showAuthForm: .constant(false))
+}

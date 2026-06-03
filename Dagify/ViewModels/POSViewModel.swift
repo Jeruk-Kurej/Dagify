@@ -112,7 +112,7 @@ class POSViewModel {
                     }
                 } else {
                     let newName = customerName.isEmpty ? "Pelanggan" : customerName
-                    // ✅ UPDATE: Pelanggan yang baru dibuat otomatis akan terikat ke Branch Kasir yang mendaftarkannya!
+                    /// Automatically binds a newly created customer to the current branch.
                     let newCustomer = Customer(id: UUID().uuidString, storeId: storeId, branchId: branchId, name: newName, phoneNumber: customerPhone, totalSpent: subtotal, visitHistory: [Date()])
                     _ = try await crmProtocol.addCustomer(newCustomer)
                     finalCustomerId = newCustomer.id

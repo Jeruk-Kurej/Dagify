@@ -19,7 +19,7 @@ struct InventoryView: View {
     
     @State private var activeSheet: InventorySheetType? = nil
     
-    // ✅ FIX 1: State untuk menampung item mana yang akan dikonfirmasi
+    /// State to hold the item awaiting confirmation.
     @State private var ingredientToDiscard: Ingredient? = nil
     @State private var ingredientToDelete: Ingredient? = nil
     
@@ -33,7 +33,7 @@ struct InventoryView: View {
                 ContentUnavailableView("Gudang Kosong", systemImage: "shippingbox", description: Text("Bahan baku belum ditambahkan."))
             } else {
                 List {
-                    // ✅ FIX 3: Menggunakan daftar gabungan (Basi & Minim)
+                    /// Uses combined list for expired and low stock.
                     if !viewModel.attentionIngredients.isEmpty {
                         Section {
                             ForEach(viewModel.attentionIngredients, id: \.id) { item in
@@ -118,7 +118,7 @@ struct InventoryView: View {
         .onAppear { Task { await viewModel.loadIngredients(branchId: branchId) } }
         .refreshable { await viewModel.loadIngredients(branchId: branchId) }
         
-        // ✅ FIX 1: Alert Konfirmasi Buang Stok Basi
+        /// Confirmation alert for discarding expired stock.
         .alert("Buang Stok Basi?", isPresented: Binding<Bool>(
             get: { ingredientToDiscard != nil },
             set: { if !$0 { ingredientToDiscard = nil } }

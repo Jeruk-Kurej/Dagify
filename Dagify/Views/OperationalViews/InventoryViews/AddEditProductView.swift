@@ -62,7 +62,7 @@ struct AddEditProductView: View {
                     HStack {
                         Spacer()
                         
-                        // ✅ LOGIKA PENAMPILAN GAMBAR (Lokal, Internet, atau Default)
+                        /// Image display logic (Local, Internet, or Default)
                         if let data = selectedImageData, let uiImage = UIImage(data: data) {
                             // Tampilkan gambar baru yang di-pick dari galeri lokal
                             Image(uiImage: uiImage).resizable().scaledToFill().frame(width: 120, height: 120).clipShape(RoundedRectangle(cornerRadius: 12)).shadow(radius: 3)
@@ -203,7 +203,7 @@ struct AddEditProductView: View {
             productName = product.name
             productPrice = String(format: "%.0f", product.price)
             selectedCategoryId = product.categoryId
-            selectedImageData = nil // ✅ Start with nil
+            selectedImageData = nil
             
             recipeDrafts = product.recipe.compactMap { recipeItem -> RecipeDraft? in
                 if let ingredient = viewModel.availableIngredients.first(where: { $0.id == recipeItem.ingredientId }) {
@@ -237,5 +237,10 @@ struct AddEditProductView: View {
             isSaving = false
             dismiss()
         }
-    }
+}
+
+}
+
+#Preview {
+    AddEditProductView(viewModel: MasterDataViewModel(operationalProtocol: MockOperationalRepository()), branchId: "B-1")
 }

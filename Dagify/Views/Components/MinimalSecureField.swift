@@ -3,7 +3,7 @@ import SwiftUI
 struct MinimalSecureField: View {
     var icon: String
     var placeholder: String
-    var hint: String = "" // 🔥 Tambahan: Menyimpan teks samar bawaan untuk password
+    /// Stores the placeholder text for the password field
     @Binding var text: String
     @State private var isVisible: Bool = false
     
@@ -45,5 +45,10 @@ struct MinimalSecureField: View {
                     .shadow(color: Color(hex: "#00A3A3").opacity(0.6), radius: 5, x: 0, y: 0)
             )
         }
-    }
+}
+
+}
+
+#Preview {
+    MinimalSecureField(icon: "lock.fill", placeholder: "Password", text: .constant(""))
 }

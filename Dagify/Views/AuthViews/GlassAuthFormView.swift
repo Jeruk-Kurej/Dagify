@@ -144,3 +144,15 @@ struct GlassAuthFormView: View {
         }
     }
 }
+
+#Preview {
+    GlassAuthFormView(
+        viewModel: AuthViewModel(authProtocol: MockAuthRepository()),
+        isLoginMode: .constant(true),
+        email: .constant(""),
+        password: .constant(""),
+        storeName: .constant(""),
+        branchName: .constant(""),
+        showAuthForm: .constant(true)
+    )
+}

@@ -15,8 +15,7 @@ class SettingsViewModel {
     }
 
     func loadStore(storeId: String) async {
-        // ✅ UX FIX: Hanya tampilkan "Memuat..." jika data toko masih kosong.
-        // Jika sudah ada, refresh diam-diam di background (Silent Refresh).
+        /// Only show loading state if the store data is empty. Otherwise, perform a silent background refresh.
         if currentStore == nil {
             isLoading = true
         }
@@ -56,7 +55,7 @@ class SettingsViewModel {
                 branch: newBranch
             )
 
-            // ✅ OPTIMISTIC UPDATE: Langsung tambahkan ke list lokal
+            /// Optimistically add the new branch to the local list.
             if currentStore != nil {
                 currentStore!.branches.append(newBranch)
             }

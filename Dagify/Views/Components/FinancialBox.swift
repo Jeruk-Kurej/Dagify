@@ -1,6 +1,6 @@
 import SwiftUI
 
-// ✅ EXTENSION GLOBAL: Mengubah angka Double menjadi "Rp 10.000,00"
+/// Global extension to format Double as Rupiah string.
 // Karena ditaruh di sini, seluruh file di aplikasi Dagify bisa menggunakannya!
 extension Double {
     func toRupiah() -> String {
@@ -35,7 +35,7 @@ struct FinancialBox: View {
                     .foregroundColor(Color(hex: "#6B7280"))
             }
 
-            // ✅ MENGGUNAKAN FORMATTER RUPIAH TERBARU
+            /// Uses the latest Rupiah formatter
             Text(isCurrency ? amount.toRupiah() : String(format: "%.0f", amount))
                 .font(.headline)
                 .fontWeight(.bold)

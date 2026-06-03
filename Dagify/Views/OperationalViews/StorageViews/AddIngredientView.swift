@@ -5,7 +5,7 @@ struct AddIngredientView: View {
     @Bindable var viewModel: InventoryViewModel
     let branchId: String
     
-    // ✅ Tambahan opsional untuk mengenali mode Edit
+    /// Optional identifier for edit mode.
     var ingredientToEdit: Ingredient? = nil
     
     @State private var name = ""
@@ -87,7 +87,7 @@ struct AddIngredientView: View {
                 }
             }
             .onAppear {
-                // ✅ Isi data jika mode edit aktif
+                /// Populate data if edit mode is active.
                 if let edit = ingredientToEdit {
                     name = edit.name
                     currentStock = String(format: "%.1f", edit.currentStock)
@@ -102,4 +102,8 @@ struct AddIngredientView: View {
             }
         }
     }
+}
+
+#Preview {
+    AddIngredientView(viewModel: InventoryViewModel(operationalProtocol: MockOperationalRepository(), cashflowProtocol: MockCashflowRepository()), branchId: "B-1")
 }

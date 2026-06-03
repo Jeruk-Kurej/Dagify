@@ -16,7 +16,7 @@ struct TransactionRowView: View {
                     .foregroundColor(record.type == .income ? Color(hex: "#10B981") : Color(hex: "#EF4444"))
             }
             
-            // ✅ FIX: maxWidth .infinity akan memaksa VSTACK untuk memakan ruang yang sisa,
+            /// Forces VSTACK to consume remaining space.
             // sehingga jika kepanjangan, akan terpotong "..." di area sisa tersebut tanpa menendang angka!
             VStack(alignment: .leading, spacing: 4) {
                 Text(record.notes.isEmpty ? (record.type == .income ? "Pemasukan" : "Pengeluaran") : record.notes)
@@ -45,5 +45,10 @@ struct TransactionRowView: View {
         }
         .padding(.vertical, 12)
         .contentShape(Rectangle())
-    }
+}
+
+}
+
+#Preview {
+    TransactionRowView(record: FinancialRecord(id: "1", branchId: "B-1", amount: 50000, type: .income, category: .none, timestamp: Date(), notes: "Penjualan Kasir"))
 }

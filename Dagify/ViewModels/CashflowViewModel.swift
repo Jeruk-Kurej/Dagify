@@ -52,7 +52,7 @@ class CashflowViewModel {
         return formatter.string(from: currentMonthDate)
     }
 
-    // ✅ FITUR BARU: Mengecek apakah bulan yang sedang dilihat adalah bulan ini
+    /// Checks if the currently viewed month is the current calendar month.
     var isCurrentMonthTheLatest: Bool {
         let calendar = Calendar.current
         let now = Date()
@@ -65,7 +65,7 @@ class CashflowViewModel {
     }
 
     func nextMonth() {
-        // ✅ FITUR BARU: Cegah jika sudah di bulan ini
+        /// Prevent navigating beyond the current month.
         guard !isCurrentMonthTheLatest else { return }
         if let newDate = Calendar.current.date(byAdding: .month, value: 1, to: currentMonthDate) { currentMonthDate = newDate }
     }

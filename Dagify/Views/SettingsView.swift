@@ -5,15 +5,14 @@ struct SettingsView: View {
     let storeId: String
     @Binding var activeBranchId: String
 
-    // ✅ KUNCI UTAMA: ViewModel diamankan di dalam @State agar
-    // tidak hancur (amnesia) saat MainAppView melakukan re-render.
+    /// Persist the view model state to prevent recreation during view updates.
     @State private var viewModel: SettingsViewModel
 
     @State private var showingAddBranch = false
     @State private var newBranchName = ""
     @State private var newBranchAddress = ""
 
-    // ✅ Custom Init (Dependency Injection) yang sangat SOLID
+    /// Initializes the view with required dependencies.
     init(
         authViewModel: AuthViewModel,
         storeProtocol: StoreProtocol,

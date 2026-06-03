@@ -54,3 +54,7 @@ struct AuthView: View {
         .animation(.spring(response: 0.7, dampingFraction: 0.8), value: showAuthForm)
     }
 }
+
+#Preview {
+    AuthView(viewModel: AuthViewModel(authProtocol: MockAuthRepository()))
+}
