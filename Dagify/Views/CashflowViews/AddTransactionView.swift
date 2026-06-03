@@ -6,11 +6,12 @@ struct AddTransactionView: View {
     var branchId: String
 
     @State private var type: TransactionType = .expense
-    @State private var transactionDate: Date = Date() // ✅ KALENDER WAKTU
+    // ✅ Menginisiasi default waktu dengan waktu saat ini
+    @State private var transactionDate: Date = Date()
     @State private var notes: String = ""
     @State private var amountString: String = ""
     
-    @State private var hasAttemptedSave = false // ✅ TRIGGER VALIDASI SOPAN
+    @State private var hasAttemptedSave = false
 
     var isAmountValid: Bool {
         let clean = amountString.replacingOccurrences(of: ",", with: ".")
@@ -30,7 +31,6 @@ struct AddTransactionView: View {
         NavigationStack {
             Form {
                 Section(header: Text("Detail Transaksi")) {
-                    // 1. Jenis
                     Picker("Jenis Transaksi", selection: $type) {
                         Text("Pengeluaran").tag(TransactionType.expense)
                         Text("Pemasukan").tag(TransactionType.income)
@@ -38,13 +38,11 @@ struct AddTransactionView: View {
                     .pickerStyle(.segmented)
                     .padding(.vertical, 8)
                     
-                    // 2. Tanggal Transaksi
-                    DatePicker("Waktu Transaksi", selection: $transactionDate)
+                    // ✅ UPDATE: Membatasi kalender HANYA sampai hari ini (Masa lalu didukung, masa depan diblokir)
+                    DatePicker("Waktu Transaksi", selection: $transactionDate, in: ...Date(), displayedComponents: [.date, .hourAndMinute])
                     
-                    // 3. Catatan
                     TextField("Catatan (Opsional)", text: $notes)
 
-                    // 4. Nominal (Tergabung dengan error text di bawahnya)
                     VStack(alignment: .leading, spacing: 4) {
                         TextField("Nominal (Rp)", text: $amountString)
                             .keyboardType(.decimalPad)
@@ -79,11 +77,9 @@ struct AddTransactionView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Simpan") {
-                        // ✅ JIKA KOSONG: Munculkan pesan error (Jangan kunci tombol secara buta)
                         if amountString.isEmpty || !isAmountValid {
                             withAnimation { hasAttemptedSave = true }
                         } else {
-                            // ✅ JIKA VALID: Eksekusi penyimpanan
                             Task {
                                 let cleanString = amountString.replacingOccurrences(of: ",", with: ".")
                                 if let amount = Double(cleanString) {
@@ -93,7 +89,7 @@ struct AddTransactionView: View {
                                         type: type,
                                         category: .none,
                                         notes: notes.isEmpty ? (type == .income ? "Pemasukan Manual" : "Pengeluaran Manual") : notes,
-                                        date: transactionDate // ✅ Kirim tanggal pilihan
+                                        date: transactionDate // ✅ Tanggal terdahulu dikirimkan ke server!
                                     )
                                     dismiss()
                                 }

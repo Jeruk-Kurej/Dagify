@@ -42,14 +42,12 @@ struct CashflowView: View {
                         }
                         
                         if viewModel.chartData.isEmpty {
-                            // ✅ FIX UI BUNTUNG:
-                            // Paksa tulisan ini membentang penuh (maxWidth: .infinity) dan
-                            // set minimal tinggi (minHeight: 240) agar ukuran kotaknya sama persis seperti saat ada grafiknya.
                             Text("Belum ada data untuk periode ini.")
                                 .foregroundColor(.gray)
                                 .frame(maxWidth: .infinity, minHeight: 240, alignment: .center)
                         } else {
                             Chart(viewModel.chartData) { data in
+                                // ✅ HANYA MENAMPILKAN BAR PEMASUKAN DAN PENGELUARAN
                                 BarMark(
                                     x: .value("Waktu", data.date, unit: viewModel.chartUnit),
                                     y: .value("Pemasukan", data.income)
@@ -63,28 +61,16 @@ struct CashflowView: View {
                                 )
                                 .foregroundStyle(Color(hex: "#EF4444"))
                                 .position(by: .value("Tipe", "Pengeluaran"))
-                                
-                                LineMark(
-                                    x: .value("Waktu", data.date, unit: viewModel.chartUnit),
-                                    y: .value("Cash Flow", data.cumulativeNet)
-                                )
-                                .foregroundStyle(Color.blue)
-                                .lineStyle(StrokeStyle(lineWidth: 3))
-                                .interpolationMethod(.monotone)
-                                
-                                PointMark(
-                                    x: .value("Waktu", data.date, unit: viewModel.chartUnit),
-                                    y: .value("Cash Flow", data.cumulativeNet)
-                                )
-                                .foregroundStyle(Color.blue)
                             }
                             .frame(height: 240)
+                            // ✅ MEMAKSA BASE VALUE MULAI DARI 0 (Tidak ada nilai negatif)
+                            .chartYScale(domain: .automatic(includesZero: true))
                             .chartYAxis { AxisMarks(position: .leading) }
                             
+                            // ✅ LEGEND DISEDERHANAKAN
                             HStack(spacing: 16) {
                                 HStack(spacing: 4) { Circle().fill(Color(hex: "#10B981")).frame(width: 8, height: 8); Text("Pemasukan").font(.caption2).foregroundColor(.gray) }
                                 HStack(spacing: 4) { Circle().fill(Color(hex: "#EF4444")).frame(width: 8, height: 8); Text("Pengeluaran").font(.caption2).foregroundColor(.gray) }
-                                HStack(spacing: 4) { Circle().fill(Color.blue).frame(width: 8, height: 8); Text("Cash Flow").font(.caption2).foregroundColor(.gray) }
                             }
                             .frame(maxWidth: .infinity, alignment: .center)
                             .padding(.top, 4)
@@ -203,7 +189,6 @@ struct ShareSheet: UIViewControllerRepresentable {
     }
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
-
 #Preview {
     let previewViewModel: CashflowViewModel = {
         let mockRepo = MockCashflowRepository()
