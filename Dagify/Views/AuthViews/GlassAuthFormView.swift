@@ -49,7 +49,6 @@ struct GlassAuthFormView: View {
                     MinimalField(
                         icon: "envelope",
                         placeholder: "Alamat Email",
-                        hint: "email",
                         text: $email
                     )
                     .keyboardType(.emailAddress)
@@ -57,7 +56,6 @@ struct GlassAuthFormView: View {
                     MinimalSecureField(
                         icon: "lock",
                         placeholder: "Kata Sandi",
-                        hint: "password",
                         text: $password
                     )
                     
@@ -65,13 +63,11 @@ struct GlassAuthFormView: View {
                         MinimalField(
                             icon: "building.2",
                             placeholder: "Nama Toko",
-                            hint: "Toko Cth: Kopi Kenangan",
                             text: $storeName
                         )
                         MinimalField(
                             icon: "storefront",
                             placeholder: "Cabang",
-                            hint: "Cabang Cth: Pusat",
                             text: $branchName
                         )
                     }
