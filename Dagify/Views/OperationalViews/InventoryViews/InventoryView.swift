@@ -27,7 +27,17 @@ struct InventoryView: View {
                                 IngredientRowView(ingredient: item, isLowStock: true)
                             }
                         } header: {
-                            Text("PERHATIAN SEGERA").foregroundColor(Color(hex: "#EF4444")).fontWeight(.bold)
+                            // ✅ UX FIX: Tambahan Legenda Ikon agar User Paham
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("PERHATIAN SEGERA").foregroundColor(Color(hex: "#EF4444")).fontWeight(.bold)
+                                HStack(spacing: 12) {
+                                    HStack(spacing: 4) { Image(systemName: "trash.fill").foregroundColor(Color(hex: "#EF4444")); Text("Basi (Dapat Dibuang)") }
+                                    HStack(spacing: 4) { Image(systemName: "exclamationmark.triangle.fill").foregroundColor(Color(hex: "#F59E0B")); Text("Stok Minim") }
+                                }
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                                .textCase(.none)
+                            }
                         }
                     }
                     

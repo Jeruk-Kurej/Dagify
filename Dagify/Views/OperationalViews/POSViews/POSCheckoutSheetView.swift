@@ -12,7 +12,6 @@ struct POSCheckoutSheetView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 List {
-                    // ✅ FORM CRM (PROFILING) DENGAN AUTO-SUGGEST
                     Section {
                         VStack(alignment: .leading, spacing: 0) {
                             TextField("Nomor HP (Cth: 0812345...)", text: $viewModel.customerPhone)
@@ -22,7 +21,6 @@ struct POSCheckoutSheetView: View {
                                     if filtered != newValue { viewModel.customerPhone = filtered }
                                 }
                             
-                            // ✅ DROPDOWN SUGESTI
                             if !viewModel.suggestedCustomers.isEmpty {
                                 Divider().padding(.vertical, 8)
                                 ScrollView {
@@ -43,7 +41,7 @@ struct POSCheckoutSheetView: View {
                                         }
                                     }
                                 }
-                                .frame(maxHeight: 120) // Batasi tinggi dropdown
+                                .frame(maxHeight: 120)
                             }
                         }
                         
@@ -101,9 +99,17 @@ struct POSCheckoutSheetView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Tutup") { isPresented = false } } }
             .onChange(of: viewModel.cart.isEmpty) { oldValue, newValue in if newValue { isPresented = false } }
-            // ✅ TARIK DATA PELANGGAN SAAT POP-UP DIBUKA
             .onAppear {
                 Task { await viewModel.loadCustomersForSuggestions(storeId: storeId) }
+            }
+            // ✅ ALERT ERROR KETIKA STOK BAHAN BAKU HABIS SAAT NAMBAH DARI POP-UP
+            .alert("Peringatan!", isPresented: Binding<Bool>(
+                get: { viewModel.errorMessage != nil },
+                set: { if !$0 { viewModel.errorMessage = nil } }
+            )) {
+                Button("Mengerti", role: .cancel) { viewModel.errorMessage = nil }
+            } message: {
+                Text(viewModel.errorMessage ?? "")
             }
         }
     }

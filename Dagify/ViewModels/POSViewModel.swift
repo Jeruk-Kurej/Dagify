@@ -9,6 +9,9 @@ extension NetworkMonitor: NetworkMonitorProtocol {}
 @Observable
 class POSViewModel {
     var availableProducts: [Product] = []
+    // ✅ STATE BARU: Menyimpan data stok bahan baku gudang untuk validasi kasir
+    var availableIngredients: [Ingredient] = []
+    
     var cart: [OrderItem] = []
     var isLoading: Bool = false
     var errorMessage: String? = nil
@@ -17,13 +20,10 @@ class POSViewModel {
     var customerPhone: String = ""
     var customerName: String = ""
     
-    // ✅ CRM AUTO-SUGGESTION STATE
     var allCustomers: [Customer] = []
     
-    // Komputasi pintar untuk memunculkan dropdown jika nomor diketik
     var suggestedCustomers: [Customer] {
         guard !customerPhone.isEmpty else { return [] }
-        // Sembunyikan jika nomornya sudah persis / sudah dipilih
         if allCustomers.contains(where: { $0.phoneNumber == customerPhone }) { return [] }
         return allCustomers.filter { $0.phoneNumber.contains(customerPhone) }
     }
@@ -50,23 +50,53 @@ class POSViewModel {
 
     func loadProducts(branchId: String) async {
         isLoading = true
-        do { availableProducts = try await operationalProtocol.fetchProducts(for: branchId) } catch { errorMessage = "Gagal memuat menu." }
+        do {
+            // ✅ MENGAMBIL DATA MENU DAN GUDANG SEKALIGUS
+            async let fetchProducts = operationalProtocol.fetchProducts(for: branchId)
+            async let fetchIngredients = operationalProtocol.fetchIngredients(for: branchId)
+            availableProducts = try await fetchProducts
+            availableIngredients = try await fetchIngredients
+        } catch { errorMessage = "Gagal memuat menu atau stok gudang." }
         isLoading = false
     }
     
-    // ✅ TARIK DATA PELANGGAN DI LATAR BELAKANG
     func loadCustomersForSuggestions(storeId: String) async {
         do { allCustomers = try await crmProtocol.fetchCustomers(for: storeId) } catch { }
     }
     
-    // ✅ AKSI SAAT KASIR MEMILIH NOMOR DARI DROPDOWN
     func selectCustomer(_ customer: Customer) {
         customerPhone = customer.phoneNumber
         customerName = customer.name
     }
 
+    // ✅ FITUR BARU: Auto-Block jika bahan baku habis!
     func addToCart(product: Product) {
-        if let index = cart.firstIndex(where: { $0.product.id == product.id }) { cart[index].quantity += 1 } else { cart.append(OrderItem(product: product, quantity: 1)) }
+        for recipeItem in product.recipe {
+            let totalNeededForThisItem = recipeItem.quantityRequired
+            
+            // Hitung bahan baku yang sudah ter-booking di keranjang saat ini
+            let alreadyInCart = cart.reduce(0.0) { sum, orderItem in
+                let matchingRecipe = orderItem.product.recipe.first(where: { $0.ingredientId == recipeItem.ingredientId })
+                return sum + (matchingRecipe?.quantityRequired ?? 0) * Double(orderItem.quantity)
+            }
+            
+            let totalNeeded = alreadyInCart + totalNeededForThisItem
+            let ingredient = availableIngredients.first(where: { $0.id == recipeItem.ingredientId })
+            let currentStock = ingredient?.currentStock ?? 0
+            let ingredientName = ingredient?.name ?? "Bahan Baku"
+            
+            // BLOKIR JIKA STOK KURANG
+            if totalNeeded > currentStock {
+                errorMessage = "Stok '\(ingredientName)' tidak cukup! (Sisa: \(String(format: "%.1f", currentStock)))"
+                return
+            }
+        }
+
+        if let index = cart.firstIndex(where: { $0.product.id == product.id }) {
+            cart[index].quantity += 1
+        } else {
+            cart.append(OrderItem(product: product, quantity: 1))
+        }
     }
 
     func removeOrDecreaseFromCart(product: Product) {
@@ -109,6 +139,8 @@ class POSViewModel {
                 cart.removeAll()
                 customerName = ""
                 customerPhone = ""
+                // ✅ UPDATE STOK LOKAL SETELAH CHECKOUT SUKSES
+                await loadProducts(branchId: branchId)
             } catch { errorMessage = "Gagal menyetor Kas." }
         } else {
             do {

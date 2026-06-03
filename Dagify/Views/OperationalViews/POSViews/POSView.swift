@@ -8,7 +8,6 @@ struct POSView: View {
     let branchId: String
     
     @State private var showCheckoutSheet = false
-
     let columns = [GridItem(.adaptive(minimum: 160), spacing: 16)]
 
     var body: some View {
@@ -26,7 +25,6 @@ struct POSView: View {
                 } else {
                     LazyVGrid(columns: columns, spacing: 16) {
                         ForEach(viewModel.availableProducts) { product in
-                            // ✅ FIX: Menggunakan getCartQuantity() untuk mencegah Xcode Error
                             ProductCardView(
                                 product: product,
                                 quantity: viewModel.getCartQuantity(for: product),
@@ -59,7 +57,8 @@ struct POSView: View {
                                 Text("\(viewModel.cart.reduce(0){$0 + $1.quantity}) Item")
                                     .font(.caption)
                                     .foregroundColor(.white.opacity(0.8))
-                                Text(viewModel.subtotal.toRupiah())                                    .font(.headline)
+                                Text(viewModel.subtotal.toRupiah())
+                                    .font(.headline)
                                     .foregroundColor(.white)
                             }
                             Spacer()
@@ -99,6 +98,15 @@ struct POSView: View {
         } message: {
             Text("Pembayaran tercatat dan stok bahan baku terkait telah terpotong otomatis.")
         }
+        // ✅ ALERT ERROR KETIKA STOK BAHAN BAKU HABIS
+        .alert("Peringatan!", isPresented: Binding<Bool>(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("Mengerti", role: .cancel) { viewModel.errorMessage = nil }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
         .sheet(isPresented: $showCheckoutSheet) {
             POSCheckoutSheetView(
                 viewModel: viewModel,
@@ -111,3 +119,32 @@ struct POSView: View {
         }
     }
 }
+
+//#Preview {
+//    let mockOp = MockOperationalRepository()
+//    let mockCash = MockCashflowRepository()
+//    let mockCRM = MockCRMRepository()
+//    let mockSync = MockSyncManager()
+//    let network = NetworkMonitor()
+//
+//    mockOp.dummyProducts = [
+//        Product(id: "1", branchId: "B-1", categoryId: "C1", name: "Es Kopi Susu Aren", price: 22000, recipe: []),
+//        Product(id: "2", branchId: "B-1", categoryId: "C1", name: "Americano Dingin", price: 18000, recipe: [])
+//    ]
+//
+//    let vm = POSViewModel(
+//        operationalProtocol: mockOp,
+//        cashflowProtocol: mockCash,
+//        crmProtocol: mockCRM,
+//        networkMonitor: network,
+//        syncManager: mockSync
+//    )
+//    
+//    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+//    let container = try! ModelContainer(for: OfflineOrderModel.self, configurations: config)
+//
+//    NavigationStack {
+//        POSView(viewModel: vm, storeId: "S-1", branchId: "B-1")
+//            .modelContainer(container)
+//    }
+//}
