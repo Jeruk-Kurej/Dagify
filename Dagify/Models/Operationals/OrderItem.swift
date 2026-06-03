@@ -7,13 +7,17 @@
 
 import Foundation
 
-struct OrderItem: Codable, Equatable {
-    let product: Product
-    var quantity: Int
+struct OrderItem: Identifiable, Codable, Equatable {
     
-    init(product: Product, quantity: Int) {
+    // MARK: - Properties
+     var id: String
+     var product: Product
+     var quantity: Int
+    
+    // MARK: - Initialization
+     init(id: String = UUID().uuidString, product: Product, quantity: Int) {
+        self.id = id
         self.product = product
         self.quantity = quantity
     }
 }
-

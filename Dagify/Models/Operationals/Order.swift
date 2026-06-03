@@ -5,18 +5,29 @@
 //  Created by Mario Ruby Ariesusandi  on 28-05-2026.
 //
 
-import Foundation
 import FirebaseFirestore
+import Foundation
 
 struct Order: Identifiable, Codable, Equatable {
+
+    // MARK: - Properties
     @DocumentID public var id: String?
-    let branchId: String
-    let customerId: String?
-    let items: [OrderItem]
-    let totalAmount: Double
-    let timestamp: Date
-    
-    init(id: String? = nil, branchId: String, customerId: String?, items: [OrderItem], totalAmount: Double, timestamp: Date) {
+    var branchId: String
+    var customerId: String?  // Opsional jika pelanggan umum
+
+    var items: [OrderItem]
+    var totalAmount: Double
+    var timestamp: Date
+
+    // MARK: - Initialization
+    init(
+        id: String? = nil,
+        branchId: String,
+        customerId: String? = nil,
+        items: [OrderItem],
+        totalAmount: Double,
+        timestamp: Date
+    ) {
         self.id = id
         self.branchId = branchId
         self.customerId = customerId

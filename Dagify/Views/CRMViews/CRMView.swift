@@ -96,56 +96,6 @@ struct CRMView: View {
     }
 }
 
-struct CRMDashboardSheetView: View {
-    var viewModel: CRMViewModel
-    var sheetType: CRMSheetType
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            List {
-                let unknownCount = viewModel.customers.filter { $0.branchId == nil || $0.branchId == "" }.count
-                let unknownLoyalCount = viewModel.customers.filter { ($0.branchId == nil || $0.branchId == "") && $0.isLoyal }.count
-                
-                Section(header: Text("Rincian per Cabang")) {
-                    ForEach(viewModel.storeBranches, id: \.id) { branch in
-                        HStack {
-                            Text(branch.name)
-                                .font(.body)
-                                .foregroundColor(Color(hex: "#111827"))
-                            Spacer()
-                            Text("\(viewModel.getCustomerCount(for: branch.id, isLoyalOnly: sheetType == .loyal)) Orang")
-                                .font(.headline)
-                                .foregroundColor(sheetType == .total ? Color(hex: "#00A3A3") : Color(hex: "#F59E0B"))
-                        }
-                    }
-                    
-                    if sheetType == .total ? (unknownCount > 0) : (unknownLoyalCount > 0) {
-                        HStack {
-                            Text("Tidak Diketahui (Data Lama)")
-                                .font(.body)
-                                .foregroundColor(.gray)
-                            Spacer()
-                            Text("\(sheetType == .total ? unknownCount : unknownLoyalCount) Orang")
-                                .font(.headline)
-                                .foregroundColor(.gray)
-                        }
-                    }
-                }
-            }
-            .scrollContentBackground(.hidden)
-            .background(Color.white)
-            .navigationTitle(sheetType == .total ? "Total Pelanggan" : "Pelanggan Setia")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Tutup") { dismiss() }
-                }
-            }
-        }
-    }
-}
-
 struct CustomerDetailSheetView: View {
     var customer: Customer
     @Environment(\.dismiss) private var dismiss

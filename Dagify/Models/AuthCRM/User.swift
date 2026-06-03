@@ -9,11 +9,14 @@ import FirebaseFirestore
 import Foundation
 
 struct User: Identifiable, Codable, Equatable {
+
+    // MARK: - Properties
     @DocumentID public var id: String?
-    public let email: String
-    public let storeId: String
-    
-    public init(id: String? = nil, email: String, storeId: String) {
+    var email: String
+    var storeId: String
+
+    // MARK: - Initialization
+    init(id: String? = nil, email: String, storeId: String) {
         self.id = id
         self.email = email
         self.storeId = storeId

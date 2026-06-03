@@ -5,21 +5,33 @@
 //  Created by Mario Ruby Ariesusandi  on 28-05-2026.
 //
 
-import Foundation
 import FirebaseFirestore
+import Foundation
 
 struct Ingredient: Identifiable, Codable, Equatable {
+
+    // MARK: - Properties
     @DocumentID public var id: String?
-    public var branchId: String
-    // ✅ FIX: Semua 'let' diubah menjadi 'var' agar bisa diedit di Form
-    public var name: String
-    public var currentStock: Double
-    public var unit: String
-    public var expiryDate: Date?
-    public var minimumStockWarning: Double
-    public var costPerUnit: Double
-    
-    public init(id: String? = nil, branchId: String, name: String, currentStock: Double, unit: String, expiryDate: Date? = nil, minimumStockWarning: Double, costPerUnit: Double) {
+    var branchId: String
+
+    var name: String
+    var currentStock: Double
+    var unit: String
+    var expiryDate: Date?
+    var minimumStockWarning: Double
+    var costPerUnit: Double
+
+    // MARK: - Initialization
+    init(
+        id: String? = nil,
+        branchId: String,
+        name: String,
+        currentStock: Double,
+        unit: String,
+        expiryDate: Date? = nil,
+        minimumStockWarning: Double,
+        costPerUnit: Double
+    ) {
         self.id = id
         self.branchId = branchId
         self.name = name
