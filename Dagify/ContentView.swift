@@ -9,26 +9,27 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var authViewModel = AuthViewModel(authProtocol: FirebaseAuthService())
-    
+    @State private var authViewModel = AuthViewModel(
+        authProtocol: FirebaseAuthService()
+    )
+
     var body: some View {
         Group {
-            if authViewModel.isAuthenticated, let user = authViewModel.currentUser {
-                MainAppView(
-                    storeId: user.storeId,
-                    branchId: user.activeBranchId,
-                    authViewModel: authViewModel
-                )
-                .transition(.opacity)
+            if authViewModel.isAuthenticated,
+                let user = authViewModel.currentUser
+            {
+                /// Passing the Store ID for initialization
+                MainAppView(storeId: user.storeId, authViewModel: authViewModel)
+                    .transition(.opacity)
             } else {
                 AuthView(viewModel: authViewModel)
                     .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: authViewModel.isAuthenticated)
+        .animation(.easeInOut, value: authViewModel.isAuthenticated)
     }
 }
 
 #Preview {
-    //ContentView()
+    ContentView()
 }

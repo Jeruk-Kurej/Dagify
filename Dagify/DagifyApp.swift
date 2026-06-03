@@ -10,23 +10,27 @@ import SwiftUI
 import FirebaseCore
 import SwiftData
 
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        FirebaseApp.configure()
+        return true
+    }
+}
+
 @main
 struct DagifyApp: App {
-    
-    init() {
-        FirebaseApp.configure()
-    }
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     
     var body: some Scene {
         WindowGroup {
             ContentView()
+            #if targetEnvironment(macCatalyst)
+                .frame(minWidth: 900, minHeight: 600)
+            #endif
         }
-        .modelContainer(for: [
-            FinancialRecord.self,
-            CustomerModel.self,
-            IngredientModel.self,
-            ProductModel.self,
-            OrderModel.self
-        ])
+        .modelContainer(for: OfflineOrderModel.self)
+        #if targetEnvironment(macCatalyst)
+        .windowResizability(.contentMinSize)
+        #endif
     }
 }
