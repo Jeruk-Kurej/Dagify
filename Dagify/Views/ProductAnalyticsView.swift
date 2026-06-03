@@ -80,10 +80,3 @@ struct ProductAnalyticsView: View {
     }
 }
 
-#Preview {
-    let mockViewModel = ProductAnalyticsViewModel(
-        crmProtocol: MockCRMRepository(),
-        inventoryProtocol: MockOperationalRepository()
-    )
-    return ProductAnalyticsView(viewModel: mockViewModel, branchId: "B-1")
-}

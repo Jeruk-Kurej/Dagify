@@ -137,6 +137,3 @@ struct CashflowPDFTemplate: View {
     }
 }
 
-#Preview {
-    CashflowPDFTemplate(records: [], totalIncome: 0, totalExpense: 0, monthYear: "Januari 2026", page: 1, totalPages: 1)
-}

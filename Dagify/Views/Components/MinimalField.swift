@@ -19,7 +19,7 @@ struct MinimalField: View {
                     .font(.system(size: 18, weight: .medium))
                     .frame(width: 24)
                 
-                TextField(hint, text: $text)
+                TextField(placeholder, text: $text)
                     .foregroundColor(Color.gray)
                     .textInputAutocapitalization(.never)
             }

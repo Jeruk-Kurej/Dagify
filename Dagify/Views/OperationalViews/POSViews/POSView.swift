@@ -120,31 +120,3 @@ struct POSView: View {
     }
 }
 
-#Preview {
-    let mockOp = MockOperationalRepository()
-    let mockCash = MockCashflowRepository()
-    let mockCRM = MockCRMRepository()
-    let mockSync = MockSyncManager()
-    let network = NetworkMonitor()
-
-    mockOp.dummyProducts = [
-        Product(id: "1", branchId: "B-1", categoryId: "C1", name: "Es Kopi Susu Aren", price: 22000, recipe: []),
-        Product(id: "2", branchId: "B-1", categoryId: "C1", name: "Americano Dingin", price: 18000, recipe: [])
-    ]
-
-    let vm = POSViewModel(
-        operationalProtocol: mockOp,
-        cashflowProtocol: mockCash,
-        crmProtocol: mockCRM,
-        networkMonitor: network,
-        syncManager: mockSync
-    )
-    
-    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: OfflineOrderModel.self, configurations: config)
-
-    NavigationStack {
-        POSView(viewModel: vm, storeId: "S-1", branchId: "B-1")
-            .modelContainer(container)
-    }
-}

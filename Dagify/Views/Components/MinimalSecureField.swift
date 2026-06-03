@@ -20,11 +20,11 @@ struct MinimalSecureField: View {
                     .frame(width: 24)
                 
                 if isVisible {
-                    TextField(hint, text: $text)
+                    TextField(placeholder, text: $text)
                         .foregroundColor(Color.gray)
                         .textInputAutocapitalization(.never)
                 } else {
-                    SecureField(hint, text: $text)
+                    SecureField(placeholder, text: $text)
                         .foregroundColor(Color.gray)
                 }
                 
