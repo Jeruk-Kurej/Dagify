@@ -10,6 +10,15 @@ struct CashflowView: View {
     @State private var isShowingShareSheet = false
     @State private var selectedRecord: FinancialRecord? = nil
     
+    // ✅ HELPER BARU: Mengubah angka miliaran/jutaan menjadi format singkatan enak dibaca
+    private func formatCompact(_ value: Double) -> String {
+        let absValue = abs(value)
+        if absValue >= 1_000_000_000 { return String(format: "%.1f M", value / 1_000_000_000) } // Miliar
+        if absValue >= 1_000_000 { return String(format: "%.1f Jt", value / 1_000_000) } // Juta
+        if absValue >= 1_000 { return String(format: "%.0f K", value / 1_000) } // Ribu
+        return String(format: "%.0f", value)
+    }
+    
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -47,7 +56,6 @@ struct CashflowView: View {
                                 .frame(maxWidth: .infinity, minHeight: 240, alignment: .center)
                         } else {
                             Chart(viewModel.chartData) { data in
-                                // ✅ HANYA MENAMPILKAN BAR PEMASUKAN DAN PENGELUARAN
                                 BarMark(
                                     x: .value("Waktu", data.date, unit: viewModel.chartUnit),
                                     y: .value("Pemasukan", data.income)
@@ -63,11 +71,21 @@ struct CashflowView: View {
                                 .position(by: .value("Tipe", "Pengeluaran"))
                             }
                             .frame(height: 240)
-                            // ✅ MEMAKSA BASE VALUE MULAI DARI 0 (Tidak ada nilai negatif)
                             .chartYScale(domain: .automatic(includesZero: true))
-                            .chartYAxis { AxisMarks(position: .leading) }
+                            // ✅ FIX: Memaksa label Y-Axis menggunakan fungsi singkatan (Jt, K, dll)
+                            .chartYAxis {
+                                AxisMarks(position: .leading) { mark in
+                                    AxisGridLine()
+                                    AxisValueLabel {
+                                        if let val = mark.as(Double.self) {
+                                            Text(formatCompact(val))
+                                                .font(.caption2)
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+                                }
+                            }
                             
-                            // ✅ LEGEND DISEDERHANAKAN
                             HStack(spacing: 16) {
                                 HStack(spacing: 4) { Circle().fill(Color(hex: "#10B981")).frame(width: 8, height: 8); Text("Pemasukan").font(.caption2).foregroundColor(.gray) }
                                 HStack(spacing: 4) { Circle().fill(Color(hex: "#EF4444")).frame(width: 8, height: 8); Text("Pengeluaran").font(.caption2).foregroundColor(.gray) }

@@ -5,16 +5,13 @@ struct CRMView: View {
     var viewModel: CRMViewModel
     let storeId: String
     
-    // ✅ STATE UNTUK MENGONTROL KAPAN POP-UP MUNCUL
     @State private var activeSheet: CRMSheetType? = nil
     
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    // Metrik Retensi
                     HStack(spacing: 16) {
-                        // ✅ KOTAK DIJADIKAN TOMBOL YANG BISA DIKLIK
                         Button(action: { activeSheet = .total }) {
                             FinancialBox(title: "Total Pelanggan", amount: Double(viewModel.customers.count), color: Color(hex: "#00A3A3"), icon: "person.3.fill", isCurrency: false)
                         }
@@ -26,7 +23,6 @@ struct CRMView: View {
                         .buttonStyle(PlainButtonStyle())
                     }.padding(.horizontal)
                     
-                    // GRAFIK SEGMENTASI WAKTU
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Grafik Jam Sibuk Kunjungan")
                             .font(.headline)
@@ -53,7 +49,6 @@ struct CRMView: View {
                         .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 2)
                     }.padding(.horizontal)
                     
-                    // Daftar Profil Pelanggan
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Direktori Pelanggan")
                             .font(.headline)
@@ -77,7 +72,6 @@ struct CRMView: View {
             .navigationTitle("CRM")
             .onAppear { Task { await viewModel.loadCustomers(storeId: storeId) } }
             .refreshable { await viewModel.loadCustomers(storeId: storeId) }
-            // ✅ MENGAKTIFKAN SHEET POP UP
             .sheet(item: $activeSheet) { sheetType in
                 CRMDashboardSheetView(viewModel: viewModel, sheetType: sheetType)
                     .presentationDetents([.medium, .large])
@@ -86,7 +80,6 @@ struct CRMView: View {
     }
 }
 
-// ✅ KOMPONEN LAYAR POP UP PERINCIAN CABANG
 struct CRMDashboardSheetView: View {
     var viewModel: CRMViewModel
     var sheetType: CRMSheetType
@@ -95,7 +88,6 @@ struct CRMDashboardSheetView: View {
     var body: some View {
         NavigationStack {
             List {
-                // Kalkulasi pelanggan lama yang dibuat sebelum fitur multi-cabang rilis
                 let unknownCount = viewModel.customers.filter { $0.branchId == nil || $0.branchId == "" }.count
                 let unknownLoyalCount = viewModel.customers.filter { ($0.branchId == nil || $0.branchId == "") && $0.isLoyal }.count
                 
@@ -112,7 +104,6 @@ struct CRMDashboardSheetView: View {
                         }
                     }
                     
-                    // Tampilkan peninggalan data lama jika ada
                     if sheetType == .total ? (unknownCount > 0) : (unknownLoyalCount > 0) {
                         HStack {
                             Text("Tidak Diketahui (Data Lama)")
@@ -126,6 +117,9 @@ struct CRMDashboardSheetView: View {
                     }
                 }
             }
+            // ✅ FIX: Mematikan background abu-abu bawaan List dan menggantinya dengan putih bersih
+            .scrollContentBackground(.hidden)
+            .background(Color.white)
             .navigationTitle(sheetType == .total ? "Total Pelanggan" : "Pelanggan Setia")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -136,7 +130,6 @@ struct CRMDashboardSheetView: View {
         }
     }
 }
-
 #Preview {
     let mockCRM = MockCRMRepository()
     let mockOp = MockOperationalRepository()

@@ -27,12 +27,13 @@ struct TransactionRowView: View {
                 Text(record.timestamp.formatted(date: .abbreviated, time: .shortened))
                     .font(.caption)
                     .foregroundColor(Color(hex: "#6B7280"))
+                    .lineLimit(1) // ✅ FIX: Memaksa tanggal dan waktu agar hanya 1 baris
+                    .truncationMode(.tail) // ✅ FIX: Menjadi "..." jika terlalu panjang (misal layarnya kecil)
             }
             
             Spacer(minLength: 8)
             
             Text("\(record.type == .income ? "+" : "-") \(record.amount.toRupiah())")
-                // ✅ UPDATE: Font diturunkan 1 tahap menjadi subheadline
                 .font(.subheadline)
                 .fontWeight(.bold)
                 .foregroundColor(record.type == .income ? Color(hex: "#10B981") : Color(hex: "#EF4444"))
