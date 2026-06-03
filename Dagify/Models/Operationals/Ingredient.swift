@@ -9,16 +9,17 @@ import Foundation
 import FirebaseFirestore
 
 struct Ingredient: Identifiable, Codable, Equatable {
-    @DocumentID var id: String?
-    var branchId: String
-    let name: String
-    var currentStock: Double
-    let unit: String
-    let expiryDate: Date?
-    let minimumStockWarning: Double
-    let costPerUnit: Double
+    @DocumentID public var id: String?
+    public var branchId: String
+    // ✅ FIX: Semua 'let' diubah menjadi 'var' agar bisa diedit di Form
+    public var name: String
+    public var currentStock: Double
+    public var unit: String
+    public var expiryDate: Date?
+    public var minimumStockWarning: Double
+    public var costPerUnit: Double
     
-    init(id: String? = nil, branchId: String = "", name: String, currentStock: Double, unit: String, expiryDate: Date?, minimumStockWarning: Double, costPerUnit: Double) {
+    public init(id: String? = nil, branchId: String, name: String, currentStock: Double, unit: String, expiryDate: Date? = nil, minimumStockWarning: Double, costPerUnit: Double) {
         self.id = id
         self.branchId = branchId
         self.name = name

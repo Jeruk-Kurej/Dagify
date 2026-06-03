@@ -1,7 +1,6 @@
 import SwiftUI
 import Charts
 
-// ✅ ENUM UNTUK MENGELOLA POP-UP SHEET ARUS KAS
 enum CashflowSheetType: Identifiable {
     case add
     case edit(FinancialRecord)
@@ -20,7 +19,7 @@ struct CashflowView: View {
     @State private var activeSheet: CashflowSheetType? = nil
     @State private var generatedPDFURL: URL? = nil
     @State private var isShowingShareSheet = false
-    @State private var selectedRecord: FinancialRecord? = nil // Untuk pop-up rincian alert biasa
+    @State private var selectedRecord: FinancialRecord? = nil
     
     private func formatCompact(_ value: Double) -> String {
         let absValue = abs(value)
@@ -116,12 +115,26 @@ struct CashflowView: View {
                         Button(action: { withAnimation(.easeInOut) { viewModel.previousMonth() } }) {
                             Image(systemName: "chevron.left").font(.system(size: 14, weight: .bold)).frame(width: 36, height: 36).background(Color(hex: "#00A3A3").opacity(0.1)).foregroundColor(Color(hex: "#00A3A3")).clipShape(Circle())
                         }
+                        
                         Spacer()
-                        Text(viewModel.currentMonthString).font(.title3).fontWeight(.bold).foregroundColor(Color(hex: "#111827"))
+                        
+                        Text(viewModel.currentMonthString)
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color(hex: "#111827"))
+                        
                         Spacer()
+                        
+                        // ✅ FIX: Sembunyikan atau redupkan tombol kanan (Next) jika berada di bulan ini
                         Button(action: { withAnimation(.easeInOut) { viewModel.nextMonth() } }) {
-                            Image(systemName: "chevron.right").font(.system(size: 14, weight: .bold)).frame(width: 36, height: 36).background(Color(hex: "#00A3A3").opacity(0.1)).foregroundColor(Color(hex: "#00A3A3")).clipShape(Circle())
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .bold))
+                                .frame(width: 36, height: 36)
+                                .background(Color(hex: "#00A3A3").opacity(viewModel.isCurrentMonthTheLatest ? 0.0 : 0.1))
+                                .foregroundColor(viewModel.isCurrentMonthTheLatest ? .clear : Color(hex: "#00A3A3"))
+                                .clipShape(Circle())
                         }
+                        .disabled(viewModel.isCurrentMonthTheLatest) // Menonaktifkan fungsionalitas klik
                     }
                     .padding(.horizontal)
                     
@@ -152,13 +165,13 @@ struct CashflowView: View {
                             LazyVStack(spacing: 0) {
                                 ForEach(viewModel.filteredRecords, id: \.id) { record in
                                     Button(action: {
-                                        selectedRecord = record // KLIK: MUNCUL ALERT DETAIL
+                                        selectedRecord = record
                                     }) {
                                         TransactionRowView(record: record)
                                     }
                                     .buttonStyle(PlainButtonStyle())
                                     .padding(.horizontal)
-                                    .contextMenu {            // TAHAN (HOLD): MUNCUL EDIT & HAPUS
+                                    .contextMenu {
                                         Button { activeSheet = .edit(record) } label: { Label("Edit Transaksi", systemImage: "pencil") }
                                         Button(role: .destructive) {
                                             if let id = record.id { Task { await viewModel.deleteTransaction(recordId: id, branchId: branchId) } }
@@ -194,7 +207,6 @@ struct CashflowView: View {
                 }
             }
             .onAppear { Task { await viewModel.loadRecords(branchId: branchId) } }
-            // ✅ SHEET YANG MERESPON BAIK TAMBAH MAUPUN EDIT
             .sheet(item: $activeSheet) { sheetType in
                 switch sheetType {
                 case .add: AddTransactionView(viewModel: viewModel, branchId: branchId)
@@ -222,7 +234,6 @@ struct CashflowView: View {
     }
 }
 
-// ... (ShareSheet Struct & Preview tetap sama)
 struct ShareSheet: UIViewControllerRepresentable {
     var activityItems: [Any]
     func makeUIViewController(context: Context) -> UIActivityViewController {

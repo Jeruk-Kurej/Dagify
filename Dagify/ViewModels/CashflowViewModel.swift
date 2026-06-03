@@ -52,11 +52,21 @@ class CashflowViewModel {
         return formatter.string(from: currentMonthDate)
     }
 
+    // ✅ FITUR BARU: Mengecek apakah bulan yang sedang dilihat adalah bulan ini
+    var isCurrentMonthTheLatest: Bool {
+        let calendar = Calendar.current
+        let now = Date()
+        return calendar.isDate(currentMonthDate, equalTo: now, toGranularity: .month) &&
+               calendar.isDate(currentMonthDate, equalTo: now, toGranularity: .year)
+    }
+
     func previousMonth() {
         if let newDate = Calendar.current.date(byAdding: .month, value: -1, to: currentMonthDate) { currentMonthDate = newDate }
     }
 
     func nextMonth() {
+        // ✅ FITUR BARU: Cegah jika sudah di bulan ini
+        guard !isCurrentMonthTheLatest else { return }
         if let newDate = Calendar.current.date(byAdding: .month, value: 1, to: currentMonthDate) { currentMonthDate = newDate }
     }
 
@@ -117,35 +127,33 @@ class CashflowViewModel {
         isLoading = false
     }
 
-    // ✅ FITUR BARU: Menerima Parameter 'date'
     func addTransaction(branchId: String, amount: Double, type: TransactionType, category: ExpenseCategory, notes: String, date: Date) async {
         isLoading = true
         let record = FinancialRecord(id: UUID().uuidString, branchId: branchId, amount: amount, type: type, category: category, timestamp: date, notes: notes)
         do {
             _ = try await cashProtocol.addRecord(record)
-            currentMonthDate = Date()
+            currentMonthDate = record.timestamp // Pindah ke bulan transaksi
             await loadRecords(branchId: branchId)
         } catch { errorMessage = "Gagal menambah transaksi: \(error.localizedDescription)" }
         isLoading = false
     }
-    
+
     func updateTransaction(_ record: FinancialRecord) async {
-            isLoading = true
-            do {
-                _ = try await cashProtocol.updateRecord(record)
-                currentMonthDate = record.timestamp // Pindah ke bulan transaksi
-                await loadRecords(branchId: record.branchId)
-            } catch { errorMessage = "Gagal memperbarui transaksi." }
-            isLoading = false
-        }
-        
-        // ✅ FUNGSI BARU: Hapus Transaksi
-        func deleteTransaction(recordId: String, branchId: String) async {
-            isLoading = true
-            do {
-                _ = try await cashProtocol.deleteRecord(id: recordId)
-                await loadRecords(branchId: branchId)
-            } catch { errorMessage = "Gagal menghapus transaksi." }
-            isLoading = false
-        }
+        isLoading = true
+        do {
+            _ = try await cashProtocol.updateRecord(record)
+            currentMonthDate = record.timestamp // Pindah ke bulan transaksi
+            await loadRecords(branchId: record.branchId)
+        } catch { errorMessage = "Gagal memperbarui transaksi." }
+        isLoading = false
+    }
+    
+    func deleteTransaction(recordId: String, branchId: String) async {
+        isLoading = true
+        do {
+            _ = try await cashProtocol.deleteRecord(id: recordId)
+            await loadRecords(branchId: branchId)
+        } catch { errorMessage = "Gagal menghapus transaksi." }
+        isLoading = false
+    }
 }
