@@ -11,20 +11,19 @@ import FirebaseFirestore
 struct Product: Identifiable, Codable, Equatable {
     @DocumentID var id: String?
     var branchId: String
-    var categoryId: String // ✅ DITAMBAHKAN: Relasi ke ProductCategory
+    var categoryId: String
     let name: String
     let price: Double
     let recipe: [RecipeItem]
-    var imageData: Data?   // ✅ DITAMBAHKAN: Penyimpanan gambar opsional
+    var imageUrl: String?   // ✅ DIUBAH: Sekarang hanya menyimpan Tautan (URL) Gambar
     
-    // Default value ditambahkan agar kompatibel dengan data yang sudah ada sebelumnya
-    init(id: String? = nil, branchId: String = "", categoryId: String = "", name: String, price: Double, recipe: [RecipeItem], imageData: Data? = nil) {
+    init(id: String? = nil, branchId: String = "", categoryId: String = "", name: String, price: Double, recipe: [RecipeItem], imageUrl: String? = nil) {
         self.id = id
         self.branchId = branchId
         self.categoryId = categoryId
         self.name = name
         self.price = price
         self.recipe = recipe
-        self.imageData = imageData
+        self.imageUrl = imageUrl
     }
 }

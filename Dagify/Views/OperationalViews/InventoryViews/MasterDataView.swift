@@ -34,8 +34,13 @@ struct MasterDataView: View {
                 List {
                     ForEach(viewModel.products) { product in
                         HStack(spacing: 16) {
-                            if let data = product.imageData, let uiImage = UIImage(data: data) {
-                                Image(uiImage: uiImage).resizable().scaledToFill().frame(width: 50, height: 50).clipShape(RoundedRectangle(cornerRadius: 8))
+                            if let urlStr = product.imageUrl, let url = URL(string: urlStr) {
+                                AsyncImage(url: url) { image in
+                                    image.resizable().scaledToFill()
+                                } placeholder: {
+                                    Color(hex: "#E5E7EB")
+                                }
+                                .frame(width: 50, height: 50).clipShape(RoundedRectangle(cornerRadius: 8))
                             } else {
                                 Image(systemName: "cup.and.saucer.fill").resizable().scaledToFit().frame(width: 25, height: 25).foregroundColor(.gray).frame(width: 50, height: 50).background(Color(hex: "#E5E7EB")).clipShape(RoundedRectangle(cornerRadius: 8))
                             }

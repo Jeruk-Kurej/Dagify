@@ -10,9 +10,11 @@ class MasterDataViewModel {
     
     var products: [Product] = []
     var availableIngredients: [Ingredient] = []
-    var categories: [ProductCategory] = [] // ✅ STATE KATEGORI BARU
+    var categories: [ProductCategory] = []
     
     private let operationalProtocol: OperationalProtocol
+    private let cloudinaryService: CloudStorageProtocol = CloudinaryService() // ✅ MESIN CLOUDINARY
+    
     init(operationalProtocol: OperationalProtocol) {
         self.operationalProtocol = operationalProtocol
     }
@@ -29,7 +31,6 @@ class MasterDataViewModel {
         catch { errorMessage = "Gagal memuat daftar bahan baku." }
     }
     
-    // ✅ LOGIKA BARU: Muat Kategori (Buat nilai Default jika kosong)
     func loadCategories(branchId: String) async {
         do {
             let fetched = try await operationalProtocol.fetchCategories(for: branchId)
@@ -39,9 +40,7 @@ class MasterDataViewModel {
                     _ = try await operationalProtocol.addCategory(ProductCategory(branchId: branchId, name: name))
                 }
                 categories = try await operationalProtocol.fetchCategories(for: branchId)
-            } else {
-                categories = fetched
-            }
+            } else { categories = fetched }
         } catch { errorMessage = "Gagal memuat kategori." }
     }
     
@@ -54,7 +53,6 @@ class MasterDataViewModel {
         isLoading = false
     }
     
-    // ✅ VALIDASI SEBELUM MENGHAPUS KATEGORI
     func deleteCategory(categoryId: String, branchId: String) async {
         if products.contains(where: { $0.categoryId == categoryId }) {
             errorMessage = "Peringatan: Kategori ini sedang digunakan oleh menu F&B!"
@@ -68,9 +66,16 @@ class MasterDataViewModel {
         isLoading = false
     }
 
-    func createProduct(branchId: String, categoryId: String, name: String, price: Double, recipe: [RecipeItem], imageData: Data?) async {
+    // ✅ PROSES UPLOAD GAMBAR SEBELUM MEMBUAT MENU
+    func createProduct(branchId: String, categoryId: String, name: String, price: Double, recipe: [RecipeItem], newImageData: Data?) async {
         isLoading = true
-        let newProduct = Product(branchId: branchId, categoryId: categoryId, name: name, price: price, recipe: recipe, imageData: imageData)
+        var finalUrl: String? = nil
+        
+        if let data = newImageData {
+            finalUrl = try? await cloudinaryService.uploadImage(imageData: data)
+        }
+        
+        let newProduct = Product(branchId: branchId, categoryId: categoryId, name: name, price: price, recipe: recipe, imageUrl: finalUrl)
         do {
             _ = try await operationalProtocol.addProduct(newProduct)
             await loadProducts(branchId: branchId)
@@ -78,10 +83,19 @@ class MasterDataViewModel {
         isLoading = false
     }
     
-    func updateProduct(product: Product) async {
+    // ✅ PROSES UPDATE GAMBAR (Jika ada gambar baru)
+    func updateProduct(product: Product, newImageData: Data?) async {
         isLoading = true
+        var updatedProduct = product
+        
+        if let data = newImageData {
+            if let newUrl = try? await cloudinaryService.uploadImage(imageData: data) {
+                updatedProduct.imageUrl = newUrl
+            }
+        }
+        
         do {
-            _ = try await operationalProtocol.updateProduct(product)
+            _ = try await operationalProtocol.updateProduct(updatedProduct)
             await loadProducts(branchId: product.branchId)
         } catch { errorMessage = "Gagal memperbarui menu." }
         isLoading = false

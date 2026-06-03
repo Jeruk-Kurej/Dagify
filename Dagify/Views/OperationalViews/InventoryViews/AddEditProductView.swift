@@ -21,7 +21,7 @@ struct AddEditProductView: View {
     
     @State private var selectedCategoryId: String = ""
     @State private var selectedImageItem: PhotosPickerItem? = nil
-    @State private var selectedImageData: Data? = nil
+    @State private var selectedImageData: Data? = nil // Untuk gambar lokal yang baru dipilih
 
     var isNameDuplicate: Bool {
         if let edit = productToEdit, edit.name.lowercased() == productName.lowercased() { return false }
@@ -61,11 +61,28 @@ struct AddEditProductView: View {
                 Section("Media & Pengelompokan") {
                     HStack {
                         Spacer()
+                        
+                        // ✅ LOGIKA PENAMPILAN GAMBAR (Lokal, Internet, atau Default)
                         if let data = selectedImageData, let uiImage = UIImage(data: data) {
+                            // Tampilkan gambar baru yang di-pick dari galeri lokal
                             Image(uiImage: uiImage).resizable().scaledToFill().frame(width: 120, height: 120).clipShape(RoundedRectangle(cornerRadius: 12)).shadow(radius: 3)
+                        } else if let urlString = productToEdit?.imageUrl, let url = URL(string: urlString) {
+                            // Tampilkan gambar dari Cloudinary menggunakan AsyncImage
+                            AsyncImage(url: url) { phase in
+                                if let image = phase.image {
+                                    image.resizable().scaledToFill()
+                                } else if phase.error != nil {
+                                    Image(systemName: "photo.fill").foregroundColor(.gray)
+                                } else {
+                                    ProgressView()
+                                }
+                            }
+                            .frame(width: 120, height: 120).clipShape(RoundedRectangle(cornerRadius: 12)).shadow(radius: 3)
                         } else {
+                            // Gambar default jika kosong
                             Image(systemName: "cup.and.saucer.fill").resizable().scaledToFit().frame(width: 50, height: 50).foregroundColor(.gray).frame(width: 120, height: 120).background(Color(hex: "#F3F4F6")).clipShape(RoundedRectangle(cornerRadius: 12))
                         }
+                        
                         Spacer()
                     }
                     
@@ -76,11 +93,8 @@ struct AddEditProductView: View {
                         Task {
                             if let data = try? await newItem?.loadTransferable(type: Data.self),
                                let uiImage = UIImage(data: data) {
-                                // ✅ BUG FIX GAMBAR HANTU:
-                                // Kompresi gambar menjadi 10% kualitas.
-                                // Jika tidak dikompres, gambar dari HP akan melebihi 1MB
-                                // dan Firebase akan diam-diam membatalkan proses "Simpan"!
-                                selectedImageData = uiImage.jpegData(compressionQuality: 0.1)
+                                // Kompres agar upload lebih cepat via Cloudinary
+                                selectedImageData = uiImage.jpegData(compressionQuality: 0.5)
                             }
                         }
                     }
@@ -146,8 +160,11 @@ struct AddEditProductView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Batal") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Simpan") { saveProduct() }
-                        .disabled(productName.isEmpty || !isPriceValid || viewModel.isLoading || isNameDuplicate || !isRecipeValid || isSaving || selectedCategoryId.isEmpty)
+                    Button("Simpan") {
+                        if viewModel.isLoading { return } // Mencegah double tap
+                        saveProduct()
+                    }
+                    .disabled(productName.isEmpty || !isPriceValid || viewModel.isLoading || isNameDuplicate || !isRecipeValid || isSaving || selectedCategoryId.isEmpty)
                 }
             }
             .onAppear(perform: loadExistingData)
@@ -169,6 +186,15 @@ struct AddEditProductView: View {
                     .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Tutup") { showIngredientPicker = false } } }
                 }.presentationDetents([.medium, .large])
             }
+            // Tambahan Overlay Loading
+            .overlay {
+                if viewModel.isLoading {
+                    ZStack {
+                        Color.black.opacity(0.4).ignoresSafeArea()
+                        ProgressView("Mengunggah Aset...").padding().background(Color.white).cornerRadius(12)
+                    }
+                }
+            }
         }
     }
 
@@ -177,7 +203,7 @@ struct AddEditProductView: View {
             productName = product.name
             productPrice = String(format: "%.0f", product.price)
             selectedCategoryId = product.categoryId
-            selectedImageData = product.imageData
+            selectedImageData = nil // ✅ Start with nil
             
             recipeDrafts = product.recipe.compactMap { recipeItem -> RecipeDraft? in
                 if let ingredient = viewModel.availableIngredients.first(where: { $0.id == recipeItem.ingredientId }) {
@@ -203,10 +229,10 @@ struct AddEditProductView: View {
         isSaving = true
         Task {
             if let edit = productToEdit {
-                let updatedProduct = Product(id: edit.id, branchId: branchId, categoryId: selectedCategoryId, name: productName, price: price, recipe: finalRecipe, imageData: selectedImageData)
-                await viewModel.updateProduct(product: updatedProduct)
+                let updatedProduct = Product(id: edit.id, branchId: branchId, categoryId: selectedCategoryId, name: productName, price: price, recipe: finalRecipe, imageUrl: edit.imageUrl)
+                await viewModel.updateProduct(product: updatedProduct, newImageData: selectedImageData)
             } else {
-                await viewModel.createProduct(branchId: branchId, categoryId: selectedCategoryId, name: productName, price: price, recipe: finalRecipe, imageData: selectedImageData)
+                await viewModel.createProduct(branchId: branchId, categoryId: selectedCategoryId, name: productName, price: price, recipe: finalRecipe, newImageData: selectedImageData)
             }
             isSaving = false
             dismiss()

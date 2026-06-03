@@ -11,8 +11,12 @@ struct ProductCardView: View {
             // ✅ MENAMPILKAN GAMBAR HASIL UPLOAD DI KASIR
             ZStack {
                 Color.themeBgMain
-                if let data = product.imageData, let uiImage = UIImage(data: data) {
-                    Image(uiImage: uiImage).resizable().scaledToFill()
+                if let urlStr = product.imageUrl, let url = URL(string: urlStr) {
+                    AsyncImage(url: url) { image in
+                        image.resizable().scaledToFill()
+                    } placeholder: {
+                        Color.themeBgMain
+                    }
                 } else {
                     Image(systemName: "cup.and.saucer.fill").resizable().scaledToFit().frame(height: 40).foregroundColor(.themePrimary.opacity(0.6))
                 }
