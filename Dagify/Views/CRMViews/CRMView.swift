@@ -12,80 +12,162 @@ struct CRMView: View {
     var viewModel: CRMViewModel
     let storeId: String
 
+    @State private var activeSheet: CRMSheetType? = nil
+
+    /// State to track the currently selected customer for detail view.
+    @State private var selectedCustomer: Customer? = nil
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    VStack(alignment: .leading) {
-                        Text("Retensi Pelanggan").font(.headline)
-                        HStack {
-                            Text(
-                                String(
-                                    format: "%.1f%%",
-                                    viewModel.loyalCustomerPercentage
-                                )
-                            ).font(.system(size: 48, weight: .bold))
-                                .foregroundColor(.themeSuccess)
-                            Text("berbelanja lebih dari 5 kali.").font(
-                                .subheadline
-                            ).foregroundColor(.themeTextSecondary)
+                VStack(spacing: 20) {
+                    HStack(spacing: 16) {
+                        Button(action: { activeSheet = .total }) {
+                            FinancialBox(
+                                title: "Total Pelanggan",
+                                amount: Double(viewModel.customers.count),
+                                color: Color(hex: "#00A3A3"),
+                                icon: "person.3.fill",
+                                isCurrency: false
+                            )
                         }
+                        .buttonStyle(PlainButtonStyle())
+
+                        Button(action: { activeSheet = .loyal }) {
+                            FinancialBox(
+                                title: "Pelanggan Setia (Loyal)",
+                                amount: Double(viewModel.loyalCustomers.count),
+                                color: Color(hex: "#F59E0B"),
+                                icon: "star.circle.fill",
+                                isCurrency: false
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }.padding(.horizontal)
 
-                    VStack(alignment: .leading) {
-                        Text("Heatmap Jam Sibuk").font(.headline).padding(
-                            .horizontal
-                        )
-                        if viewModel.sortedBusiestHours.isEmpty {
-                            ContentUnavailableView(
-                                "Belum Ada Data",
-                                systemImage: "clock"
-                            ).frame(height: 200)
-                        } else {
-                            Chart {
-                                ForEach(viewModel.sortedBusiestHours, id: \.key)
-                                { hour, count in
-                                    BarMark(
-                                        x: .value("Jam", "\(hour):00"),
-                                        y: .value("Kunjungan", count)
-                                    ).foregroundStyle(Color.themePrimary)
-                                        .cornerRadius(4)
-                                }
-                            }.frame(height: 250).padding().background(
-                                Color.themeBgSecondary
-                            ).cornerRadius(12).padding(.horizontal)
-                        }
-                    }
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Grafik Jam Sibuk Kunjungan")
+                            .font(.headline)
+                            .foregroundColor(Color(hex: "#111827"))
 
-                    VStack(alignment: .leading) {
-                        Text("Daftar Pelanggan").font(.headline).padding(
-                            .horizontal
-                        )
-                        ForEach(viewModel.customers) { customer in
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text(customer.name).font(.body).bold()
-                                    Text(customer.phoneNumber).font(.caption)
-                                        .foregroundColor(.themeTextSecondary)
+                        VStack {
+                            if viewModel.peakHoursData.isEmpty {
+                                Text("Belum ada data kunjungan yang cukup.")
+                                    .foregroundColor(.gray).padding()
+                            } else {
+                                Chart(viewModel.peakHoursData) { item in
+                                    BarMark(
+                                        x: .value("Jam", item.label),
+                                        y: .value("Total Kunjungan", item.count)
+                                    )
+                                    .foregroundStyle(
+                                        Color(hex: "#00A3A3").gradient
+                                    )
+                                    .cornerRadius(4)
                                 }
-                                Spacer()
-                                if customer.isLoyal {
-                                    Image(systemName: "star.fill")
-                                        .foregroundColor(.themeWarning)
-                                }
-                                Text(
-                                    "Rp \(customer.totalSpent, specifier: "%.0f")"
-                                ).font(.subheadline).bold().foregroundColor(
-                                    .themePrimary
-                                )
-                            }.padding().background(Color.themeBgSecondary)
-                                .cornerRadius(8).padding(.horizontal)
+                                .frame(height: 200)
+                            }
                         }
-                    }
+                        .padding()
+                        .background(Color.white)
+                        .cornerRadius(16)
+                        .shadow(
+                            color: Color.black.opacity(0.04),
+                            radius: 5,
+                            x: 0,
+                            y: 2
+                        )
+                    }.padding(.horizontal)
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Direktori Pelanggan")
+                            .font(.headline)
+                            .foregroundColor(Color(hex: "#111827"))
+
+                        if viewModel.isLoading {
+                            ProgressView().frame(maxWidth: .infinity).padding()
+                        } else if viewModel.customers.isEmpty {
+                            ContentUnavailableView(
+                                "CRM Kosong",
+                                systemImage:
+                                    "person.crop.circle.badge.questionmark",
+                                description: Text(
+                                    "Catat nomor HP pelanggan di layar Kasir."
+                                )
+                            )
+                        } else {
+                            LazyVStack(spacing: 12) {
+                                ForEach(viewModel.customers, id: \.id) {
+                                    customer in
+
+                                    /// Wrap the card in a button to make it interactive.
+                                    Button(action: {
+                                        selectedCustomer = customer
+                                    }) {
+                                        CustomerCardView(customer: customer)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())  // Menghapus efek biru bawaan list/button
+
+                                }
+                            }
+                        }
+                    }.padding(.horizontal)
                 }.padding(.vertical)
-            }.navigationTitle("CRM").background(Color.themeBgMain).onAppear {
+                    .frame(maxWidth: 800)
+                    .frame(maxWidth: .infinity, alignment: .top)
+            }
+            .background(Color(hex: "#F9FAFB"))
+            .navigationTitle("CRM")
+            .onAppear {
                 Task { await viewModel.loadCustomers(storeId: storeId) }
+            }
+            .refreshable { await viewModel.loadCustomers(storeId: storeId) }
+            .popover(item: $activeSheet) { sheetType in
+                CRMDashboardSheetView(
+                    viewModel: viewModel,
+                    sheetType: sheetType
+                )
+                .presentationDetents([.medium, .large])
+            }
+            /// Presents a pop-up sheet with customer details when a customer is selected.
+            .sheet(item: $selectedCustomer) { customer in
+                CustomerDetailSheetView(customer: customer)
+                    .presentationDetents([.fraction(0.7), .large])  // Pop-up bisa 70% atau ditarik Full Screen
             }
         }
     }
+}
+
+#Preview {
+    let mockCRM = MockCRMRepository()
+    let mockOp = MockOperationalRepository()
+    mockOp.dummyStore = Store(
+        id: "S-1",
+        name: "Dagify Test Store",
+        branches: [Branch(id: "B-1", name: "Pusat", address: "")]
+    )
+    mockCRM.customers = [
+        Customer(
+            id: "1",
+            storeId: "S-1",
+            branchId: "B-1",
+            name: "Budi",
+            phoneNumber: "081",
+            totalSpent: 100000,
+            visitHistory: [Date()]
+        ),
+        Customer(
+            id: "2",
+            storeId: "S-1",
+            branchId: "B-1",
+            name: "Susi",
+            phoneNumber: "082",
+            totalSpent: 200000,
+            visitHistory: [Date(), Date(), Date(), Date(), Date()]
+        ),
+    ]
+    return CRMView(
+        viewModel: CRMViewModel(crmProtocol: mockCRM, storeProtocol: mockOp),
+        storeId: "S-1"
+    )
 }
