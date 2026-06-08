@@ -2,21 +2,74 @@
 //  NotificationService.swift
 //  Dagify
 //
-//  Created by Hanzelius Kwan on 28/05/26.
+//  Created by Bryan Carlie Lukito Setiawan on 28/05/26.
 //
 
 import Foundation
 import UserNotifications
 
 class NotificationService {
+
+    // MARK: - Singleton Instance
     static let shared = NotificationService()
-    func requestPermission() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in }
+    private init() {}
+
+    // MARK: - Authorization
+    func requestAuthorization() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [
+            .alert, .badge, .sound,
+        ]) { granted, error in
+            if let error = error {
+                print(
+                    "Error meminta izin notifikasi: \(error.localizedDescription)"
+                )
+            }
+        }
     }
-    func sendLocalNotification(title: String, body: String) {
+
+    // MARK: - Scheduling Methods
+    func scheduleExpiryWarning(for ingredient: Ingredient) {
+        guard let expiryDate = ingredient.expiryDate else { return }
+
+        // Memberi peringatan 3 hari sebelum basi
+        let warningDate =
+            Calendar.current.date(byAdding: .day, value: -3, to: expiryDate)
+            ?? expiryDate
+        if warningDate < Date() { return }  // Jangan jadwalkan di masa lalu
+
         let content = UNMutableNotificationContent()
-        content.title = title; content.body = body; content.sound = .default
-        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
-        UNUserNotificationCenter.current().add(request)
+        content.title = "Peringatan Kedaluwarsa!"
+        content.body =
+            "Bahan baku \(ingredient.name) akan segera basi pada \(expiryDate.formatted(date: .abbreviated, time: .omitted)). Harap cek gudang!"
+        content.sound = .default
+
+        let components = Calendar.current.dateComponents(
+            [.year, .month, .day, .hour],
+            from: warningDate
+        )
+        let trigger = UNCalendarNotificationTrigger(
+            dateMatching: components,
+            repeats: false
+        )
+
+        // Gunakan ID bahan sebagai identifier agar notifikasi dapat di-update/dibatalkan
+        let request = UNNotificationRequest(
+            identifier: "expiry_\(ingredient.id ?? UUID().uuidString)",
+            content: content,
+            trigger: trigger
+        )
+
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print(
+                    "Gagal menjadwalkan notifikasi: \(error.localizedDescription)"
+                )
+            }
+        }
+    }
+
+    func cancelExpiryWarning(for ingredientId: String) {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(
+            withIdentifiers: ["expiry_\(ingredientId)"])
     }
 }

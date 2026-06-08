@@ -8,54 +8,50 @@
 import Foundation
 import SwiftData
 
-@MainActor
 class SyncManager: SyncManagerProtocol {
-    static let shared = SyncManager()
-    
-    private init() {}
-    
-    func handleCheckout(order: Order, isConnected: Bool, firebaseRepo: OperationalProtocol, context: ModelContext) async throws {
-        if isConnected {
-            _ = try await firebaseRepo.submitOrderAndUpdateInventory(order: order)
-            print("Online: Pesanan sukses masuk ke Firebase.")
-        } else {
-            let encoder = JSONEncoder()
-            if let encodedData = try? encoder.encode(order) {
-                let offlineOrder = OfflineOrderModel(
-                    id: order.id ?? UUID().uuidString,
-                    orderData: encodedData,
-                    timestamp: Date()
-                )
-                
-                context.insert(offlineOrder)
-                try context.save()
-                print("Offline: Pesanan aman tersimpan di SwiftData Lokal!")
-            }
-        }
+
+    // MARK: - Properties
+    let operationalProtocol: OperationalProtocol
+
+    // MARK: - Initialization
+    init(operationalProtocol: OperationalProtocol) {
+        self.operationalProtocol = operationalProtocol
     }
-    
-    func syncOfflineData(firebaseRepo: OperationalProtocol, context: ModelContext) async {
-        let descriptor = FetchDescriptor<OfflineOrderModel>(sortBy: [SortDescriptor(\.timestamp, order: .forward)])
-        guard let offlineOrders = try? context.fetch(descriptor), !offlineOrders.isEmpty else { return }
-        
-        print("Koneksi pulih! Memulai sinkronisasi \(offlineOrders.count) pesanan ke Firebase...")
-        
-        let decoder = JSONDecoder()
-        
-        for offlineOrder in offlineOrders {
-            if let orderToSync = try? decoder.decode(Order.self, from: offlineOrder.orderData) {
-                do {
-                    _ = try await firebaseRepo.submitOrderAndUpdateInventory(order: orderToSync)
-                    
-                    context.delete(offlineOrder)
-                } catch {
-                    print("Gagal sinkronisasi order \(offlineOrder.id): \(error.localizedDescription)")
+
+    // MARK: - Synchronization Methods
+    func syncOfflineOrders(context: ModelContext, branchId: String) async {
+        do {
+            let descriptor = FetchDescriptor<OfflineOrderModel>()
+            let offlineOrders = try context.fetch(descriptor)
+
+            guard !offlineOrders.isEmpty else { return }
+            print(
+                "Memulai sinkronisasi \(offlineOrders.count) transaksi offline ke Cloud..."
+            )
+
+            let decoder = JSONDecoder()
+            for offlineRecord in offlineOrders {
+                if let order = try? decoder.decode(
+                    Order.self,
+                    from: offlineRecord.orderData
+                ) {
+                    do {
+                        _ =
+                            try await operationalProtocol
+                            .submitOrderAndUpdateInventory(order: order)
+                        // Jika berhasil dikirim, hapus dari database lokal
+                        context.delete(offlineRecord)
+                    } catch {
+                        print(
+                            "Gagal sinkronisasi pesanan \(order.id ?? "Unknown")"
+                        )
+                    }
                 }
             }
+            try context.save()
+            print("Sinkronisasi Selesai.")
+        } catch {
+            print("Gagal membaca data offline: \(error.localizedDescription)")
         }
-        
-        // Simpan penghapusan
-        try? context.save()
-        print("Sinkronisasi selesai!")
     }
 }

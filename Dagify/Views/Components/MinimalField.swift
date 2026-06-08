@@ -2,26 +2,57 @@
 //  MinimalField.swift
 //  Dagify
 //
-//  Created by Hanzelius Kwan on 31/05/26.
+//  Created by Bryan Carlie Lukito Setiawan on 31/05/26.
 //
 
 import SwiftUI
 
 struct MinimalField: View {
-    let icon: String
-    let placeholder: String
+    var icon: String
+    var placeholder: String
+    /// Stores the placeholder text inside the input box
     @Binding var text: String
+
     var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: icon).foregroundColor(.white.opacity(0.6)).frame(
-                width: 20
+        VStack(alignment: .leading, spacing: 8) {
+            // Label atas berwarna gray opacity 0.6 sesuai permintaan sebelumnya
+            Text(placeholder)
+                .font(.subheadline)
+                .foregroundColor(Color.gray)
+
+            HStack(spacing: 16) {
+                Image(systemName: icon)
+                    .foregroundColor(Color(hex: "#00A3A3"))
+                    .font(.system(size: 18, weight: .medium))
+                    .frame(width: 24)
+
+                TextField(placeholder, text: $text)
+                    .foregroundColor(Color.gray)
+                    .textInputAutocapitalization(.never)
+            }
+            .padding(.vertical, 16)
+            .padding(.horizontal, 20)
+            .background(Color.white.opacity(0.05))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color(hex: "#00A3A3"), lineWidth: 1.5)
+                    .shadow(
+                        color: Color(hex: "#00A3A3").opacity(0.6),
+                        radius: 5,
+                        x: 0,
+                        y: 0
+                    )
             )
-            TextField(placeholder, text: $text)
-                .foregroundColor(.white)
-                .autocapitalization(.none)
         }
-        .padding()
-        .background(Color.white.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
+
+}
+
+#Preview {
+    MinimalField(
+        icon: "envelope.fill",
+        placeholder: "Email",
+        text: .constant("")
+    )
 }

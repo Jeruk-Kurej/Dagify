@@ -5,23 +5,35 @@
 //  Created by Bryan Carlie Lukito Setiawan on 28/05/26.
 //
 
-import Combine
 import Foundation
 import Network
+import Observation
 
-@MainActor
-class NetworkMonitor: ObservableObject {
-    private let monitor = NWPathMonitor()
-    private let queue = DispatchQueue(label: "NetworkMonitor")
+// MARK: - Protocol Definition
+protocol NetworkMonitorProtocol {
+    var isConnected: Bool { get }
+}
 
-    public var isConnected: Bool = true
+// MARK: - Service Implementation
+@Observable
+class NetworkMonitor: NetworkMonitorProtocol {
 
-    public init() {
+    // MARK: - Properties
+    var isConnected: Bool = true
+    let monitor = NWPathMonitor()
+    let queue = DispatchQueue(label: "NetworkMonitor")
+
+    // MARK: - Initialization
+    init() {
         monitor.pathUpdateHandler = { [weak self] path in
             DispatchQueue.main.async {
-                self?.isConnected = (path.status == .satisfied)
+                self?.isConnected = path.status == .satisfied
             }
         }
         monitor.start(queue: queue)
+    }
+
+    deinit {
+        monitor.cancel()
     }
 }
