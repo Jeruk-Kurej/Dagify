@@ -12,39 +12,34 @@ struct FluidBackgroundView: View {
 
     var body: some View {
         ZStack {
-            Color.themeTextPrimary.ignoresSafeArea()
+            Color(hex: "#F9FAFB").ignoresSafeArea()
 
             Circle()
-                .fill(Color.themePrimary.opacity(0.7))
-                .frame(width: 300, height: 300)
-                .blur(radius: 90)
+                .fill(Color(hex: "#00A3A3").opacity(0.15))
+                .frame(width: 400, height: 400)
+                .blur(radius: 80)
                 .offset(
-                    x: isAnimating ? 150 : -150,
-                    y: isAnimating ? -200 : 100
+                    x: isAnimating ? 100 : -50,
+                    y: isAnimating ? -200 : -100
                 )
 
             Circle()
-                .fill(Color.purple.opacity(0.7))
+                .fill(Color(hex: "#2DD4BF").opacity(0.2))
                 .frame(width: 350, height: 350)
-                .blur(radius: 120)
-                .offset(
-                    x: isAnimating ? -150 : 150,
-                    y: isAnimating ? 200 : -150
-                )
-
-            Circle()
-                .fill(Color.themeHighlight.opacity(0.6))
-                .frame(width: 250, height: 250)
-                .blur(radius: 100)
-                .offset(x: isAnimating ? 50 : -200, y: isAnimating ? -50 : 250)
+                .blur(radius: 90)
+                .offset(x: isAnimating ? -100 : 50, y: isAnimating ? 200 : 100)
         }
         .ignoresSafeArea()
         .onAppear {
             withAnimation(
-                .easeInOut(duration: 6).repeatForever(autoreverses: true)
+                .easeInOut(duration: 10).repeatForever(autoreverses: true)
             ) {
                 isAnimating.toggle()
             }
         }
     }
+}
+
+#Preview {
+    FluidBackgroundView()
 }

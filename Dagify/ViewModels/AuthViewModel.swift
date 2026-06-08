@@ -35,7 +35,7 @@ class AuthViewModel {
                 password: password
             )
         } catch {
-            errorMessage = "Gagal login: Periksa kembali kredensial Anda."
+            errorMessage = "Gagal login: \(error.localizedDescription)"
         }
 
         isLoading = false

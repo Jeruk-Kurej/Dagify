@@ -10,51 +10,82 @@ import FirebaseFirestore
 import Foundation
 
 class FirebaseAuthService: AuthProtocol {
-    private let auth = Auth.auth()
-    private let db = Firestore.firestore()
-    
-     init() {}
-    
-     func login(email: String, password: String) async throws -> User {
-        let authResult = try await auth.signIn(withEmail: email, password: password)
-        let uid = authResult.user.uid
-        
-        let snapshot = try await db.collection("users").document(uid).getDocument()
+
+    // MARK: - Properties
+    let auth = Auth.auth()
+    let db = Firestore.firestore()
+
+    // MARK: - Initialization
+    init() {}
+
+    // MARK: - Authentication Methods
+
+    func login(email: String, password: String) async throws -> User {
+        let authResult = try await auth.signIn(
+            withEmail: email,
+            password: password
+        )
+        let snapshot = try await db.collection("users").document(
+            authResult.user.uid
+        ).getDocument()
+
         guard let user = try snapshot.data(as: User?.self) else {
-            throw NSError(domain: "AuthError", code: 404, userInfo: [NSLocalizedDescriptionKey: "Profil pengguna tidak ditemukan."])
+            throw NSError(
+                domain: "Auth",
+                code: 404,
+                userInfo: [
+                    NSLocalizedDescriptionKey:
+                        "Data pengguna tidak ditemukan di database."
+                ]
+            )
         }
         return user
     }
-    
-    // FITUR BARU: Registrasi Kompleks (User + Store + Branch)
-     func register(email: String, password: String, storeName: String, branchName: String) async throws -> User {
-        // 1. Buat akun di Firebase Auth
-        let authResult = try await auth.createUser(withEmail: email, password: password)
+
+    func register(
+        email: String,
+        password: String,
+        storeName: String,
+        branchName: String
+    ) async throws -> User {
+        let authResult = try await auth.createUser(
+            withEmail: email,
+            password: password
+        )
         let uid = authResult.user.uid
-        
-        // Siapkan Batch untuk penulisan serentak
-        let batch = db.batch()
-        
-        // 2. Siapkan dokumen Store baru
-        let storeRef = db.collection("stores").document()
-        let storeId = storeRef.documentID
-        
-        let newBranch = Branch(id: UUID().uuidString, name: branchName, address: "Belum diatur")
-        let newStore = Store(id: storeId, name: storeName, branches: [newBranch])
-        try batch.setData(from: newStore, forDocument: storeRef)
-        
-        // 3. Siapkan dokumen User yang terikat dengan Store tersebut
-        let userRef = db.collection("users").document(uid)
+
+        // Membuat entitas Store & Branch baru
+        let storeId = UUID().uuidString
+        let branchId = UUID().uuidString
+
+        let initialBranch = Branch(
+            id: branchId,
+            name: branchName,
+            address: "Alamat belum diatur"
+        )
+        let newStore = Store(
+            id: storeId,
+            name: storeName,
+            branches: [initialBranch]
+        )
+        try db.collection("stores").document(storeId).setData(from: newStore)
+
+        // Mendaftarkan User
         let newUser = User(id: uid, email: email, storeId: storeId)
-        try batch.setData(from: newUser, forDocument: userRef)
-        
-        // 4. Eksekusi semua secara serentak
-        try await batch.commit()
-        
+        try db.collection("users").document(uid).setData(from: newUser)
+
         return newUser
     }
-    
-     func logout() throws {
+
+    func logout() throws {
         try auth.signOut()
+    }
+
+    func getCurrentUser() async throws -> User? {
+        guard let currentUser = auth.currentUser else { return nil }
+        let snapshot = try await db.collection("users").document(
+            currentUser.uid
+        ).getDocument()
+        return try snapshot.data(as: User?.self)
     }
 }
