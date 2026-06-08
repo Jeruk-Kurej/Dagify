@@ -2,34 +2,164 @@
 //  POSViewModelTests.swift
 //  DagifyTests
 //
-//  Created by Mario Ruby Ariesusandi  on 28-05-2026.
+//  Created by Bryan Carlie Lukito Setiawan on 28/05/26.
 //
 
-import Testing
 import Foundation
+import SwiftData
+import Testing
 
 @testable import Dagify
 
+@Suite("POS ViewModel Tests")
 @MainActor
 struct POSViewModelTests {
-    
-    @Test("1. Kalkulasi Total Harga dan Jumlah Barang Keranjang")
-    func testCartCalculations() {
-        let mockOp = MockOperationalRepository()
-        let viewModel = POSViewModel(operationalProtocol: mockOp, networkMonitor: NetworkMonitor(), syncManager: MockSyncManager())
-        
-        let product1 = Product(id: "P1", name: "Kopi", price: 20000, category: "Menu", isAvailable: true, recipe: [])
-        let product2 = Product(id: "P2", name: "Teh", price: 15000, category: "Menu", isAvailable: true, recipe: [])
-        
-        viewModel.addToCart(product: product1)
-        viewModel.addToCart(product: product1)
-        viewModel.addToCart(product: product2)
-        
-        #expect(viewModel.totalCartItems == 3, "Kalkulasi jumlah barang di keranjang salah")
-        #expect(viewModel.subtotal == 55000, "Kalkulasi subtotal (2x20k + 15k) salah")
-        #expect(viewModel.isCartEmpty == false, "State keranjang kosong salah")
-        
-        viewModel.removeOrDecreaseFromCart(product: product1)
-        #expect(viewModel.totalCartItems == 2, "Pengurangan item keranjang gagal")
+
+    @Test("Fungsi: loadProducts()")
+    func testLoadProducts() async {
+        let mockOpRepo = MockOperationalRepository()
+        let vm = POSViewModel(
+            operationalProtocol: mockOpRepo,
+            cashflowProtocol: MockCashflowRepository(),
+            crmProtocol: MockCRMRepository(),
+            networkMonitor: MockNetworkMonitor(),
+            syncManager: MockSyncManager()
+        )
+        mockOpRepo.products = [
+            Product(
+                id: "1",
+                branchId: "B-1",
+                name: "Kopi",
+                price: 10000,
+                recipe: []
+            )
+        ]
+
+        await vm.loadProducts(branchId: "B-1")
+        #expect(vm.availableProducts.count == 1)
+    }
+
+    @Test("Fungsi: loadCustomersForSuggestions() & selectCustomer()")
+    func testCustomerSelection() async {
+        let mockCrmRepo = MockCRMRepository()
+        let vm = POSViewModel(
+            operationalProtocol: MockOperationalRepository(),
+            cashflowProtocol: MockCashflowRepository(),
+            crmProtocol: mockCrmRepo,
+            networkMonitor: MockNetworkMonitor(),
+            syncManager: MockSyncManager()
+        )
+
+        let c1 = Customer(
+            id: "1",
+            storeId: "S-1",
+            branchId: "B-1",
+            name: "Budi",
+            phoneNumber: "081",
+            totalSpent: 10000,
+            visitHistory: [Date(), Date(), Date(), Date(), Date()]
+        )
+        mockCrmRepo.customers = [c1]
+
+        await vm.loadCustomersForSuggestions(storeId: "S-1")
+        vm.customerPhone = "08"
+        #expect(vm.suggestedCustomers.count == 1)
+
+        vm.selectCustomer(c1)
+        #expect(vm.customerName == "Budi")
+        #expect(vm.customerPhone == "081")
+    }
+
+    @Test(
+        "Fungsi: addToCart() & removeOrDecreaseFromCart() & getCartQuantity()"
+    )
+    func testCartOperations() {
+        let vm = POSViewModel(
+            operationalProtocol: MockOperationalRepository(),
+            cashflowProtocol: MockCashflowRepository(),
+            crmProtocol: MockCRMRepository(),
+            networkMonitor: MockNetworkMonitor(),
+            syncManager: MockSyncManager()
+        )
+        let p1 = Product(
+            id: "1",
+            branchId: "B-1",
+            name: "Kopi",
+            price: 10000,
+            recipe: []
+        )
+
+        vm.addToCart(product: p1)
+        vm.addToCart(product: p1)  // qty = 2
+        #expect(vm.cart.first?.quantity == 2)
+        #expect(vm.subtotal == 20000)
+        #expect(vm.getCartQuantity(for: p1) == 2)
+
+        vm.removeOrDecreaseFromCart(product: p1)  // qty = 1
+        #expect(vm.cart.first?.quantity == 1)
+        #expect(vm.getCartQuantity(for: p1) == 1)
+
+        vm.removeOrDecreaseFromCart(product: p1)  // qty = 0 (dihapus)
+        #expect(vm.cart.isEmpty == true)
+        #expect(vm.getCartQuantity(for: p1) == 0)
+    }
+
+    @Test("Fungsi: checkout() - Skenario Berhasil")
+    func testCheckoutSuccess() async throws {
+        let mockCashRepo = MockCashflowRepository()
+        let vm = POSViewModel(
+            operationalProtocol: MockOperationalRepository(),
+            cashflowProtocol: mockCashRepo,
+            crmProtocol: MockCRMRepository(),
+            networkMonitor: MockNetworkMonitor(),
+            syncManager: MockSyncManager()
+        )
+        vm.addToCart(
+            product: Product(
+                id: "1",
+                branchId: "B-1",
+                name: "Kopi",
+                price: 10000,
+                recipe: []
+            )
+        )
+
+        let container = try ModelContainer(
+            for: OfflineOrderModel.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        await vm.checkout(
+            storeId: "S-1",
+            branchId: "B-1",
+            context: ModelContext(container)
+        )
+
+        #expect(vm.isCheckoutSuccess == true)
+        #expect(vm.cart.isEmpty == true)
+        #expect(mockCashRepo.records.count == 1)  // Checkout should add income record
+    }
+
+    @Test("Fungsi: checkout() - Skenario Gagal (Keranjang Kosong)")
+    func testCheckoutFailEmptyCart() async throws {
+        let vm = POSViewModel(
+            operationalProtocol: MockOperationalRepository(),
+            cashflowProtocol: MockCashflowRepository(),
+            crmProtocol: MockCRMRepository(),
+            networkMonitor: MockNetworkMonitor(),
+            syncManager: MockSyncManager()
+        )
+
+        let container = try ModelContainer(
+            for: OfflineOrderModel.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        await vm.checkout(
+            storeId: "S-1",
+            branchId: "B-1",
+            context: ModelContext(container)
+        )
+
+        #expect(vm.isCheckoutSuccess == false)
+        #expect(vm.errorMessage == nil)
     }
 }
