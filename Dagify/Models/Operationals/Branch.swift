@@ -8,11 +8,14 @@
 import Foundation
 
 struct Branch: Identifiable, Codable, Equatable {
-    let id: String
-    let name: String
-    let address: String
-    
-    init(id: String, name: String, address: String) {
+
+    // MARK: - Properties
+    var id: String
+    var name: String
+    var address: String
+
+    // MARK: - Initialization
+    init(id: String = UUID().uuidString, name: String, address: String) {
         self.id = id
         self.name = name
         self.address = address
