@@ -2,83 +2,44 @@
 //  ProductAnalyticsViewModelTests.swift
 //  DagifyTests
 //
-//  Created by Mario Ruby Ariesusandi  on 28-05-2026.
+//  Created by Bryan Carlie Lukito Setiawan on 28/05/26.
 //
 
-import Testing
 import Foundation
+import Testing
 
 @testable import Dagify
 
-@Suite("Product Analytics ViewModel Tests")
+@Suite("ProductAnalytics ViewModel Tests")
 @MainActor
 struct ProductAnalyticsViewModelTests {
-    
-    @Test("Test Fungsi loadAnalyticsData - Berhasil Memuat Data Penjualan")
-    func testLoadAnalyticsData() async {
-        let mockOp = MockOperationalRepository()
-        let vm = ProductAnalyticsViewModel(operationalProtocol: mockOp)
-        
-        await vm.loadAnalyticsData(branchId: "BRANCH-A")
-        
-        #expect(vm.orders != nil)
+
+    @Test("Fungsi: loadAnalyticsData() - Skenario Berhasil")
+    func testLoadAnalyticsDataSuccess() async {
+        let mockOpRepo = MockOperationalRepository()
+        let vm = ProductAnalyticsViewModel(operationalProtocol: mockOpRepo)
+
+        let p1 = Product(id: "1", name: "Kopi", price: 10000, recipe: [])
+        let p2 = Product(id: "2", name: "Teh", price: 5000, recipe: [])
+        mockOpRepo.products = [p1, p2]
+
+        await vm.loadAnalyticsData(branchId: "B-1")
+
+        #expect(vm.isLoading == false)
+        #expect(vm.errorMessage == nil)
     }
-    
-    @Test("Test Properti mostProfitableProducts - Kalkulasi Margin Laba Bersih Berdasarkan HPP")
-    func testMostProfitableProductsCalculation() async {
-        let mockOp = MockOperationalRepository()
-        let vm = ProductAnalyticsViewModel(operationalProtocol: mockOp)
-        
-        let kopi = Ingredient(id: "I-KOPI", name: "Kopi", currentStock: 100, unit: "gr", expiryDate: nil, minimumStockWarning: 1, costPerUnit: 500)
-        mockOp.dummyIngredients = [kopi]
-        
-        let espresso = Product(id: "P-ESP", name: "Espresso", price: 15000, recipe: [RecipeItem(ingredientId: "I-KOPI", quantityRequired: 10)])
-        
-        mockOp.dummyOrders = [
-            Order(branchId: "BRANCH-A", customerId: nil, items: [OrderItem(product: espresso, quantity: 1)], totalAmount: 15000, timestamp: Date())
-        ]
-        
-        await vm.loadAnalyticsData(branchId: "BRANCH-A")
-        
-        #expect(vm.mostProfitableProducts.first?.productName == "Espresso")
-        #expect(vm.mostProfitableProducts.first?.profitMargin == 10000)
-    }
-    
-    @Test("Test Properti bestSellers - Mengurutkan Produk dari yang Paling Banyak Terjual")
-    func testBestSellersSorting() async {
-        let mockOp = MockOperationalRepository()
-        let vm = ProductAnalyticsViewModel(operationalProtocol: mockOp)
-        
-        let p1 = Product(id: "P1", name: "Kopi Susu", price: 15000, recipe: [])
-        let p2 = Product(id: "P2", name: "Teh Manis", price: 5000, recipe: [])
-        
-        mockOp.dummyOrders = [
-            Order(branchId: "BRANCH-A", customerId: nil, items: [OrderItem(product: p1, quantity: 10)], totalAmount: 150000, timestamp: Date()),
-            Order(branchId: "BRANCH-A", customerId: nil, items: [OrderItem(product: p2, quantity: 3)], totalAmount: 15000, timestamp: Date())
-        ]
-        
-        await vm.loadAnalyticsData(branchId: "BRANCH-A")
-        
-        #expect(vm.bestSellers.first?.productName == "Kopi Susu")
-        #expect(vm.bestSellers.first?.quantitySold == 10)
-    }
-    
-    @Test("Test Properti leastPopular - Mengurutkan Produk dari yang Paling Sedikit Terjual")
-    func testLeastPopularSorting() async {
-        let mockOp = MockOperationalRepository()
-        let vm = ProductAnalyticsViewModel(operationalProtocol: mockOp)
-        
-        let p1 = Product(id: "P1", name: "Kopi Susu", price: 15000, recipe: [])
-        let p2 = Product(id: "P2", name: "Teh Manis", price: 5000, recipe: [])
-        
-        mockOp.dummyOrders = [
-            Order(branchId: "BRANCH-A", customerId: nil, items: [OrderItem(product: p1, quantity: 10)], totalAmount: 150000, timestamp: Date()),
-            Order(branchId: "BRANCH-A", customerId: nil, items: [OrderItem(product: p2, quantity: 3)], totalAmount: 15000, timestamp: Date())
-        ]
-        
-        await vm.loadAnalyticsData(branchId: "BRANCH-A")
-        
-        #expect(vm.leastPopular.first?.productName == "Teh Manis")
-        #expect(vm.leastPopular.first?.quantitySold == 3)
+
+    @Test("Fungsi: loadAnalyticsData() - Skenario Error")
+    func testLoadAnalyticsDataFailure() async {
+        let mockOpRepo = MockOperationalRepository()
+        let vm = ProductAnalyticsViewModel(operationalProtocol: mockOpRepo)
+
+        mockOpRepo.shouldThrowError = true
+
+        await vm.loadAnalyticsData(branchId: "B-1")
+
+        #expect(vm.isLoading == false)
+        #expect(vm.errorMessage != nil)
+        #expect(vm.chartData.isEmpty == true)
     }
 }

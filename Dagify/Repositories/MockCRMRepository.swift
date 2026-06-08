@@ -7,27 +7,29 @@
 
 import Foundation
 
-class MockCRMRepository: CRMProtocol{
-    public var shouldThrowError = false
-    public var customers: [Customer] = []
+class MockCRMRepository: CRMProtocol {
 
-    public init() {}
+    // MARK: - Mock State
+    var shouldThrowError = false
+    var customers: [Customer] = []
 
-    public func addCustomer(_ customer: Customer) async throws -> Bool {
-        var newCustomer = customer
-        if newCustomer.id == nil { newCustomer.id = UUID().uuidString }
-        customers.append(newCustomer)
+    // MARK: - CRMProtocol Implementation
+
+    func addCustomer(_ customer: Customer) async throws -> Bool {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        customers.append(customer)
         return true
     }
 
-    public func fetchCustomers(for storeId: String) async throws -> [Customer] {
-        if shouldThrowError { throw NSError(domain: "MockCRM", code: 500) }
-        return customers
+    func fetchCustomers(for storeId: String) async throws -> [Customer] {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        return customers.filter { $0.storeId == storeId }
     }
 
-    public func recordNewVisit(customerId: String, spent: Double, date: Date)
+    func recordNewVisit(customerId: String, spent: Double, date: Date)
         async throws -> Bool
     {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
         if let index = customers.firstIndex(where: { $0.id == customerId }) {
             customers[index].totalSpent += spent
             customers[index].visitHistory.append(date)

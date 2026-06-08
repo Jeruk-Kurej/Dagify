@@ -10,5 +10,6 @@ import Foundation
 protocol CRMProtocol {
     func addCustomer(_ customer: Customer) async throws -> Bool
     func fetchCustomers(for storeId: String) async throws -> [Customer]
-    func recordNewVisit(customerId: String, spent: Double, date: Date) async throws -> Bool
+    func recordNewVisit(customerId: String, spent: Double, date: Date)
+        async throws -> Bool
 }
