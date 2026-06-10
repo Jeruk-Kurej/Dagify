@@ -223,10 +223,10 @@ struct CashflowView: View {
             }
             .onChange(of: viewModel.filteredRecords) { _ in updatePDF() }
             .onChange(of: viewModel.currentMonthString) { _ in updatePDF() }
-            .popover(item: $activeSheet) { sheetType in
+            .sheet(item: $activeSheet) { sheetType in
                 switch sheetType {
-                case .add: AddTransactionView(viewModel: viewModel, branchId: branchId)
-                case .edit(let record): AddTransactionView(viewModel: viewModel, branchId: branchId, recordToEdit: record)
+                case .add: AddTransactionView(viewModel: viewModel, branchId: branchId).presentationDetents([.medium, .large])
+                case .edit(let record): AddTransactionView(viewModel: viewModel, branchId: branchId, recordToEdit: record).presentationDetents([.medium, .large])
                 }
             }
             .alert("Detail Transaksi", isPresented: Binding<Bool>(
