@@ -134,6 +134,7 @@ struct MainAppView: View {
             }
         }
         .task { await setupInitialBranch() }
+        .onAppear { NotificationService.shared.requestAuthorization() }
     }
     
     @ViewBuilder

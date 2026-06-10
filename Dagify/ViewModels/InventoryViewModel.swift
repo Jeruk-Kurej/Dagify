@@ -101,6 +101,10 @@ class InventoryViewModel {
                 )
                 _ = try await cashflowProtocol.addRecord(expenseRecord)
             }
+            
+            // Jadwalkan notifikasi kadaluwarsa
+            NotificationService.shared.scheduleExpiryWarning(for: newIngredient)
+            
             await loadIngredients(branchId: branchId)
         } catch {
             errorMessage = "Gagal menyimpan bahan baku."
@@ -133,6 +137,10 @@ class InventoryViewModel {
                 )
                 _ = try await cashflowProtocol.addRecord(expenseRecord)
             }
+            
+            // Perbarui jadwal notifikasi dengan data terbaru
+            NotificationService.shared.scheduleExpiryWarning(for: updated)
+            
             await loadIngredients(branchId: ingredient.branchId)
         } catch {
             errorMessage = "Gagal menambah stok bahan baku."

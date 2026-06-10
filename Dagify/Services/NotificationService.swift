@@ -35,24 +35,29 @@ class NotificationService {
         let warningDate =
             Calendar.current.date(byAdding: .day, value: -3, to: expiryDate)
             ?? expiryDate
-        if warningDate < Date() { return }  // Jangan jadwalkan di masa lalu
-
         let content = UNMutableNotificationContent()
         content.title = "Peringatan Kedaluwarsa!"
         content.body =
             "Bahan baku \(ingredient.name) akan segera basi pada \(expiryDate.formatted(date: .abbreviated, time: .omitted)). Harap cek gudang!"
         content.sound = .default
 
-        let components = Calendar.current.dateComponents(
-            [.year, .month, .day, .hour],
-            from: warningDate
-        )
-        let trigger = UNCalendarNotificationTrigger(
-            dateMatching: components,
-            repeats: false
-        )
+        let trigger: UNNotificationTrigger
+        
+        if warningDate < Date() {
+            // Jika tanggal peringatan sudah lewat (barang diinput ketika umurnya tinggal < 3 hari)
+            // Trigger notifikasi sekarang juga (delay 5 detik agar user sempat keluar aplikasi)
+            trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
+        } else {
+            let components = Calendar.current.dateComponents(
+                [.year, .month, .day, .hour, .minute],
+                from: warningDate
+            )
+            trigger = UNCalendarNotificationTrigger(
+                dateMatching: components,
+                repeats: false
+            )
+        }
 
-        // Gunakan ID bahan sebagai identifier agar notifikasi dapat di-update/dibatalkan
         let request = UNNotificationRequest(
             identifier: "expiry_\(ingredient.id ?? UUID().uuidString)",
             content: content,
