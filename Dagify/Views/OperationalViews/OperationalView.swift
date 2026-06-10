@@ -14,9 +14,6 @@ struct OperationalView: View {
     let storeId: String
     let branchId: String
 
-    let columns = [
-        GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16),
-    ]
 
     var body: some View {
         NavigationStack {
@@ -27,7 +24,7 @@ struct OperationalView: View {
                         .foregroundColor(Color(hex: "#111827"))
                         .padding(.horizontal).padding(.top, 8)
 
-                    LazyVGrid(columns: columns, spacing: 16) {
+                    LazyVStack(spacing: 16) {
                         NavigationLink(
                             destination: POSView(
                                 viewModel: POSViewModel(
@@ -45,6 +42,7 @@ struct OperationalView: View {
                         ) {
                             OperationalMenuCard(
                                 title: "Kasir (POS)",
+                                description: "Lakukan transaksi penjualan dan catat pesanan pelanggan di cabang ini.",
                                 icon: "cart.fill",
                                 color: Color(hex: "#00A3A3")
                             )
@@ -60,6 +58,7 @@ struct OperationalView: View {
                         ) {
                             OperationalMenuCard(
                                 title: "Master Data",
+                                description: "Kelola daftar menu F&B, harga, kategori, dan resep komposisi bahan.",
                                 icon: "folder.fill.badge.plus",
                                 color: Color(hex: "#4DBDBD")
                             )
@@ -76,6 +75,7 @@ struct OperationalView: View {
                         ) {
                             OperationalMenuCard(
                                 title: "Gudang",
+                                description: "Pantau stok bahan baku, catat barang masuk, dan kelola sisa inventaris.",
                                 icon: "shippingbox.fill",
                                 color: Color(hex: "#F59E0B")
                             )
@@ -91,6 +91,7 @@ struct OperationalView: View {
                         ) {
                             OperationalMenuCard(
                                 title: "Analitik Menu",
+                                description: "Lihat tren penjualan menu mana yang paling laris dan disukai pelanggan.",
                                 icon: "chart.pie.fill",
                                 color: Color(hex: "#10B981")
                             )
