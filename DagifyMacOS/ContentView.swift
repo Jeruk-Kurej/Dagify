@@ -8,14 +8,24 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var authViewModel = AuthViewModel(
+        authProtocol: FirebaseAuthService()
+    )
+
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        Group {
+            if authViewModel.isAuthenticated,
+                let user = authViewModel.currentUser
+            {
+                /// Passing the Store ID for initialization
+                MacMainAppView(storeId: user.storeId, authViewModel: authViewModel)
+                    .transition(.opacity)
+            } else {
+                AuthView(viewModel: authViewModel)
+                    .transition(.opacity)
+            }
         }
-        .padding()
+        .animation(.easeInOut, value: authViewModel.isAuthenticated)
     }
 }
 

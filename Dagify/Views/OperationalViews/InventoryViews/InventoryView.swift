@@ -93,6 +93,8 @@ struct InventoryView: View {
                 }
                 .listStyle(.insetGrouped)
                 .scrollContentBackground(.hidden)
+                .frame(maxWidth: 800)
+                .frame(maxWidth: .infinity, alignment: .top)
             }
         }
         .navigationTitle("Gudang")

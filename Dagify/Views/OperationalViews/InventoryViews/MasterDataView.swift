@@ -70,6 +70,8 @@ struct MasterDataView: View {
                 }
                 .listStyle(.insetGrouped)
                 .scrollContentBackground(.hidden)
+                .frame(maxWidth: 800)
+                .frame(maxWidth: .infinity, alignment: .top)
                 .overlay(alignment: .bottom) {
                     if let err = viewModel.errorMessage {
                         Text(err)

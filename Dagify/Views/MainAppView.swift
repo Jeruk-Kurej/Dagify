@@ -62,6 +62,10 @@ struct MainAppView: View {
     @State private var isOperasionalExpanded: Bool = true
     @Environment(\.horizontalSizeClass) private var sizeClass
     
+    private var isMacOS: Bool {
+        ProcessInfo.processInfo.isiOSAppOnMac || ProcessInfo.processInfo.isMacCatalystApp
+    }
+    
     private let operationalService = FirebaseOperationalService()
     private let cashflowService = FirebaseCashflowService()
     private let crmService = FirebaseCRMService()
@@ -89,7 +93,9 @@ struct MainAppView: View {
                 .transition(.opacity)
                 
             } else {
-                if sizeClass == .regular {
+                if isMacOS {
+                    MacMainAppView(storeId: storeId, authViewModel: authViewModel)
+                } else if sizeClass == .regular {
                     NavigationSplitView {
                         List(selection: Binding(get: { selectedIPadMenu }, set: { if let new = $0 { selectedIPadMenu = new } })) {
                             NavigationLink(value: IPadMenu.dashboard) { Label(IPadMenu.dashboard.rawValue, systemImage: IPadMenu.dashboard.icon) }

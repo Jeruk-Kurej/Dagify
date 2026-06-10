@@ -162,6 +162,7 @@ struct AddEditProductView: View {
                       }
                   }
             }
+            .frame(maxWidth: 500)
             .navigationTitle(productToEdit == nil ? "Tambah Menu" : "Edit Menu")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

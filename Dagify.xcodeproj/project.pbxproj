@@ -30,14 +30,47 @@
 		903F30432FC7E0C500BA79C6 /* DagifyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DagifyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		647A871F2FD94BFF00F3199E /* Exceptions for "DagifyMacOS" folder in "Dagify" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				MacMainAppView.swift,
+			);
+			target = 643E957F2FC4267E00508448 /* Dagify */;
+		};
+		647A87202FD94BFF00F3199E /* Exceptions for "DagifyMacOS" folder in "DagifyMacOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				MacMainAppView.swift,
+			);
+			target = 647A87102FD9412100F3199E /* DagifyMacOS */;
+		};
+		647A87222FD954A200F3199E /* Exceptions for "Dagify" folder in "DagifyMacOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Protocols/AuthProtocol.swift,
+				Services/FirebaseAuthService.swift,
+				ViewModels/AuthViewModel.swift,
+			);
+			target = 647A87102FD9412100F3199E /* DagifyMacOS */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		643E95822FC4267E00508448 /* Dagify */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				647A87222FD954A200F3199E /* Exceptions for "Dagify" folder in "DagifyMacOS" target */,
+			);
 			path = Dagify;
 			sourceTree = "<group>";
 		};
 		647A87122FD9412100F3199E /* DagifyMacOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				647A871F2FD94BFF00F3199E /* Exceptions for "DagifyMacOS" folder in "Dagify" target */,
+				647A87202FD94BFF00F3199E /* Exceptions for "DagifyMacOS" folder in "DagifyMacOS" target */,
+			);
 			path = DagifyMacOS;
 			sourceTree = "<group>";
 		};
@@ -402,6 +435,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = V4C8BQN3W8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -433,6 +467,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = V4C8BQN3W8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

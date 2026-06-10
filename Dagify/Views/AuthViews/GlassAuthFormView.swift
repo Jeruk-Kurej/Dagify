@@ -120,6 +120,7 @@ struct GlassAuthFormView: View {
                     .stroke(Color.white.opacity(0.1), lineWidth: 1)
             )
             .padding(.horizontal, 24)
+            .frame(maxWidth: 450)
             
             Spacer()
         }

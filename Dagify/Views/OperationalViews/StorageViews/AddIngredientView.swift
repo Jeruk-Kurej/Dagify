@@ -105,6 +105,7 @@ struct AddIngredientView: View {
                     .disabled(name.isEmpty || (!isEditMode && (currentStock.isEmpty || costPerUnit.isEmpty)) || viewModel.isLoading)
                 }
             }
+            .frame(maxWidth: 500)
             .onAppear {
                 /// Populate data if edit mode is active.
                 if let edit = ingredientToEdit {

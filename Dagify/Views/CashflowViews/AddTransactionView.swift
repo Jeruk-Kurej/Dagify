@@ -64,6 +64,7 @@ struct AddTransactionView: View {
                     Section { Text(errorMessage).foregroundColor(.red).font(.footnote) }
                 }
             }
+            .frame(maxWidth: 500)
             .navigationTitle(recordToEdit == nil ? "Catat Kas" : "Edit Transaksi")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
