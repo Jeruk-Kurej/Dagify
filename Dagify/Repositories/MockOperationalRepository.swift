@@ -94,6 +94,12 @@ class MockOperationalRepository: OperationalProtocol, StoreProtocol {
     func deleteIngredient(ingredientId: String) async throws -> Bool {
         if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
         ingredients.removeAll { $0.id == ingredientId }
+        
+        // Cascade delete
+        for i in 0..<products.count {
+            products[i].recipe.removeAll { $0.ingredientId == ingredientId }
+        }
+        
         return true
     }
 

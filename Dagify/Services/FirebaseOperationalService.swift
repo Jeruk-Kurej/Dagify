@@ -100,6 +100,17 @@ class FirebaseOperationalService: OperationalProtocol, StoreProtocol {
 
     func deleteIngredient(ingredientId: String) async throws -> Bool {
         try await db.collection("ingredients").document(ingredientId).delete()
+        
+        // Menghapus referensi bahan baku yang terhapus dari semua resep menu
+        let productsSnapshot = try await db.collection("products").getDocuments()
+        for doc in productsSnapshot.documents {
+            if var product = try? doc.data(as: Product.self) {
+                if product.recipe.contains(where: { $0.ingredientId == ingredientId }) {
+                    product.recipe.removeAll(where: { $0.ingredientId == ingredientId })
+                    try db.collection("products").document(doc.documentID).setData(from: product)
+                }
+            }
+        }
         return true
     }
 
