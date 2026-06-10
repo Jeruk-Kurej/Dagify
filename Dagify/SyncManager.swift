@@ -55,7 +55,6 @@ class SyncManager: SyncManagerProtocol {
                         )
                         _ = try await cashflowProtocol.addRecord(incomeRecord)
                         
-                        // Bug Fix: Restore CRM loyal status
                         if let cid = order.customerId, !cid.isEmpty {
                             _ = try await crmProtocol.recordNewVisit(customerId: cid, spent: order.totalAmount, date: order.timestamp)
                         }
