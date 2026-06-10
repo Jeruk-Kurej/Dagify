@@ -168,7 +168,7 @@ struct AddEditProductView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Simpan") {
-                        if viewModel.isLoading { return } // Mencegah double tap
+                        if viewModel.isLoading { return }
                         saveProduct()
                     }
                     .disabled(productName.isEmpty || !isPriceValid || viewModel.isLoading || isNameDuplicate || !isRecipeValid || isSaving || selectedCategoryId.isEmpty)
