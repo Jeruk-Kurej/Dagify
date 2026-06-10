@@ -69,7 +69,7 @@ class CRMViewModel {
     func loadCustomers(storeId: String) async {
         isLoading = true
         do {
-            // Ambil data pelanggan dan cabang secara pararel
+            // Ambil data pelanggan dan cabang
             async let fetchCusts = crmProtocol.fetchCustomers(for: storeId)
             async let fetchStore = storeProtocol.fetchStore(storeId: storeId)
 
