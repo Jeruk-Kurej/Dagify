@@ -132,7 +132,7 @@ class CashflowViewModel {
         let record = FinancialRecord(id: UUID().uuidString, branchId: branchId, amount: amount, type: type, category: category, timestamp: date, notes: notes)
         do {
             _ = try await cashProtocol.addRecord(record)
-            currentMonthDate = record.timestamp // Pindah ke bulan transaksi
+            currentMonthDate = record.timestamp 
             await loadRecords(branchId: branchId)
         } catch { errorMessage = "Gagal menambah transaksi: \(error.localizedDescription)" }
         isLoading = false
