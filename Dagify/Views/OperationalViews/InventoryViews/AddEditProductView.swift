@@ -86,7 +86,6 @@ struct AddEditProductView: View {
                             }
                             .frame(width: 120, height: 120).clipShape(RoundedRectangle(cornerRadius: 12)).shadow(radius: 3)
                         } else {
-                            // Gambar default jika kosong
                             Image(systemName: "cup.and.saucer.fill").resizable().scaledToFit().frame(width: 50, height: 50).foregroundColor(.gray).frame(width: 120, height: 120).background(Color(hex: "#F3F4F6")).clipShape(RoundedRectangle(cornerRadius: 12))
                         }
                         
