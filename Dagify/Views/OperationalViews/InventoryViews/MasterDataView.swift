@@ -8,13 +8,9 @@
 import SwiftUI
 
 enum MasterDataSheet: Identifiable {
-    case add
-    case edit(Product)
     case manageCategories
     var id: String {
         switch self {
-        case .add: return "add"
-        case .edit(let product): return product.id ?? UUID().uuidString
         case .manageCategories: return "categories"
         }
     }
@@ -25,6 +21,8 @@ struct MasterDataView: View {
     let branchId: String
     @State private var activeSheet: MasterDataSheet? = nil
     @State private var selectedCategoryId: String? = nil
+    @State private var navigateToAddProduct: Bool = false
+    @State private var navigateToEditProduct: Product? = nil
 
     var body: some View {
         ZStack {
@@ -103,7 +101,7 @@ struct MasterDataView: View {
                                     }
                                     .contentShape(Rectangle())
                                     .contextMenu {
-                                        Button { activeSheet = .edit(product) } label: { Label("Edit Menu", systemImage: "pencil") }
+                                        Button { navigateToEditProduct = product } label: { Label("Edit Menu", systemImage: "pencil") }
                                         Button(role: .destructive) {
                                             if let id = product.id { Task { await viewModel.deleteProduct(productId: id, branchId: branchId) } }
                                         } label: { Label("Hapus Menu", systemImage: "trash") }
@@ -134,7 +132,7 @@ struct MasterDataView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    Button("Tambah Menu Baru", systemImage: "plus.app.fill") { activeSheet = .add }
+                    Button("Tambah Menu Baru", systemImage: "plus.app.fill") { navigateToAddProduct = true }
                     Button("Kelola Kategori", systemImage: "tag.fill") { activeSheet = .manageCategories }
                 } label: {
                     Image(systemName: "ellipsis.circle").fontWeight(.bold).foregroundColor(Color(hex: "#00A3A3"))
@@ -143,10 +141,14 @@ struct MasterDataView: View {
         }
         .onAppear { Task { await viewModel.loadProducts(branchId: branchId); await viewModel.loadIngredients(branchId: branchId); await viewModel.loadCategories(branchId: branchId) } }
         .refreshable { await viewModel.loadProducts(branchId: branchId) }
+        .navigationDestination(isPresented: $navigateToAddProduct) {
+            AddEditProductView(viewModel: viewModel, branchId: branchId, productToEdit: nil)
+        }
+        .navigationDestination(item: $navigateToEditProduct) { product in
+            AddEditProductView(viewModel: viewModel, branchId: branchId, productToEdit: product)
+        }
         .sheet(item: $activeSheet) { sheetType in
             switch sheetType {
-            case .add: AddEditProductView(viewModel: viewModel, branchId: branchId, productToEdit: nil)
-            case .edit(let product): AddEditProductView(viewModel: viewModel, branchId: branchId, productToEdit: product)
             case .manageCategories: CategoryManagerView(viewModel: viewModel, branchId: branchId)
             }
         }

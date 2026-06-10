@@ -63,7 +63,7 @@ struct AddEditProductView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        Group {
             Form {
                 Section("Media & Pengelompokan") {
                     HStack {
@@ -166,7 +166,7 @@ struct AddEditProductView: View {
             .navigationTitle(productToEdit == nil ? "Tambah Menu" : "Edit Menu")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Batal") { dismiss() } }
+                // ToolbarItem(placement: .cancellationAction) { Button("Batal") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Simpan") {
                         if viewModel.isLoading { return } // Mencegah double tap
@@ -178,15 +178,21 @@ struct AddEditProductView: View {
             .onAppear(perform: loadExistingData)
             .sheet(isPresented: $showIngredientPicker) {
                 NavigationStack {
-                    List(viewModel.availableIngredients) { ingredient in
-                        Button(action: {
-                            if !recipeDrafts.contains(where: { $0.ingredient.id == ingredient.id }) { recipeDrafts.append(RecipeDraft(ingredient: ingredient, qtyString: "")) }
-                            showIngredientPicker = false
-                        }) {
-                            HStack {
-                                Text(ingredient.name).foregroundColor(Color(hex: "#111827")).fontWeight(.medium)
-                                Spacer()
-                                Text("Sisa: \(String(format: "%.1f", ingredient.currentStock)) \(ingredient.unit)").font(.caption).foregroundColor(Color(hex: "#6B7280"))
+                    Group {
+                        if viewModel.availableIngredients.isEmpty {
+                            ContentUnavailableView("Belum ada bahan baku", systemImage: "shippingbox", description: Text("Silakan tambahkan bahan baku di tab Gudang terlebih dahulu."))
+                        } else {
+                            List(viewModel.availableIngredients) { ingredient in
+                                Button(action: {
+                                    if !recipeDrafts.contains(where: { $0.ingredient.id == ingredient.id }) { recipeDrafts.append(RecipeDraft(ingredient: ingredient, qtyString: "")) }
+                                    showIngredientPicker = false
+                                }) {
+                                    HStack {
+                                        Text(ingredient.name).foregroundColor(Color(hex: "#111827")).fontWeight(.medium)
+                                        Spacer()
+                                        Text("Sisa: \(String(format: "%.1f", ingredient.currentStock)) \(ingredient.unit)").font(.caption).foregroundColor(Color(hex: "#6B7280"))
+                                    }
+                                }
                             }
                         }
                     }

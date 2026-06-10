@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct RecipeItem: Codable, Equatable {
+struct RecipeItem: Codable, Equatable, Hashable {
 
     // MARK: - Properties
     var ingredientId: String
