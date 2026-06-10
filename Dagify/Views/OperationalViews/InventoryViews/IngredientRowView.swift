@@ -13,7 +13,6 @@ struct IngredientRowView: View {
     var isLowStock: Bool = false
     var onDiscard: (() -> Void)? = nil
     
-    // Prioritas icon: Merah (Basi) -> Kuning (Minim)
     var iconColor: Color {
         if isExpired { return Color(hex: "#EF4444") }
         if isLowStock { return Color(hex: "#F59E0B") }
