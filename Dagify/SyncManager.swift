@@ -44,7 +44,6 @@ class SyncManager: SyncManagerProtocol {
                             try await operationalProtocol
                             .submitOrderAndUpdateInventory(order: order)
                             
-                        // Bug Fix: Restore Cashflow Income
                         let incomeRecord = FinancialRecord(
                             id: UUID().uuidString,
                             branchId: order.branchId,
