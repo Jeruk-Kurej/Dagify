@@ -80,7 +80,17 @@ struct MacMainAppView: View {
             CRMView(viewModel: CRMViewModel(crmProtocol: crmService, storeProtocol: operationalService, operationalProtocol: operationalService), storeId: storeId)
         case .pos:
             POSView(
-                viewModel: POSViewModel(operationalProtocol: operationalService, cashflowProtocol: cashflowService, crmProtocol: crmService, networkMonitor: NetworkMonitor(), syncManager: SyncManager(operationalProtocol: operationalService)),
+                viewModel: POSViewModel(
+                    operationalProtocol: operationalService,
+                    cashflowProtocol: cashflowService,
+                    crmProtocol: crmService,
+                    networkMonitor: NetworkMonitor(),
+                    syncManager: SyncManager(
+                        operationalProtocol: operationalService,
+                        cashflowProtocol: cashflowService,
+                        crmProtocol: crmService
+                    )
+                ),
                 storeId: storeId, branchId: activeBranchId
             ).id(activeBranchId)
         case .masterData:

@@ -12,10 +12,14 @@ class SyncManager: SyncManagerProtocol {
 
     // MARK: - Properties
     let operationalProtocol: OperationalProtocol
+    let cashflowProtocol: CashflowProtocol
+    let crmProtocol: CRMProtocol
 
     // MARK: - Initialization
-    init(operationalProtocol: OperationalProtocol) {
+    init(operationalProtocol: OperationalProtocol, cashflowProtocol: CashflowProtocol, crmProtocol: CRMProtocol) {
         self.operationalProtocol = operationalProtocol
+        self.cashflowProtocol = cashflowProtocol
+        self.crmProtocol = crmProtocol
     }
 
     // MARK: - Synchronization Methods
@@ -39,6 +43,24 @@ class SyncManager: SyncManagerProtocol {
                         _ =
                             try await operationalProtocol
                             .submitOrderAndUpdateInventory(order: order)
+                            
+                        // Bug Fix: Restore Cashflow Income
+                        let incomeRecord = FinancialRecord(
+                            id: UUID().uuidString,
+                            branchId: order.branchId,
+                            amount: order.totalAmount,
+                            type: .income,
+                            category: .none,
+                            timestamp: order.timestamp,
+                            notes: "POS Offline Sync"
+                        )
+                        _ = try await cashflowProtocol.addRecord(incomeRecord)
+                        
+                        // Bug Fix: Restore CRM loyal status
+                        if let cid = order.customerId, !cid.isEmpty {
+                            _ = try await crmProtocol.recordNewVisit(customerId: cid, spent: order.totalAmount, date: order.timestamp)
+                        }
+
                         // Jika berhasil dikirim, hapus dari database lokal
                         context.delete(offlineRecord)
                     } catch {
