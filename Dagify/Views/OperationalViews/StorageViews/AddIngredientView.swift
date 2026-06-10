@@ -77,7 +77,6 @@ struct AddIngredientView: View {
                             let parsedWarning = Double(minimumStockWarning.replacingOccurrences(of: ",", with: ".")) ?? 0
                             
                             if let edit = ingredientToEdit {
-                                // Mode EDIT
                                 var updated = edit
                                 updated.name = name
                                 updated.unit = unit
