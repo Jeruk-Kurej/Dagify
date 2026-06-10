@@ -33,7 +33,9 @@ struct OperationalView: View {
                                     crmProtocol: crmService,
                                     networkMonitor: NetworkMonitor(),
                                     syncManager: SyncManager(
-                                        operationalProtocol: operationalService
+                                        operationalProtocol: operationalService,
+                                        cashflowProtocol: cashflowService,
+                                        crmProtocol: crmService
                                     )
                                 ),
                                 storeId: storeId,
