@@ -8,11 +8,20 @@
 import Foundation
 import UserNotifications
 
-class NotificationService {
+class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
     // MARK: - Singleton Instance
     static let shared = NotificationService()
-    private init() {}
+    
+    private override init() {
+        super.init()
+        UNUserNotificationCenter.current().delegate = self
+    }
+
+    // Tampilkan notifikasi meskipun aplikasi sedang dibuka (Foreground)
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .sound])
+    }
 
     // MARK: - Authorization
     func requestAuthorization() {
