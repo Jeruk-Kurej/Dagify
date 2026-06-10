@@ -100,7 +100,6 @@ struct AddEditProductView: View {
                         Task {
                             if let data = try? await newItem?.loadTransferable(type: Data.self),
                                let uiImage = UIImage(data: data) {
-                                // Kompres agar upload lebih cepat via Cloudinary
                                 selectedImageData = uiImage.jpegData(compressionQuality: 0.5)
                             }
                         }
