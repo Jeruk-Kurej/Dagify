@@ -200,7 +200,6 @@ struct AddEditProductView: View {
                     .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Tutup") { showIngredientPicker = false } } }
                 }.presentationDetents([.medium, .large])
             }
-            // Tambahan Overlay Loading
             .overlay {
                 if viewModel.isLoading {
                     ZStack {
