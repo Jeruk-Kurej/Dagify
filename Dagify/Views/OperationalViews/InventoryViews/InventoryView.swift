@@ -121,7 +121,6 @@ struct InventoryView: View {
         .onAppear { Task { await viewModel.loadIngredients(branchId: branchId) } }
         .refreshable { await viewModel.loadIngredients(branchId: branchId) }
         
-        /// Confirmation alert for discarding expired stock.
         .alert("Buang Stok Basi?", isPresented: Binding<Bool>(
             get: { ingredientToDiscard != nil },
             set: { if !$0 { ingredientToDiscard = nil } }
