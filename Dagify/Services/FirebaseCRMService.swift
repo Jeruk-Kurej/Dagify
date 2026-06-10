@@ -19,7 +19,8 @@ class FirebaseCRMService: CRMProtocol {
 
     // MARK: - Create
     func addCustomer(_ customer: Customer) async throws -> Bool {
-        let ref = db.collection(collectionName).document()
+        guard let id = customer.id else { return false }
+        let ref = db.collection(collectionName).document(id)
         try ref.setData(from: customer)
         return true
     }
