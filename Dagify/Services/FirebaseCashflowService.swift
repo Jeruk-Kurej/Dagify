@@ -5,11 +5,11 @@
 //  Created by Hanzelius Kwan on 28/05/26.
 //
 
-import Foundation
 import FirebaseFirestore
+import Foundation
 
 class FirebaseCashflowService: CashflowProtocol {
-    
+
     // MARK: - Properties
     private let db = Firestore.firestore()
     private let collectionName = "financial_records"
@@ -42,7 +42,7 @@ class FirebaseCashflowService: CashflowProtocol {
         try db.collection(collectionName).document(id).setData(from: record)
         return true
     }
-    
+
     // MARK: - Delete
     func deleteRecord(id: String) async throws -> Bool {
         try await db.collection(collectionName).document(id).delete()

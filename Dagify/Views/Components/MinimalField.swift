@@ -26,8 +26,8 @@ struct MinimalField: View {
                     .font(.system(size: 18, weight: .medium))
                     .frame(width: 24)
 
-                TextField(placeholder, text: $text)
-                    .foregroundColor(Color.gray)
+                TextField("", text: $text, prompt: Text(placeholder).foregroundColor(Color.gray.opacity(0.6)))
+                    .foregroundColor(Color(hex: "#111827"))
                     .textInputAutocapitalization(.never)
             }
             .padding(.vertical, 16)

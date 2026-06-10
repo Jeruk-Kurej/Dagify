@@ -96,7 +96,16 @@ class MockOperationalRepository: OperationalProtocol, StoreProtocol {
     {
         if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
         if let idx = ingredients.firstIndex(where: { $0.id == ingredientId }) {
-            ingredients[idx].currentStock -= amountToDeduct
+            var amountLeft = amountToDeduct
+            for i in 0..<ingredients[idx].batches.count {
+                if amountLeft <= 0 { break }
+                let available = ingredients[idx].batches[i].currentStock
+                if available > 0 {
+                    let deduction = min(available, amountLeft)
+                    ingredients[idx].batches[i].currentStock -= deduction
+                    amountLeft -= deduction
+                }
+            }
             return true
         }
         return false

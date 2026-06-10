@@ -64,7 +64,14 @@ class InventoryViewModel {
         }
         isLoading = true
         
-        let newIngredient = Ingredient(branchId: branchId, name: name, currentStock: currentStock, unit: unit, expiryDate: expiryDate, minimumStockWarning: minimumStockWarning, costPerUnit: costPerUnit)
+        let initialBatch = IngredientBatch(currentStock: currentStock, expiryDate: expiryDate, costPerUnit: costPerUnit)
+        let newIngredient = Ingredient(
+            branchId: branchId,
+            name: name,
+            unit: unit,
+            minimumStockWarning: minimumStockWarning,
+            batches: [initialBatch]
+        )
         let totalCost = currentStock * costPerUnit
         
         do {
@@ -89,20 +96,58 @@ class InventoryViewModel {
         isLoading = false
     }
     
+    func restockIngredient(ingredient: Ingredient, addedStock: Double, costPerUnit: Double, expiryDate: Date?) async {
+        guard addedStock > 0 else { return }
+        isLoading = true
+        
+        var updated = ingredient
+        let newBatch = IngredientBatch(currentStock: addedStock, expiryDate: expiryDate, costPerUnit: costPerUnit)
+        updated.batches.append(newBatch)
+        
+        let totalCost = addedStock * costPerUnit
+        
+        do {
+            _ = try await operationalProtocol.updateIngredient(updated)
+            
+            if totalCost > 0 {
+                let expenseRecord = FinancialRecord(
+                    id: UUID().uuidString,
+                    branchId: ingredient.branchId,
+                    amount: totalCost,
+                    type: .expense,
+                    category: .cogs,
+                    timestamp: Date(),
+                    notes: "Refill Bahan: \(ingredient.name)"
+                )
+                _ = try await cashflowProtocol.addRecord(expenseRecord)
+            }
+            await loadIngredients(branchId: ingredient.branchId)
+        } catch {
+            errorMessage = "Gagal menambah stok bahan baku."
+        }
+        isLoading = false
+    }
+    
     func discardExpiredItem(ingredient: Ingredient, branchId: String) async {
         guard let id = ingredient.id else { return }
         isLoading = true
         do {
-            // Catat kerugian secara sistem
-            _ = try await operationalProtocol.recordWaste(ingredientId: id, amountToDeduct: ingredient.currentStock)
-            
-            /// Resets current stock to 0 and removes the expiry date after discarding.
+            let today = Date()
             var updated = ingredient
-            updated.currentStock = 0
-            updated.expiryDate = nil
-            _ = try await operationalProtocol.updateIngredient(updated)
+            var totalDiscarded: Double = 0
             
-            await loadIngredients(branchId: branchId)
+            for i in 0..<updated.batches.count {
+                if let exp = updated.batches[i].expiryDate, exp < today, updated.batches[i].currentStock > 0 {
+                    totalDiscarded += updated.batches[i].currentStock
+                    updated.batches[i].currentStock = 0
+                }
+            }
+            
+            if totalDiscarded > 0 {
+                _ = try await operationalProtocol.recordWaste(ingredientId: id, amountToDeduct: totalDiscarded)
+                _ = try await operationalProtocol.updateIngredient(updated)
+                await loadIngredients(branchId: branchId)
+            }
         } catch {
             errorMessage = "Gagal membuang stok basi."
         }

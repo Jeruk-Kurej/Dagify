@@ -20,7 +20,7 @@ struct MasterDataViewModelTests {
         let vm = MasterDataViewModel(operationalProtocol: mockOpRepo)
 
         mockOpRepo.products = [Product(id: "1", branchId: "B-1", name: "Kopi", price: 10000, recipe: [])]
-        mockOpRepo.ingredients = [Ingredient(id: "1", branchId: "B-1", name: "Susu", currentStock: 10, unit: "L", minimumStockWarning: 5, costPerUnit: 15000)]
+        mockOpRepo.ingredients = [Ingredient(id: "1", branchId: "B-1", name: "Susu", unit: "L", minimumStockWarning: 5, batches: [IngredientBatch(currentStock: 10, costPerUnit: 15000)])]
         mockOpRepo.categories = [ProductCategory(id: "1", branchId: "B-1", name: "Minuman")]
 
         await vm.loadProducts(branchId: "B-1")

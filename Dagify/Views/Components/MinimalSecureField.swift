@@ -27,12 +27,12 @@ struct MinimalSecureField: View {
                     .frame(width: 24)
 
                 if isVisible {
-                    TextField(placeholder, text: $text)
-                        .foregroundColor(Color.gray)
+                    TextField("", text: $text, prompt: Text(placeholder).foregroundColor(Color.gray.opacity(0.6)))
+                        .foregroundColor(Color(hex: "#111827"))
                         .textInputAutocapitalization(.never)
                 } else {
-                    SecureField(placeholder, text: $text)
-                        .foregroundColor(Color.gray)
+                    SecureField("", text: $text, prompt: Text(placeholder).foregroundColor(Color.gray.opacity(0.6)))
+                        .foregroundColor(Color(hex: "#111827"))
                 }
 
                 Button(action: {

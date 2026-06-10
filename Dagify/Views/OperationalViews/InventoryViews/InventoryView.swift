@@ -30,6 +30,25 @@ struct InventoryView: View {
     @State private var ingredientToDiscard: Ingredient? = nil
     @State private var ingredientToDelete: Ingredient? = nil
     
+    @ViewBuilder
+    private func rowForIngredient(_ item: Ingredient, isExp: Bool, isLow: Bool) -> some View {
+        IngredientRowView(
+            ingredient: item,
+            isExpired: isExp,
+            isLowStock: isLow
+        ) {
+            ingredientToDiscard = item
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { activeSheet = .detail(item) }
+        .contextMenu {
+            Button { activeSheet = .edit(item) } label: { Label("Edit Bahan", systemImage: "pencil") }
+            Button(role: .destructive) {
+                ingredientToDelete = item
+            } label: { Label("Hapus Bahan", systemImage: "trash") }
+        }
+    }
+    
     var body: some View {
         ZStack {
             Color(hex: "#F9FAFB").ignoresSafeArea()
@@ -44,26 +63,10 @@ struct InventoryView: View {
                     if !viewModel.attentionIngredients.isEmpty {
                         Section {
                             ForEach(viewModel.attentionIngredients, id: \.id) { item in
-                                let isExp = viewModel.expiredIngredients.contains(where: { $0.id == item.id })
-                                let isLow = viewModel.lowStockIngredients.contains(where: { $0.id == item.id })
+                                let isExp = viewModel.expiredIngredients.contains(item)
+                                let isLow = viewModel.lowStockIngredients.contains(item)
                                 
-                                IngredientRowView(
-                                    ingredient: item,
-                                    isExpired: isExp,
-                                    isLowStock: isLow
-                                ) {
-                                    // Panggil alert Buang Stok
-                                    ingredientToDiscard = item
-                                }
-                                .contentShape(Rectangle())
-                                .onTapGesture { activeSheet = .detail(item) }
-                                .contextMenu {
-                                    Button { activeSheet = .edit(item) } label: { Label("Edit Bahan", systemImage: "pencil") }
-                                    Button(role: .destructive) {
-                                        // Panggil alert Hapus Permanen
-                                        ingredientToDelete = item
-                                    } label: { Label("Hapus Bahan", systemImage: "trash") }
-                                }
+                                rowForIngredient(item, isExp: isExp, isLow: isLow)
                             }
                         } header: {
                             VStack(alignment: .leading, spacing: 6) {
@@ -82,17 +85,8 @@ struct InventoryView: View {
                     Section {
                         ForEach(viewModel.ingredients, id: \.id) { item in
                             // Tampilkan jika tidak ada di grup perhatian
-                            if !viewModel.attentionIngredients.contains(where: { $0.id == item.id }) {
-                                IngredientRowView(ingredient: item, isExpired: false, isLowStock: false)
-                                    .contentShape(Rectangle())
-                                    .onTapGesture { activeSheet = .detail(item) }
-                                    .contextMenu {
-                                        Button { activeSheet = .edit(item) } label: { Label("Edit Bahan", systemImage: "pencil") }
-                                        Button(role: .destructive) {
-                                            // Panggil alert Hapus Permanen
-                                            ingredientToDelete = item
-                                        } label: { Label("Hapus Bahan", systemImage: "trash") }
-                                    }
+                            if !viewModel.attentionIngredients.contains(item) {
+                                rowForIngredient(item, isExp: false, isLow: false)
                             }
                         }
                     } header: { Text("STOK AMAN") }
@@ -118,7 +112,7 @@ struct InventoryView: View {
             case .edit(let ingredient):
                 AddIngredientView(viewModel: viewModel, branchId: branchId, ingredientToEdit: ingredient)
             case .detail(let ingredient):
-                IngredientDetailView(ingredient: ingredient)
+                IngredientDetailView(ingredient: ingredient, viewModel: viewModel)
                     .presentationDetents([.medium, .large])
             }
         }

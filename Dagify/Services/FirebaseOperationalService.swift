@@ -137,21 +137,88 @@ class FirebaseOperationalService: OperationalProtocol, StoreProtocol {
     }
     
     func submitOrderAndUpdateInventory(order: Order) async throws -> Bool {
-        let batch = db.batch()
         let orderRef = db.collection("orders").document()
-        try batch.setData(from: order, forDocument: orderRef)
-
+        
+        // Prepare required ingredient IDs
+        var requiredIngredientIds = Set<String>()
         for item in order.items {
             for recipe in item.product.recipe {
-                let ingredientRef = db.collection("ingredients").document(recipe.ingredientId)
-                let totalDeduction = Double(item.quantity) * recipe.quantityRequired
-                batch.updateData(
-                    ["currentStock": FieldValue.increment(-totalDeduction)],
-                    forDocument: ingredientRef
-                )
+                requiredIngredientIds.insert(recipe.ingredientId)
             }
         }
-        try await batch.commit()
+        
+        let result = try await db.runTransaction { (transaction, errorPointer) -> Any? in
+            var ingredientsMap: [String: Ingredient] = [:]
+            
+            // 1. Read all required ingredients
+            for id in requiredIngredientIds {
+                let ref = self.db.collection("ingredients").document(id)
+                do {
+                    let doc = try transaction.getDocument(ref)
+                    if let ingredient = try doc.data(as: Ingredient?.self) {
+                        ingredientsMap[id] = ingredient
+                    }
+                } catch let error as NSError {
+                    errorPointer?.pointee = error
+                    return nil
+                }
+            }
+            
+            // 2. Perform deductions
+            for item in order.items {
+                for recipe in item.product.recipe {
+                    guard var ingredient = ingredientsMap[recipe.ingredientId] else { continue }
+                    var amountToDeduct = Double(item.quantity) * recipe.quantityRequired
+                    
+                    // Sort batches by expiryDate ascending (earliest first, nil last)
+                    ingredient.batches.sort { 
+                        if let d1 = $0.expiryDate, let d2 = $1.expiryDate { return d1 < d2 }
+                        if $0.expiryDate != nil { return true }
+                        if $1.expiryDate != nil { return false }
+                        return $0.dateAdded < $1.dateAdded 
+                    }
+                    
+                    // Deduct sequentially
+                    for i in 0..<ingredient.batches.count {
+                        if amountToDeduct <= 0 { break }
+                        let available = ingredient.batches[i].currentStock
+                        if available > 0 {
+                            let deduction = min(available, amountToDeduct)
+                            ingredient.batches[i].currentStock -= deduction
+                            amountToDeduct -= deduction
+                        }
+                    }
+                    
+                    ingredientsMap[recipe.ingredientId] = ingredient
+                }
+            }
+            
+            // 3. Write back updated ingredients
+            for (id, ingredient) in ingredientsMap {
+                let ref = self.db.collection("ingredients").document(id)
+                do {
+                    try transaction.setData(from: ingredient, forDocument: ref)
+                } catch let error as NSError {
+                    errorPointer?.pointee = error
+                    return nil
+                }
+            }
+            
+            // 4. Write Order
+            do {
+                try transaction.setData(from: order, forDocument: orderRef)
+            } catch let error as NSError {
+                errorPointer?.pointee = error
+                return nil
+            }
+            
+            return true
+        }
+        
+        if result == nil {
+            throw NSError(domain: "FirebaseOperationalService", code: 500, userInfo: [NSLocalizedDescriptionKey: "Gagal menyimpan transaksi."])
+        }
+        
         return true
     }
 }

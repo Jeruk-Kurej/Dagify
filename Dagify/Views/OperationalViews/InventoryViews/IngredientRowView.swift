@@ -90,5 +90,5 @@ struct IngredientRowView: View {
 }
 
 #Preview {
-    IngredientRowView(ingredient: Ingredient(id: "1", branchId: "B-1", name: "Biji Kopi", currentStock: 10, unit: "Kg", expiryDate: Date(), minimumStockWarning: 5, costPerUnit: 50000))
+    IngredientRowView(ingredient: Ingredient(id: "1", branchId: "B-1", name: "Biji Kopi", unit: "Kg", minimumStockWarning: 5, batches: [IngredientBatch(currentStock: 10, expiryDate: Date(), costPerUnit: 50000)]))
 }

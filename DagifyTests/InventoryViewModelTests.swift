@@ -20,8 +20,8 @@ struct InventoryViewModelTests {
         let mockCashRepo = MockCashflowRepository()
         let vm = InventoryViewModel(operationalProtocol: mockOpRepo, cashflowProtocol: mockCashRepo)
 
-        let i1 = Ingredient(id: "1", branchId: "B-1", name: "Susu", currentStock: 10, unit: "L", minimumStockWarning: 5, costPerUnit: 15000)
-        let i2 = Ingredient(id: "2", branchId: "B-1", name: "Gula", currentStock: 2, unit: "Kg", minimumStockWarning: 5, costPerUnit: 12000)
+        let i1 = Ingredient(id: "1", branchId: "B-1", name: "Susu", unit: "L", minimumStockWarning: 5, batches: [IngredientBatch(currentStock: 10, costPerUnit: 15000)])
+        let i2 = Ingredient(id: "2", branchId: "B-1", name: "Gula", unit: "Kg", minimumStockWarning: 5, batches: [IngredientBatch(currentStock: 2, costPerUnit: 12000)])
         mockOpRepo.ingredients = [i1, i2]
 
         await vm.loadIngredients(branchId: "B-1")
@@ -51,7 +51,7 @@ struct InventoryViewModelTests {
         let mockCashRepo = MockCashflowRepository()
         let vm = InventoryViewModel(operationalProtocol: mockOpRepo, cashflowProtocol: mockCashRepo)
 
-        let i1 = Ingredient(id: "1", branchId: "B-1", name: "Susu", currentStock: 10, unit: "L", minimumStockWarning: 5, costPerUnit: 15000)
+        let i1 = Ingredient(id: "1", branchId: "B-1", name: "Susu", unit: "L", minimumStockWarning: 5, batches: [IngredientBatch(currentStock: 10, costPerUnit: 15000)])
         mockOpRepo.ingredients = [i1]
 
         await vm.discardExpiredItem(ingredient: i1, branchId: "B-1")
@@ -66,7 +66,7 @@ struct InventoryViewModelTests {
         let mockCashRepo = MockCashflowRepository()
         let vm = InventoryViewModel(operationalProtocol: mockOpRepo, cashflowProtocol: mockCashRepo)
 
-        var i1 = Ingredient(id: "1", branchId: "B-1", name: "Susu", currentStock: 10, unit: "L", minimumStockWarning: 5, costPerUnit: 15000)
+        var i1 = Ingredient(id: "1", branchId: "B-1", name: "Susu", unit: "L", minimumStockWarning: 5, batches: [IngredientBatch(currentStock: 10, costPerUnit: 15000)])
         mockOpRepo.ingredients = [i1]
 
         i1.currentStock = 20
@@ -82,7 +82,7 @@ struct InventoryViewModelTests {
         let mockCashRepo = MockCashflowRepository()
         let vm = InventoryViewModel(operationalProtocol: mockOpRepo, cashflowProtocol: mockCashRepo)
 
-        let i1 = Ingredient(id: "1", branchId: "B-1", name: "Susu", currentStock: 10, unit: "L", minimumStockWarning: 5, costPerUnit: 15000)
+        let i1 = Ingredient(id: "1", branchId: "B-1", name: "Susu", unit: "L", minimumStockWarning: 5, batches: [IngredientBatch(currentStock: 10, costPerUnit: 15000)])
         mockOpRepo.ingredients = [i1]
 
         await vm.deleteIngredient(ingredientId: "1", branchId: "B-1")
