@@ -83,7 +83,6 @@ struct AddIngredientView: View {
                                 updated.minimumStockWarning = parsedWarning
                                 await viewModel.updateIngredient(ingredient: updated)
                             } else {
-                                // Mode TAMBAH BARU
                                 let parsedStock = Double(currentStock.replacingOccurrences(of: ",", with: ".")) ?? 0
                                 let parsedCost = Double(costPerUnit.replacingOccurrences(of: ",", with: ".")) ?? 0
                                 let finalExpiry = hasExpiry ? expiryDate : nil
