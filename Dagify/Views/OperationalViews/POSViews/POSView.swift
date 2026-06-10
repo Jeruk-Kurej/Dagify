@@ -152,7 +152,6 @@ struct POSView: View {
                 : "Pembayaran tercatat dan stok bahan baku terkait telah terpotong otomatis."
             )
         }
-        /// Alert when ingredient stock is empty.
         .alert(
             "Peringatan!",
             isPresented: Binding<Bool>(
