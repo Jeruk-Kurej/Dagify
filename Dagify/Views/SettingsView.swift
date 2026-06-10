@@ -219,8 +219,8 @@ struct SettingsView: View {
             .frame(maxWidth: 700)
         }
         .navigationTitle("Pengaturan")
-        .onAppear {
-            Task { await viewModel.loadStore(storeId: storeId) }
+        .task {
+            await viewModel.loadStore(storeId: storeId)
         }
         .alert("Buka Cabang Baru", isPresented: $showingAddBranch) {
             TextField("Nama Cabang", text: $newBranchName)
