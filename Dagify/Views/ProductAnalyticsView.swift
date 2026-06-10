@@ -30,7 +30,7 @@ struct ProductAnalyticsView: View {
                     )
                 } else {
 
-                    // Grafik Penjualan Dinamis berdasarkan Filter Kategori
+                    // Grafik 
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
                             Text("Grafik Penjualan")
