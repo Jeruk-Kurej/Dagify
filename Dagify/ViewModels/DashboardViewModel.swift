@@ -41,7 +41,7 @@ class DashboardViewModel {
                 }
             }
         }
-        return salesDict.map { ChartData(productName: $0.key, quantity: $0.value) }.sorted { $0.quantity > $1.quantity }
+        return Array(salesDict.map { ChartData(productName: $0.key, quantity: $0.value) }.sorted { $0.quantity > $1.quantity }.prefix(5))
     }
 
     let cashflowProtocol: CashflowProtocol

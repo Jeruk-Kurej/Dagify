@@ -96,7 +96,9 @@ struct DashboardView: View {
             }
             .navigationTitle("Dasbor")
             .background(Color(hex: "#F9FAFB"))
-            .onAppear { Task { await viewModel.loadDashboardSummary(storeId: storeId, branchId: branchId) } }
+            .task {
+                await viewModel.loadDashboardSummary(storeId: storeId, branchId: branchId)
+            }
         }
     }
 }
