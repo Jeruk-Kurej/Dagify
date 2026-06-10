@@ -11,7 +11,7 @@ import Foundation
 struct Product: Identifiable, Codable, Equatable, Hashable {
 
     // MARK: - Properties
-    @DocumentID public var id: String?
+    public var id: String?
     var branchId: String
     var categoryId: String
 

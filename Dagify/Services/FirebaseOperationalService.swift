@@ -56,7 +56,11 @@ class FirebaseOperationalService: OperationalProtocol, StoreProtocol {
             "branchId",
             isEqualTo: branchId
         ).getDocuments()
-        return snapshot.documents.compactMap { try? $0.data(as: Product.self) }
+        return snapshot.documents.compactMap { doc in
+            var product = try? doc.data(as: Product.self)
+            product?.id = doc.documentID
+            return product
+        }
     }
     
     func addProduct(_ product: Product) async throws -> Bool {

@@ -63,6 +63,14 @@ struct CRMDashboardSheetView: View {
                         }
                     }
                 }
+                
+                if sheetType == .loyal {
+                    Section {
+                        Text("💡 Info: Pengunjung loyal adalah pengunjung yang telah datang sebanyak \(viewModel.loyaltyThreshold) kali atau lebih.")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
+                }
             }
             .scrollContentBackground(.hidden)
             .background(Color.white)
