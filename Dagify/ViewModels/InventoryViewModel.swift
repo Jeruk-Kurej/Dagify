@@ -64,6 +64,18 @@ class InventoryViewModel {
         }
         isLoading = true
         
+        /// Cek apakah tipe bahan baku dengan nama yang persis sama sudah ada
+        if let existingIngredient = ingredients.first(where: { $0.name.lowercased() == name.lowercased() }) {
+            /// Jika ada, catat sebagai model (batch) baru di dalam tipe bahan tersebut (Restock)
+            await restockIngredient(
+                ingredient: existingIngredient,
+                addedStock: currentStock,
+                costPerUnit: costPerUnit,
+                expiryDate: expiryDate
+            )
+            return
+        }
+        
         let initialBatch = IngredientBatch(currentStock: currentStock, expiryDate: expiryDate, costPerUnit: costPerUnit)
         let newIngredient = Ingredient(
             branchId: branchId,
