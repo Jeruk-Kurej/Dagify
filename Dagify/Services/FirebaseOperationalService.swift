@@ -29,6 +29,12 @@ class FirebaseOperationalService: OperationalProtocol, StoreProtocol {
         }
         return store
     }
+    
+    func updateStore(store: Store) async throws -> Bool {
+        guard let id = store.id else { return false }
+        try db.collection("stores").document(id).setData(from: store)
+        return true
+    }
 
     func addBranch(storeId: String, branch: Branch) async throws -> Bool {
         let storeRef = db.collection("stores").document(storeId)

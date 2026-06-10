@@ -80,7 +80,7 @@ class DashboardViewModel {
             todayRevenue = todaysRecords.filter { $0.type == .income }.reduce(0) { $0 + $1.amount }
             todayExpense = todaysRecords.filter { $0.type == .expense }.reduce(0) { $0 + $1.amount }
             todayNetProfit = todayRevenue - todayExpense
-            totalLoyalCustomers = customers.filter { $0.isLoyal }.count
+            totalLoyalCustomers = customers.filter { $0.isLoyal(threshold: storeInfo.loyaltyThreshold) }.count
             lowStockAlertsCount = ingredients.filter { $0.currentStock <= $0.minimumStockWarning }.count
         } catch { errorMessage = "Gagal memuat dashboard." }
         isLoading = false

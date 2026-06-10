@@ -104,7 +104,7 @@ struct CRMView: View {
                                     Button(action: {
                                         selectedCustomer = customer
                                     }) {
-                                        CustomerCardView(customer: customer)
+                                        CustomerCardView(customer: customer, loyaltyThreshold: viewModel.loyaltyThreshold)
                                     }
                                     .buttonStyle(PlainButtonStyle())  // Menghapus efek biru bawaan list/button
 
@@ -131,7 +131,7 @@ struct CRMView: View {
             }
             /// Presents a pop-up sheet with customer details when a customer is selected.
             .sheet(item: $selectedCustomer) { customer in
-                CustomerDetailSheetView(customer: customer)
+                CustomerDetailSheetView(customer: customer, viewModel: viewModel)
                     .presentationDetents([.fraction(0.7), .large])  // Pop-up bisa 70% atau ditarik Full Screen
             }
         }
@@ -167,7 +167,7 @@ struct CRMView: View {
         ),
     ]
     return CRMView(
-        viewModel: CRMViewModel(crmProtocol: mockCRM, storeProtocol: mockOp),
+        viewModel: CRMViewModel(crmProtocol: mockCRM, storeProtocol: mockOp, operationalProtocol: mockOp),
         storeId: "S-1"
     )
 }

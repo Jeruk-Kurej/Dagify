@@ -29,6 +29,12 @@ class MockOperationalRepository: OperationalProtocol, StoreProtocol {
         return dummyStore
     }
 
+    func updateStore(store: Store) async throws -> Bool {
+        if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
+        self.dummyStore = store
+        return true
+    }
+
     func addBranch(storeId: String, branch: Branch) async throws -> Bool {
         if shouldThrowError { throw NSError(domain: "MockError", code: 500) }
         dummyStore.branches.append(branch)

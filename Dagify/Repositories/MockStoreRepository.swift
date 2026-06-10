@@ -25,6 +25,14 @@ class MockStoreRepository: StoreProtocol {
         }
         return dummyStore
     }
+    
+    func updateStore(store: Store) async throws -> Bool {
+        if shouldThrowError {
+            throw NSError(domain: "MockStoreError", code: 3, userInfo: [NSLocalizedDescriptionKey: "Failed to update store"])
+        }
+        dummyStore = store
+        return true
+    }
 
     func addBranch(storeId: String, branch: Branch) async throws -> Bool {
         if shouldThrowError {

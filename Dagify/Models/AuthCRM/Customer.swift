@@ -21,9 +21,9 @@ struct Customer: Identifiable, Codable, Equatable {
     var visitHistory: [Date]
 
     // MARK: - Computed Properties
-    /// Menentukan status loyalitas pelanggan (Syarat: Lebih dari atau sama dengan 5 kunjungan)
-    var isLoyal: Bool {
-        return visitHistory.count >= 5
+    /// Menentukan status loyalitas pelanggan (Syarat: Lebih dari atau sama dengan threshold yang ditentukan toko)
+    func isLoyal(threshold: Int) -> Bool {
+        return visitHistory.count >= threshold
     }
 
     // MARK: - Initialization

@@ -34,8 +34,9 @@ class CRMViewModel {
     var storeBranches: [Branch] = []
     var isLoading: Bool = false
     var errorMessage: String? = nil
+    var loyaltyThreshold: Int = 5
 
-    var loyalCustomers: [Customer] { customers.filter { $0.isLoyal } }
+    var loyalCustomers: [Customer] { customers.filter { $0.isLoyal(threshold: loyaltyThreshold) } }
 
     var peakHoursData: [TrafficData] {
         var counts = [Int: Int]()
@@ -57,10 +58,12 @@ class CRMViewModel {
     private let crmProtocol: CRMProtocol
     /// Protocol dependency for accessing store data.
     private let storeProtocol: StoreProtocol
+    private let operationalProtocol: OperationalProtocol
 
-    init(crmProtocol: CRMProtocol, storeProtocol: StoreProtocol) {
+    init(crmProtocol: CRMProtocol, storeProtocol: StoreProtocol, operationalProtocol: OperationalProtocol) {
         self.crmProtocol = crmProtocol
         self.storeProtocol = storeProtocol
+        self.operationalProtocol = operationalProtocol
     }
 
     func loadCustomers(storeId: String) async {
@@ -73,6 +76,7 @@ class CRMViewModel {
             self.customers = try await fetchCusts
             if let store = try? await fetchStore {
                 self.storeBranches = store.branches
+                self.loyaltyThreshold = store.loyaltyThreshold
             }
         } catch {
             errorMessage = "Gagal memuat CRM."
@@ -84,8 +88,21 @@ class CRMViewModel {
     func getCustomerCount(for branchId: String, isLoyalOnly: Bool) -> Int {
         let branchCustomers = customers.filter { $0.branchId == branchId }
         if isLoyalOnly {
-            return branchCustomers.filter { $0.isLoyal }.count
+            return branchCustomers.filter { $0.isLoyal(threshold: loyaltyThreshold) }.count
         }
         return branchCustomers.count
+    }
+
+    /// Fetches detailed order history for a specific customer across all store branches.
+    func fetchCustomerOrders(customerId: String) async -> [Order] {
+        var allOrders: [Order] = []
+        for branch in storeBranches {
+            if let orders = try? await operationalProtocol.fetchOrders(for: branch.id) {
+                let customerOrders = orders.filter { $0.customerId == customerId }
+                allOrders.append(contentsOf: customerOrders)
+            }
+        }
+        // Sort by newest first
+        return allOrders.sorted(by: { $0.timestamp > $1.timestamp })
     }
 }

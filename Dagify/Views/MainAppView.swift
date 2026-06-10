@@ -146,7 +146,7 @@ struct MainAppView: View {
             CashflowView(viewModel: CashflowViewModel(cashProtocol: cashflowService), branchId: activeBranchId)
                 .id(activeBranchId)
         case .crm:
-            CRMView(viewModel: CRMViewModel(crmProtocol: crmService, storeProtocol: operationalService), storeId: storeId)
+            CRMView(viewModel: CRMViewModel(crmProtocol: crmService, storeProtocol: operationalService, operationalProtocol: operationalService), storeId: storeId)
         case .operational:
             OperationalView(operationalService: operationalService, cashflowService: cashflowService, crmService: crmService, storeId: storeId, branchId: activeBranchId)
                 .id(activeBranchId)
@@ -165,7 +165,7 @@ struct MainAppView: View {
             CashflowView(viewModel: CashflowViewModel(cashProtocol: cashflowService), branchId: activeBranchId)
                 .id(activeBranchId)
         case .crm:
-            CRMView(viewModel: CRMViewModel(crmProtocol: crmService, storeProtocol: operationalService), storeId: storeId)
+            CRMView(viewModel: CRMViewModel(crmProtocol: crmService, storeProtocol: operationalService, operationalProtocol: operationalService), storeId: storeId)
         case .pos:
             POSView(
                 viewModel: POSViewModel(operationalProtocol: operationalService, cashflowProtocol: cashflowService, crmProtocol: crmService, networkMonitor: NetworkMonitor(), syncManager: SyncManager(operationalProtocol: operationalService)),

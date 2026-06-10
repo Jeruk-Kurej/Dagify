@@ -9,7 +9,12 @@ import SwiftUI
 
 struct CustomerDetailSheetView: View {
     var customer: Customer
+    @Bindable var viewModel: CRMViewModel
     @Environment(\.dismiss) private var dismiss
+    
+    @State private var customerOrders: [Order] = []
+    @State private var isLoadingOrders = true
+    @State private var showLoyaltyTooltip = false
 
     var body: some View {
         NavigationStack {
@@ -21,52 +26,86 @@ struct CustomerDetailSheetView: View {
                         "Total Pembelanjaan",
                         value: customer.totalSpent.toRupiah()
                     )
-                    LabeledContent(
-                        "Status",
-                        value: customer.isLoyal
-                            ? "Pelanggan Setia (Loyal)" : "Reguler"
-                    )
+                    LabeledContent {
+                        Text(customer.isLoyal(threshold: viewModel.loyaltyThreshold) ? "Pelanggan Setia (Loyal)" : "Reguler")
+                            .onLongPressGesture {
+                                showLoyaltyTooltip = true
+                            }
+                            .popover(isPresented: $showLoyaltyTooltip) {
+                                Text("Pelanggan disebut loyal jika sudah berbelanja minimal \(viewModel.loyaltyThreshold) kali.")
+                                    .padding()
+                                    .presentationCompactAdaptation(.popover)
+                            }
+                    } label: {
+                        Text("Status")
+                    }
                 }
 
                 Section(header: Text("Riwayat Transaksi & Kunjungan")) {
-                    if customer.visitHistory.isEmpty {
+                    if isLoadingOrders {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                            Spacer()
+                        }
+                    } else if customerOrders.isEmpty {
                         Text("Belum ada riwayat belanja.")
                             .foregroundColor(.gray)
                     } else {
-                        // Mengurutkan dari transaksi paling baru (atas) ke paling lama (bawah)
-                        ForEach(customer.visitHistory.sorted(by: >), id: \.self)
-                        { date in
-                            HStack(spacing: 16) {
-                                ZStack {
-                                    Circle()
-                                        .fill(
-                                            Color(hex: "#00A3A3").opacity(0.15)
+                        ForEach(customerOrders) { order in
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack(spacing: 16) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(
+                                                Color(hex: "#00A3A3").opacity(0.15)
+                                            )
+                                            .frame(width: 44, height: 44)
+                                        Image(systemName: "bag.fill")
+                                            .foregroundColor(Color(hex: "#00A3A3"))
+                                            .font(.title3)
+                                    }
+
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Transaksi Kasir")
+                                            .font(.body)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(Color(hex: "#111827"))
+
+                                        Text(
+                                            order.timestamp.formatted(
+                                                date: .complete,
+                                                time: .shortened
+                                            )
                                         )
-                                        .frame(width: 44, height: 44)
-                                    Image(systemName: "bag.fill")
+                                        .font(.caption)
+                                        .foregroundColor(Color(hex: "#6B7280"))
+                                    }
+                                    Spacer()
+                                    Text(order.totalAmount.toRupiah())
+                                        .font(.subheadline)
+                                        .fontWeight(.bold)
                                         .foregroundColor(Color(hex: "#00A3A3"))
-                                        .font(.title3)
                                 }
-
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Transaksi Kasir")
-                                        .font(.body)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(Color(hex: "#111827"))
-
-                                    // Menampilkan Hari, Tanggal, dan Jam belanja
-                                    Text(
-                                        date.formatted(
-                                            date: .complete,
-                                            time: .shortened
-                                        )
-                                    )
-                                    .font(.caption)
-                                    .foregroundColor(Color(hex: "#6B7280"))
+                                
+                                Divider()
+                                
+                                VStack(alignment: .leading, spacing: 6) {
+                                    ForEach(order.items) { item in
+                                        HStack {
+                                            Text("\(item.quantity)x \(item.product.name)")
+                                                .font(.caption)
+                                                .foregroundColor(Color(hex: "#374151"))
+                                            Spacer()
+                                            Text((Double(item.quantity) * item.product.price).toRupiah())
+                                                .font(.caption)
+                                                .foregroundColor(Color(hex: "#6B7280"))
+                                        }
+                                    }
                                 }
-                                Spacer()
+                                .padding(.leading, 60)
                             }
-                            .padding(.vertical, 4)
+                            .padding(.vertical, 8)
                         }
                     }
                 }
@@ -80,6 +119,12 @@ struct CustomerDetailSheetView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Tutup") { dismiss() }
                 }
+            }
+            .task {
+                if let id = customer.id {
+                    customerOrders = await viewModel.fetchCustomerOrders(customerId: id)
+                }
+                isLoadingOrders = false
             }
         }
     }
@@ -95,6 +140,7 @@ struct CustomerDetailSheetView: View {
             phoneNumber: "081234567890",
             totalSpent: 150000,
             visitHistory: [Date(), Date().addingTimeInterval(-86400)]
-        )
+        ),
+        viewModel: CRMViewModel(crmProtocol: MockCRMRepository(), storeProtocol: MockOperationalRepository(), operationalProtocol: MockOperationalRepository())
     )
 }

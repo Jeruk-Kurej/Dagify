@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CustomerCardView: View {
     var customer: Customer
+    var loyaltyThreshold: Int
 
     var body: some View {
         HStack(spacing: 16) {
@@ -33,7 +34,7 @@ struct CustomerCardView: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 4) {
-                if customer.isLoyal {
+                if customer.isLoyal(threshold: loyaltyThreshold) {
                     HStack(spacing: 4) {
                         Image(systemName: "star.fill").font(.caption2)
                             .foregroundColor(Color(hex: "#F59E0B"))
@@ -66,6 +67,7 @@ struct CustomerCardView: View {
             phoneNumber: "08123456789",
             totalSpent: 150000,
             visitHistory: []
-        )
+        ),
+        loyaltyThreshold: 5
     )
 }

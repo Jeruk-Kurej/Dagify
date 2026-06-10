@@ -176,8 +176,31 @@ struct SettingsView: View {
                             "Pilih cabang untuk mengelola Dasbor, Kasir, Arus Kas, dan Gudang di lokasi tersebut secara real-time."
                         )
                     }
+                    
+                    // Section 3: Pengaturan Pelanggan
+                    Section {
+                        if let store = viewModel.currentStore {
+                            Stepper(value: Binding(
+                                get: { store.loyaltyThreshold },
+                                set: { newValue in
+                                    Task { await viewModel.updateLoyaltyThreshold(newThreshold: newValue) }
+                                }
+                            ), in: 1...100) {
+                                HStack {
+                                    Text("Batas Minimum Belanja Loyal")
+                                    Spacer()
+                                    Text("\(store.loyaltyThreshold) kali")
+                                        .foregroundColor(.gray)
+                                }
+                            }
+                        }
+                    } header: {
+                        Text("Pengaturan Pelanggan")
+                    } footer: {
+                        Text("Tentukan batas minimum kunjungan agar pelanggan dihitung sebagai Pelanggan Setia (Loyal).")
+                    }
 
-                    // Section 3: Logout
+                    // Section 4: Logout
                     Section {
                         Button(action: { authViewModel.logout() }) {
                             HStack {

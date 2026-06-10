@@ -76,5 +76,23 @@ class SettingsViewModel {
             return nil
         }
     }
+    
+    func updateLoyaltyThreshold(newThreshold: Int) async {
+        guard var store = currentStore else { return }
+        
+        // Optimistic update
+        let oldThreshold = store.loyaltyThreshold
+        store.loyaltyThreshold = newThreshold
+        self.currentStore = store
+        
+        do {
+            _ = try await storeProtocol.updateStore(store: store)
+        } catch {
+            errorMessage = "Gagal memperbarui pengaturan loyalitas."
+            // Revert on error
+            store.loyaltyThreshold = oldThreshold
+            self.currentStore = store
+        }
+    }
 }
 

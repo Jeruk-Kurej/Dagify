@@ -24,7 +24,7 @@ struct CRMDashboardSheetView: View {
                     $0.branchId == nil || $0.branchId == ""
                 }.count
                 let unknownLoyalCount = viewModel.customers.filter {
-                    ($0.branchId == nil || $0.branchId == "") && $0.isLoyal
+                    ($0.branchId == nil || $0.branchId == "") && $0.isLoyal(threshold: viewModel.loyaltyThreshold)
                 }.count
 
                 Section(header: Text("Rincian per Cabang")) {
@@ -83,6 +83,6 @@ struct CRMDashboardSheetView: View {
 #Preview {
     let mockCRM = MockCRMRepository()
     let mockOp = MockOperationalRepository()
-    let vm = CRMViewModel(crmProtocol: mockCRM, storeProtocol: mockOp)
+    let vm = CRMViewModel(crmProtocol: mockCRM, storeProtocol: mockOp, operationalProtocol: mockOp)
     CRMDashboardSheetView(viewModel: vm, sheetType: .total)
 }
