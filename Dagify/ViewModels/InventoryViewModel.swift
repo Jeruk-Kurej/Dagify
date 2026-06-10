@@ -138,7 +138,6 @@ class InventoryViewModel {
                 _ = try await cashflowProtocol.addRecord(expenseRecord)
             }
             
-            // Perbarui jadwal notifikasi dengan data terbaru
             NotificationService.shared.scheduleExpiryWarning(for: updated)
             
             await loadIngredients(branchId: ingredient.branchId)
