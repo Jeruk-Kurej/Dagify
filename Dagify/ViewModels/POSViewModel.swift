@@ -19,6 +19,10 @@ class POSViewModel {
     var isLoading: Bool = false
     var errorMessage: String? = nil
     var isCheckoutSuccess: Bool = false
+    
+    var isOffline: Bool {
+        !networkMonitor.isConnected
+    }
 
     var customerPhone: String = ""
     var customerName: String = ""

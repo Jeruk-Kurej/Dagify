@@ -20,6 +20,18 @@ struct POSView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             ScrollView {
+                if viewModel.isOffline {
+                    HStack(spacing: 6) {
+                        Image(systemName: "wifi.slash")
+                        Text("Mode Offline - Transaksi akan disimpan di perangkat")
+                    }
+                    .font(.caption).fontWeight(.medium)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(Color.orange)
+                }
+                
                 if viewModel.isLoading {
                     ProgressView("Menyiapkan mesin kasir...")
                         .frame(maxWidth: .infinity, minHeight: 300)
@@ -130,12 +142,14 @@ struct POSView: View {
         .onAppear {
             Task { await viewModel.loadProducts(branchId: branchId) }
         }
-        .alert("Transaksi Berhasil!", isPresented: $viewModel.isCheckoutSuccess)
+        .alert(viewModel.isOffline ? "Tersimpan Lokal (Offline)!" : "Transaksi Berhasil!", isPresented: $viewModel.isCheckoutSuccess)
         {
             Button("OK", role: .cancel) { viewModel.isCheckoutSuccess = false }
         } message: {
             Text(
-                "Pembayaran tercatat dan stok bahan baku terkait telah terpotong otomatis."
+                viewModel.isOffline
+                ? "Pesanan disimpan sementara di perangkat dan akan dikirim otomatis ke server saat internet kembali."
+                : "Pembayaran tercatat dan stok bahan baku terkait telah terpotong otomatis."
             )
         }
         /// Alert when ingredient stock is empty.
