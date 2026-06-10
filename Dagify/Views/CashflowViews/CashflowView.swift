@@ -25,7 +25,6 @@ struct CashflowView: View {
     
     @State private var activeSheet: CashflowSheetType? = nil
     @State private var generatedPDFURL: URL? = nil
-    @State private var isShowingShareSheet = false
     @State private var selectedRecord: FinancialRecord? = nil
     
     private func formatCompact(_ value: Double) -> String {
@@ -205,29 +204,30 @@ struct CashflowView: View {
             .navigationTitle("Arus Kas")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        if let url = PDFGeneratorService.generateCashflowReport(
-                            monthYear: viewModel.currentMonthString,
-                            records: viewModel.filteredRecords,
-                            totalIncome: viewModel.totalIncome,
-                            totalExpense: viewModel.totalExpense,
-                            filename: "Laporan_Kas_\(viewModel.currentMonthString.replacingOccurrences(of: " ", with: "_"))"
-                        ) {
-                            self.generatedPDFURL = url
-                            self.isShowingShareSheet = true
+                    if let url = generatedPDFURL {
+                        ShareLink(item: url) {
+                            Label("Ekspor PDF", systemImage: "square.and.arrow.up")
                         }
-                    } label: { Label("Ekspor PDF", systemImage: "square.and.arrow.up") }
+                    } else {
+                        Button {
+                            updatePDF()
+                        } label: { Label("Siapkan PDF", systemImage: "arrow.down.doc") }
+                    }
                 }
             }
-            .onAppear { Task { await viewModel.loadRecords(branchId: branchId) } }
+            .onAppear { 
+                Task { 
+                    await viewModel.loadRecords(branchId: branchId) 
+                    updatePDF()
+                } 
+            }
+            .onChange(of: viewModel.filteredRecords) { _ in updatePDF() }
+            .onChange(of: viewModel.currentMonthString) { _ in updatePDF() }
             .popover(item: $activeSheet) { sheetType in
                 switch sheetType {
                 case .add: AddTransactionView(viewModel: viewModel, branchId: branchId)
                 case .edit(let record): AddTransactionView(viewModel: viewModel, branchId: branchId, recordToEdit: record)
                 }
-            }
-            .sheet(isPresented: $isShowingShareSheet) {
-                if let url = generatedPDFURL { ShareSheet(activityItems: [url]) }
             }
             .alert("Detail Transaksi", isPresented: Binding<Bool>(
                 get: { selectedRecord != nil },
@@ -243,6 +243,19 @@ struct CashflowView: View {
                     Text("\(status) sejumlah \(record.amount.toRupiah())\nTanggal: \(dateStr)\n\nCatatan:\n\(noteStr)")
                 }
             }
+        }
+    }
+
+    // MARK: - Helper Methods
+    private func updatePDF() {
+        if let url = PDFGeneratorService.generateCashflowReport(
+            monthYear: viewModel.currentMonthString,
+            records: viewModel.filteredRecords,
+            totalIncome: viewModel.totalIncome,
+            totalExpense: viewModel.totalExpense,
+            filename: "Laporan_Kas_\(viewModel.currentMonthString.replacingOccurrences(of: " ", with: "_"))"
+        ) {
+            self.generatedPDFURL = url
         }
     }
 }
