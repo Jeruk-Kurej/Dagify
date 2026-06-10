@@ -69,4 +69,3 @@ class CloudinaryService: CloudStorageProtocol {
         return secureUrl
     }
 }
-
