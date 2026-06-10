@@ -18,9 +18,11 @@ struct CRMViewModelTests {
     func testLoadCustomersSuccess() async {
         let mockCrmRepo = MockCRMRepository()
         let mockStoreRepo = MockStoreRepository()
+        let mockOpRepo = MockOperationalRepository()
         let vm = CRMViewModel(
             crmProtocol: mockCrmRepo,
-            storeProtocol: mockStoreRepo
+            storeProtocol: mockStoreRepo,
+            operationalProtocol: mockOpRepo
         )
 
         // Setup mock data
@@ -55,9 +57,11 @@ struct CRMViewModelTests {
     func testLoadCustomersFailure() async {
         let mockCrmRepo = MockCRMRepository()
         let mockStoreRepo = MockStoreRepository()
+        let mockOpRepo = MockOperationalRepository()
         let vm = CRMViewModel(
             crmProtocol: mockCrmRepo,
-            storeProtocol: mockStoreRepo
+            storeProtocol: mockStoreRepo,
+            operationalProtocol: mockOpRepo
         )
 
         mockCrmRepo.shouldThrowError = true
@@ -73,9 +77,11 @@ struct CRMViewModelTests {
     func testGetCustomerCount() async {
         let mockCrmRepo = MockCRMRepository()
         let mockStoreRepo = MockStoreRepository()
+        let mockOpRepo = MockOperationalRepository()
         let vm = CRMViewModel(
             crmProtocol: mockCrmRepo,
-            storeProtocol: mockStoreRepo
+            storeProtocol: mockStoreRepo,
+            operationalProtocol: mockOpRepo
         )
 
         let c1 = Customer(
