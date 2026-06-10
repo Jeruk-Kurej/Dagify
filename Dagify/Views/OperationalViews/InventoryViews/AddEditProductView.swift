@@ -166,7 +166,6 @@ struct AddEditProductView: View {
             .navigationTitle(productToEdit == nil ? "Tambah Menu" : "Edit Menu")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                // ToolbarItem(placement: .cancellationAction) { Button("Batal") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Simpan") {
                         if viewModel.isLoading { return } // Mencegah double tap
