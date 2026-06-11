@@ -69,7 +69,7 @@ struct InventoryViewModelTests {
         var i1 = Ingredient(id: "1", branchId: "B-1", name: "Susu", unit: "L", minimumStockWarning: 5, batches: [IngredientBatch(currentStock: 10, costPerUnit: 15000)])
         mockOpRepo.ingredients = [i1]
 
-        i1.currentStock = 20
+        i1.batches = [IngredientBatch(currentStock: 20, costPerUnit: 15000)]
         await vm.updateIngredient(ingredient: i1)
 
         #expect(vm.errorMessage == nil)
