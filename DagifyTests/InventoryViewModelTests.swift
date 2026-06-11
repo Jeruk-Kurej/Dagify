@@ -51,7 +51,8 @@ struct InventoryViewModelTests {
         let mockCashRepo = MockCashflowRepository()
         let vm = InventoryViewModel(operationalProtocol: mockOpRepo, cashflowProtocol: mockCashRepo)
 
-        let i1 = Ingredient(id: "1", branchId: "B-1", name: "Susu", unit: "L", minimumStockWarning: 5, batches: [IngredientBatch(currentStock: 10, costPerUnit: 15000)])
+        let pastDate = Calendar.current.date(byAdding: .day, value: -1, to: Date())
+        let i1 = Ingredient(id: "1", branchId: "B-1", name: "Susu", unit: "L", minimumStockWarning: 5, batches: [IngredientBatch(currentStock: 10, expiryDate: pastDate, costPerUnit: 15000)])
         mockOpRepo.ingredients = [i1]
 
         await vm.discardExpiredItem(ingredient: i1, branchId: "B-1")

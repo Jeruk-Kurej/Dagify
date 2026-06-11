@@ -7,6 +7,17 @@
 
 import Foundation
 
+enum MockAuthError: LocalizedError {
+    case invalidCredentials
+    
+    var errorDescription: String? {
+        switch self {
+        case .invalidCredentials:
+            return "Periksa kembali kredensial Anda."
+        }
+    }
+}
+
 class MockAuthRepository: AuthProtocol {
 
     // MARK: - Mock State
@@ -21,7 +32,7 @@ class MockAuthRepository: AuthProtocol {
 
     func login(email: String, password: String) async throws -> User {
         if shouldThrowError {
-            throw NSError(domain: "MockError", code: 401, userInfo: nil)
+            throw MockAuthError.invalidCredentials
         }
         return currentUser ?? User(id: "U-1", email: email, storeId: "S-1")
     }
